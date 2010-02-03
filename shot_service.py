@@ -11,6 +11,8 @@ from PyQt4.QtWebKit import QWebPage
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
+from optparse import OptionParser
+
 num_screenshot_threads = 1
 max_width = 2048
 max_height = 4096
@@ -118,7 +120,35 @@ class RPCThread(QThread):
         server.serve_forever()
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    qtargs = [sys.argv[0]]
+    description = '''Screenshot service with QtPt.'''
+    parser = OptionParser(usage="usage: %prog [options]",
+                          version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
+                          description=description)
+    
+    parser.add_option("-n", "--workers", dest="workers", default=4, type="int",
+                      help="Number or worker threads [default: %default].",
+                      metavar="WORKERS")
+    parser.add_option("-w", "--max-width", dest="max_width", default=2048, type="int",
+                      help="Max width of the screenshot image [default: %default].",
+                      metavar="MAX_WIDTH")
+    parser.add_option("-g", "--max-height", dest="max_height", default=4096, type="int",
+                      help="Max height of the screenshot image [default: %default].",
+                      metavar="MAX_HEIGHT")
+
+    (options,args) = parser.parse_args()
+    if len(args) != 0:
+        parser.error("incorrect number of arguments") 
+
+    num_screenshot_threads = options.workers
+    max_width = options.max_width
+    max_height = options.max_height
+
+    print("Workers: " + str(num_screenshot_threads))
+    print("Max width: " + str(max_width))
+    print("Max height: " + str(max_height))
+
+    app = QApplication([])
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     ta = []
