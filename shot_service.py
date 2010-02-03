@@ -8,7 +8,10 @@ from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 from PyQt4.QtWebKit import QWebPage
 
-num_screenshot_threads = 4
+from SimpleXMLRPCServer import SimpleXMLRPCServer
+from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+
+num_screenshot_threads = 1
 max_width = 2048
 max_height = 4096
 
@@ -26,7 +29,6 @@ class ScreenshotWorker(QThread):
     def postSetup(self, name):
         # Called by main after start()
         QObject.connect(self, SIGNAL("open"), self.onOpen, Qt.QueuedConnection)
-        QObject.connect(self.webpage, SIGNAL("loadFinished(bool)"), self.onLoadFinished, Qt.QueuedConnection)
         self.setObjectName(name)
 
     def onLoadFinished(self, result):
@@ -66,11 +68,17 @@ class ScreenshotWorker(QThread):
 
         # enable task reader
         self.task = None
+        QObject.disconnect(self.webpage, SIGNAL("loadFinished(bool)"), self.onLoadFinished)
+
         self.processing.wakeOne()
         self.mutex.unlock()
 
     def onOpen(self, url):
         print("onOpen: " + url)
+        self.webpage.mainFrame().setHtml("<html></html>")
+        self.webpage.setViewportSize(QSize(0,0))
+
+        QObject.connect(self.webpage, SIGNAL("loadFinished(bool)"), self.onLoadFinished, Qt.QueuedConnection)
         self.webpage.mainFrame().load(QUrl(url))
 
     def run(self):
@@ -87,21 +95,27 @@ class ScreenshotWorker(QThread):
             source_queue.task_done()
             self.mutex.unlock()
 
-def source():
-    return [
-        {'url':'http://g.cn/', 'filename':'/tmp/g.png'},
-        {'url':'http://news.sina.com.cn', 'filename':'/tmp/sina.png'},
-        {'url':'file:///usr/share/doc/python-doc/html/contents.html','filename':'/tmp/contents.png'},
-        {'url':'file:///usr/share/doc/python-doc/html/index.html','filename':'/tmp/index.png'},
-        {'url':'http://www.tianya.cn/publicforum/content/funinfo/1/1801508.shtml', 'filename':'/tmp/tianya.png'},
-        {'url':'http://news.mop.com/pic/hz/index.shtml', 'filename':'/tmp/mop.png'},
-        {'url':'http://g.cn/', 'filename':'/tmp/1.png'},
-        {'url':'http://news.sina.com.cn', 'filename':'/tmp/2.png'},
-        {'url':'file:///usr/share/doc/python-doc/html/contents.html','filename':'/tmp/3.png'},
-        {'url':'file:///usr/share/doc/python-doc/html/index.html','filename':'/tmp/4.png'},
-        {'url':'http://www.tianya.cn/publicforum/content/funinfo/1/1801508.shtml', 'filename':'/tmp/5.png'},
-        {'url':'http://news.mop.com/pic/hz/index.shtml', 'filename':'/tmp/6.png'},
-        ]
+class RequestHandler(SimpleXMLRPCRequestHandler):
+    rpc_paths = ('/RPC2',)
+
+def ScreenShot(url, filename):
+    import tempfile
+    if filename is None:
+        f = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+        filename = f.name
+        f.close()
+    print("ScreenShot: " + filename)
+    source_queue.put({'url':url, 'filename':filename})
+    return True
+
+class RPCThread(QThread):
+    def run(self):
+        server = SimpleXMLRPCServer(("localhost", 8000), 
+                                    requestHandler=RequestHandler,
+                                    allow_none=True)
+        server.register_introspection_functions()
+        server.register_function(ScreenShot)
+        server.serve_forever()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
@@ -115,7 +129,7 @@ if __name__ == '__main__':
         t.postSetup(str(i))
         ta.append(t)
 
-    for item in source():
-        source_queue.put(item)
+    rpc_thread = RPCThread()
+    rpc_thread.start()
 
     sys.exit(app.exec_())
