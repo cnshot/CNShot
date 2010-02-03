@@ -9,6 +9,9 @@ from PyQt4.QtGui import *
 from PyQt4.QtWebKit import QWebPage
 
 num_screenshot_threads = 4
+max_width = 2048
+max_height = 4096
+
 source_queue = Queue()
 screenshot_queue = Queue()
 
@@ -39,10 +42,10 @@ class ScreenshotWorker(QThread):
             # Paint this frame into an image
             qs = self.webpage.viewportSize()
             print(self.objectName() + " View port size: " + str(qs))
-            if qs.width() > 2048:
-                qs.setWidth(2048)
-            if qs.height() > 4096:
-                qs.setHeight(4096)
+            if qs.width() > max_width:
+                qs.setWidth(max_width)
+            if qs.height() > max_height:
+                qs.setHeight(max_height)
             print(self.objectName() + " Size to save: " + str(qs))
             image = QImage(qs, QImage.Format_ARGB32)
             painter = QPainter(image)
@@ -92,16 +95,25 @@ def source():
         {'url':'file:///usr/share/doc/python-doc/html/index.html','filename':'/tmp/index.png'},
         {'url':'http://www.tianya.cn/publicforum/content/funinfo/1/1801508.shtml', 'filename':'/tmp/tianya.png'},
         {'url':'http://news.mop.com/pic/hz/index.shtml', 'filename':'/tmp/mop.png'},
+        {'url':'http://g.cn/', 'filename':'/tmp/1.png'},
+        {'url':'http://news.sina.com.cn', 'filename':'/tmp/2.png'},
+        {'url':'file:///usr/share/doc/python-doc/html/contents.html','filename':'/tmp/3.png'},
+        {'url':'file:///usr/share/doc/python-doc/html/index.html','filename':'/tmp/4.png'},
+        {'url':'http://www.tianya.cn/publicforum/content/funinfo/1/1801508.shtml', 'filename':'/tmp/5.png'},
+        {'url':'http://news.mop.com/pic/hz/index.shtml', 'filename':'/tmp/6.png'},
         ]
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+    ta = []
+
     for i in range(num_screenshot_threads):
         t = ScreenshotWorker()
         t.start()
         t.postSetup(str(i))
+        ta.append(t)
 
     for item in source():
         source_queue.put(item)
