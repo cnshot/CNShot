@@ -16,6 +16,7 @@ from optparse import OptionParser
 num_screenshot_threads = 1
 max_width = 2048
 max_height = 4096
+output_rpc = None
 
 source_queue = Queue()
 screenshot_queue = Queue()
@@ -26,6 +27,9 @@ class ScreenshotWorker(QThread):
         self.webpage = QWebPage()
         self.mutex = QMutex()
         self.processing = QWaitCondition()
+        self.output_service = None
+        if output_rpc:
+            self.output_service = xmlrpclib.ServerProxy(output_rpc, allow_none = True)
         QThread.__init__(self)
 
     def postSetup(self, name):
@@ -37,6 +41,8 @@ class ScreenshotWorker(QThread):
         self.mutex.lock()
         if not result:
             print(self.objectName() + " Request failed")
+            if self.output_service:
+                self.output_service.failure(self.task)
         else:
             print(self.objectName() + " Page loaded: " + self.task['url'])
 
@@ -67,6 +73,9 @@ class ScreenshotWorker(QThread):
             
             global screenshot_queue
             screenshot_queue.put(self.task)
+
+            if self.output_service:
+                self.output_service.success(self.task)
 
         # enable task reader
         self.task = None
@@ -100,15 +109,23 @@ class ScreenshotWorker(QThread):
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
 
-def ScreenShot(url, filename):
+def ScreenShot(url, id, filename):
     import tempfile
+    import uuid
+
     if filename is None:
-        f = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+        if sys.hexversion >= 0x02060000:
+            f = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+        else:
+            f = tempfile.NamedTemporaryFile(suffix='.png')
         filename = f.name
         f.close()
+    if id is None:
+        id = str(uuid.uuid1())
     print("ScreenShot: " + filename)
-    source_queue.put({'url':url, 'filename':filename})
-    return True
+    task = {'id':id, 'url':url, 'filename':filename}
+    source_queue.put(task)
+    return task
 
 class RPCThread(QThread):
     def run(self):
@@ -120,7 +137,6 @@ class RPCThread(QThread):
         server.serve_forever()
 
 if __name__ == '__main__':
-    qtargs = [sys.argv[0]]
     description = '''Screenshot service with QtPt.'''
     parser = OptionParser(usage="usage: %prog [options]",
                           version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
@@ -135,6 +151,9 @@ if __name__ == '__main__':
     parser.add_option("-g", "--max-height", dest="max_height", default=4096, type="int",
                       help="Max height of the screenshot image [default: %default].",
                       metavar="MAX_HEIGHT")
+    parser.add_option("-r", "--output-rpc", dest="output_rpc", type="string",
+                      help="XML RPC entrace for task output. No XML RPC output by default.",
+                      metavar="OUTPUT_RPC")
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
@@ -143,10 +162,13 @@ if __name__ == '__main__':
     num_screenshot_threads = options.workers
     max_width = options.max_width
     max_height = options.max_height
+    if options.output_rpc:
+        output_rpc = options.output_rpc
 
     print("Workers: " + str(num_screenshot_threads))
     print("Max width: " + str(max_width))
     print("Max height: " + str(max_height))
+    print("Output RPC: " + str(output_rpc))
 
     app = QApplication([])
     signal.signal(signal.SIGINT, signal.SIG_DFL)
