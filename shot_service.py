@@ -2,6 +2,7 @@
 
 import sys
 import signal
+import xmlrpclib
 
 from Queue import Queue
 from PyQt4.QtCore import *
@@ -29,12 +30,14 @@ class ScreenshotWorker(QThread):
         self.processing = QWaitCondition()
         self.output_service = None
         if output_rpc:
-            self.output_service = xmlrpclib.ServerProxy(output_rpc, allow_none = True)
+            self.output_service = xmlrpclib.ServerProxy(output_rpc, 
+                                                        allow_none = True)
         QThread.__init__(self)
 
     def postSetup(self, name):
         # Called by main after start()
-        QObject.connect(self, SIGNAL("open"), self.onOpen, Qt.QueuedConnection)
+        QObject.connect(self, SIGNAL("open"), 
+                        self.onOpen, Qt.QueuedConnection)
         self.setObjectName(name)
 
     def onLoadFinished(self, result):
@@ -79,7 +82,8 @@ class ScreenshotWorker(QThread):
 
         # enable task reader
         self.task = None
-        QObject.disconnect(self.webpage, SIGNAL("loadFinished(bool)"), self.onLoadFinished)
+        QObject.disconnect(self.webpage, SIGNAL("loadFinished(bool)"), 
+                           self.onLoadFinished)
 
         self.processing.wakeOne()
         self.mutex.unlock()
@@ -89,7 +93,8 @@ class ScreenshotWorker(QThread):
         self.webpage.mainFrame().setHtml("<html></html>")
         self.webpage.setViewportSize(QSize(0,0))
 
-        QObject.connect(self.webpage, SIGNAL("loadFinished(bool)"), self.onLoadFinished, Qt.QueuedConnection)
+        QObject.connect(self.webpage, SIGNAL("loadFinished(bool)"), 
+                        self.onLoadFinished, Qt.QueuedConnection)
         self.webpage.mainFrame().load(QUrl(url))
 
     def run(self):
@@ -142,16 +147,20 @@ if __name__ == '__main__':
                           version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
                           description=description)
     
-    parser.add_option("-n", "--workers", dest="workers", default=4, type="int",
+    parser.add_option("-n", "--workers", 
+                      dest="workers", default=4, type="int",
                       help="Number or worker threads [default: %default].",
                       metavar="WORKERS")
-    parser.add_option("-w", "--max-width", dest="max_width", default=2048, type="int",
+    parser.add_option("-w", "--max-width", 
+                      dest="max_width", default=2048, type="int",
                       help="Max width of the screenshot image [default: %default].",
                       metavar="MAX_WIDTH")
-    parser.add_option("-g", "--max-height", dest="max_height", default=4096, type="int",
+    parser.add_option("-g", "--max-height", 
+                      dest="max_height", default=4096, type="int",
                       help="Max height of the screenshot image [default: %default].",
                       metavar="MAX_HEIGHT")
-    parser.add_option("-r", "--output-rpc", dest="output_rpc", type="string",
+    parser.add_option("-r", "--output-rpc", 
+                      dest="output_rpc", type="string",
                       help="XML RPC entrace for task output. No XML RPC output by default.",
                       metavar="OUTPUT_RPC")
 
