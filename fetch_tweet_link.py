@@ -6,7 +6,10 @@ import re
 import uuid
 import xmlrpclib
 import sys
+import pickle
+
 from optparse import OptionParser
+from stompy.simple import Client
 
 username = "scrshot"
 password = "password"
@@ -29,7 +32,9 @@ if __name__ == '__main__':
         parser.error("incorrect number of arguments") 
 
     url_pattern = re.compile('((http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?)')
-    scrshot_service = xmlrpclib.ServerProxy('http://localhost:8000', allow_none = True)
+#    scrshot_service = xmlrpclib.ServerProxy('http://localhost:8000', allow_none = True)
+    stomp = Client()
+    stomp.connect()
 
     api = twitter.Api(username=username, password=password)
     if options.since:
@@ -43,8 +48,13 @@ if __name__ == '__main__':
             print s.id, " ", s.created_at, " ", s.text
             for m in matches:
                 id = str(uuid.uuid1())
-                task = scrshot_service.ScreenShot(m[0], id, None)
-                print "Task scheduled: ", task['id'], " ", task['url'], " ", task['filename']
+#                task = scrshot_service.ScreenShot(m[0], id, None)
+#                print "Task scheduled: ", task['id'], " ", task['url'], " ", task['filename']
+                stomp.put(pickle.dumps({'id':id,
+                                        'url':m[0],
+                                        'filename':None}),
+                          destination="/queue/shot_source")
+
                 
     if statuses:
         print statuses[0].id
