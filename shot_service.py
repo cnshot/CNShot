@@ -26,9 +26,6 @@ dest_mq = "/queue/shot_dest"
 source_mq = "/queue/shot_source"
 timeout = 10
 
-#source_queue = Queue()
-screenshot_queue = Queue()
-
 class ScreenshotWorker(QThread):
     def __init__(self):
         self.task = None
@@ -56,13 +53,8 @@ class ScreenshotWorker(QThread):
         print(self.objectName() + " Timeout")
 
         # enable task reader
-#        QObject.disconnect(self.webpage, SIGNAL("loadFinished(bool)"), 
-#                           self.onLoadFinished)
-
-#        self.task = None
         self.webpage.triggerAction(QWebPage.Stop)
 
-#        self.processing.wakeOne()
         self.mutex.unlock()        
 
     def onLoadFinished(self, result):
@@ -110,11 +102,21 @@ class ScreenshotWorker(QThread):
 
             print(self.objectName() + " File saved: " + self.task['filename'])
             
-            global screenshot_queue
-            screenshot_queue.put(self.task)
 
             if self.output_mq:
-                # TODO: success info
+                # success info
+                try:
+                    stomp = stompy.simple.Client()
+                    stomp.connect()
+
+                    stomp.put(pickle.dumps(self.task),
+                              destination=dest_mq)
+                finally:
+                    try:
+                        stomp.disconnect()
+                    except:
+                        print self.objectName(), " Failed to enqueue finished task."
+                        pass
                 pass
 
         # enable task reader
@@ -133,8 +135,6 @@ class ScreenshotWorker(QThread):
         self.webpage.mainFrame().setHtml("<html></html>")
         self.webpage.setViewportSize(QSize(0,0))
 
-#        QObject.connect(self.timer, SIGNAL("timeout()"),
-#                        self.onTimer, Qt.QueuedConnection)
         self.timer.start(timeout * 1000)
 
         QObject.connect(self.webpage, SIGNAL("loadFinished(bool)"), 
@@ -149,7 +149,6 @@ class ScreenshotWorker(QThread):
             while self.task != None:
                 self.processing.wait(self.mutex)
 
-#            self.task = source_queue.get()
             try:
                 # persistent stomp is unsafe :(
                 stomp = stompy.simple.Client()
@@ -191,7 +190,6 @@ class ScreenshotWorker(QThread):
             print("Run: " + self.task['url'])
             self.emit(SIGNAL("open"), self.task['url'])
 
-#            source_queue.task_done()
             self.mutex.unlock()
 
 if __name__ == '__main__':
