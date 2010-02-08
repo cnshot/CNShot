@@ -1,17 +1,9 @@
 #!/usr/bin/python
 
-import stompy
-import pickle
-import memcache
-import twitpic
-import twitter
-import sys
-import traceback
+import stompy, pickle, memcache, sys, traceback, logging, logging.config, os
+import twitpic, twitter
 
 from optparse import OptionParser
-
-#username = "scrshot"
-#password = "password"
 
 mc = None
 
@@ -20,41 +12,51 @@ def onReceiveTask(m):
     task = pickle.loads(m.body)
 
     if task is None:
-        print "Failed to parse task"
+        logger.error("Failed to parse task")
         return
 
-    print "Got task: ", task['url'], " ", task['filename']
-
-    s = mc.get(task['id'])
-    mc.delete(task['id'])
-    
-    if s is None:
-        # expired
-        print "Failed to get status of task id: ", task['id']
-        return
-
-    print "Got tweet: ", s.id, " ", s.user.screen_name, " ", s.created_at, " ", s.text.encode('utf-8')
+    logger.info("Got task: %s %s", task['url'], task['filename'])
 
     try:
-        twit = twitpic.TwitPicAPI(options.username, options.password)
+        s = mc.get(task['id'])
+        mc.delete(task['id'])
 
-        rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
-        print rt_text.encode('utf-8')
+        if s is None:
+            # expired
+            logger.error("Failed to get status of task id: %d", task['id'])
+            return
 
-        twitpic_url = twit.upload(task['filename'], 
-                                  message = rt_text.encode('utf-8')[0:140],
-                                  post_to_twitter=False)
+        logger.info("Got tweet: %d %s %s %s",
+                    s.id, str(s.user.screen_name),
+                    str(s.created_at), s.text.encode('utf-8'))
 
-        t = unicode(twitpic_url) + u" " + rt_text
-        api = twitter.Api(username=options.username, password=options.password)
-        rts = api.PostUpdate(t[0:140], in_reply_to_status_id=s.id)
+        try:
+            twit = twitpic.TwitPicAPI(options.username, options.password)
 
-        print "New tweet: ", rts.id, " ", rts.created_at, " ", rts.text.encode('utf-8')
-    except:
-        print "Failed to tweet image: ", sys.exc_info()[0]
-        print '-'*60
-        traceback.print_exc(file=sys.stdout)
-        print '-'*60
+            rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
+            logger.debug("%s", rt_text.encode('utf-8'))
+
+            twitpic_url = twit.upload(task['filename'], 
+                                      message = rt_text.encode('utf-8')[0:140],
+                                      post_to_twitter=False)
+
+            t = unicode(twitpic_url) + u" " + rt_text
+            api = twitter.Api(username=options.username, password=options.password)
+            rts = api.PostUpdate(t[0:140], in_reply_to_status_id=s.id)
+
+            logger.info("New tweet: %d %s %s", 
+                        rts.id, str(rts.created_at),
+                        rts.text.encode('utf-8'))
+        except:
+            logger.error("Failed to tweet image: %s", sys.exc_info()[0])
+            logger.error('-'*60)
+            logger.error("%s", traceback.format_exc())
+            logger.error('-'*60)
+    finally:
+        try:
+            os.unlink(task['filename'])
+        except:
+            pass
 
 if __name__ == '__main__':
     description = '''RT screenshots.'''
@@ -77,10 +79,19 @@ if __name__ == '__main__':
                       default="password",
                       help="Twitter password [default: %default].",
                       metavar="PASSWORD")
+    parser.add_option("-l", "--log-config",
+                      dest="log_config", 
+                      default="/etc/link_shot_tweet_log.conf",
+                      type="string",
+                      help="Logging config file [default: %default].",
+                      metavar="LOG_CONFIG");
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
         parser.error("incorrect number of arguments")
+
+    logging.config.fileConfig(options.log_config)
+    logger = logging.getLogger("rt_shot")
 
     mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 

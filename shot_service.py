@@ -1,11 +1,6 @@
 #!/usr/bin/python
 
-import sys
-import signal
-import xmlrpclib
-import pickle
-import stompy
-import tempfile
+import sys, signal, xmlrpclib, pickle, stompy, tempfile, logging, logging.config
 
 from Queue import Queue
 from PyQt4.QtCore import *
@@ -17,14 +12,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
 from optparse import OptionParser
 
-num_screenshot_threads = 1
-max_width = 2048
-#min_width = 640
-max_height = 4096
-#min_height = 480
-dest_mq = "/queue/shot_dest"
-source_mq = "/queue/shot_source"
-timeout = 10
+options = None
 
 class ScreenshotWorker(QThread):
     def __init__(self):
@@ -34,7 +22,7 @@ class ScreenshotWorker(QThread):
         self.processing = QWaitCondition()
         self.output_mq = None
         self.timer = QTimer(self.webpage)
-        if dest_mq:
+        if options.dest_queue:
             self.output_mq = stompy.simple.Client()
             self.output_mq.connect()
         QThread.__init__(self)
@@ -50,7 +38,7 @@ class ScreenshotWorker(QThread):
     def onTimer(self):
         self.mutex.lock()
 
-        print(self.objectName() + " Timeout")
+        logger.warn(self.objectName() + " Timeout")
 
         # enable task reader
         self.webpage.triggerAction(QWebPage.Stop)
@@ -66,41 +54,41 @@ class ScreenshotWorker(QThread):
             pass
 
         if (self.webpage.bytesReceived() == 0) or self.task is None:
-            print(self.objectName() + " Request failed")
+            logger.error(self.objectName() + " Request failed")
             if self.output_mq:
                 # TODO: failure info
                 pass
         else:
-            print(self.objectName() + " Page loaded: " + self.task['url'])
+            logger.info(self.objectName() + " Page loaded: " + self.task['url'])
 
             # Set the size of the (virtual) browser window
             self.webpage.setViewportSize(self.webpage.mainFrame().contentsSize())
 
             # Paint this frame into an image
             qs = self.webpage.viewportSize()
-            print(self.objectName() + " View port size: " + str(qs))
-            if qs.width() > max_width:
-                qs.setWidth(max_width)
+            logger.debug(self.objectName() + " View port size: " + str(qs))
+            if qs.width() > options.max_width:
+                qs.setWidth(options.max_width)
 #            if qs.width() < min_width:
 #                qs.setWidth(min_width)
-            if qs.height() > max_height:
-                qs.setHeight(max_height)
+            if qs.height() > options.max_height:
+                qs.setHeight(options.max_height)
 #            if qs.height() < min_height:
 #                qs.setHeight(min_height)
-            print(self.objectName() + " Size to save: " + str(qs))
+            logger.debug(self.objectName() + " Size to save: " + str(qs))
             image = QImage(qs, QImage.Format_ARGB32)
             painter = QPainter(image)
 
-            print(self.objectName() + " Rendering URL: " + self.task['url'])
+            logger.debug(self.objectName() + " Rendering URL: " + self.task['url'])
 
             self.webpage.mainFrame().render(painter)
             painter.end()
 
-            print(self.objectName() + " Saving file: " + self.task['filename'])
+            logger.info(self.objectName() + " Saving file: " + self.task['filename'])
 
             image.save(self.task['filename'])
 
-            print(self.objectName() + " File saved: " + self.task['filename'])
+            logger.info(self.objectName() + " File saved: " + self.task['filename'])
             
 
             if self.output_mq:
@@ -110,12 +98,12 @@ class ScreenshotWorker(QThread):
                     stomp.connect()
 
                     stomp.put(pickle.dumps(self.task),
-                              destination=dest_mq)
+                              destination=options.dest_queue)
                 finally:
                     try:
                         stomp.disconnect()
                     except:
-                        print self.objectName(), " Failed to enqueue finished task."
+                        logger.warn(self.objectName() + " Failed to enqueue finished task.")
                         pass
                 pass
 
@@ -131,11 +119,11 @@ class ScreenshotWorker(QThread):
         self.mutex.unlock()
 
     def onOpen(self, url):
-        print(self.objectName() + " onOpen: " + url)
+        logger.debug(self.objectName() + " onOpen: " + url)
         self.webpage.mainFrame().setHtml("<html></html>")
         self.webpage.setViewportSize(QSize(0,0))
 
-        self.timer.start(timeout * 1000)
+        self.timer.start(options.timeout * 1000)
 
         QObject.connect(self.webpage, SIGNAL("loadFinished(bool)"), 
                         self.onLoadFinished, Qt.QueuedConnection)
@@ -153,9 +141,9 @@ class ScreenshotWorker(QThread):
                 # persistent stomp is unsafe :(
                 stomp = stompy.simple.Client()
                 stomp.connect()
-                stomp.subscribe(source_mq, ack='client')
+                stomp.subscribe(options.source_queue, ack='client')
             except:
-                print(self.objectName() + " STOMP subscribe failed.")
+                logger.warn(self.objectName() + " STOMP subscribe failed.")
                 try:
                     stomp.disconnect()
                 except:
@@ -167,15 +155,15 @@ class ScreenshotWorker(QThread):
                 m=stomp.get()
                 stomp.ack(m)
             except:
-                print(self.objectName() + " STOMP dequeue failed.")
+                logger.warn(self.objectName() + " STOMP dequeue failed.")
                 self.mutex.unlock()
                 continue
             finally:
                 try:
-                    stomp.unsubscribe(source_mq)
+                    stomp.unsubscribe(options.source_queue)
                     stomp.disconnect()
                 except:
-                    print(self.objectName() + " STOMP unsubscribe failed.")
+                    logger.warn(self.objectName() + " STOMP unsubscribe failed.")
                     pass
 
             self.task = pickle.loads(m.body)
@@ -187,7 +175,7 @@ class ScreenshotWorker(QThread):
                 self.task['filename'] = f.name
                 f.close()
 
-            print("Run: " + self.task['url'])
+            logger.info(self.objectName() + " Run: " + self.task['url'])
             self.emit(SIGNAL("open"), self.task['url'])
 
             self.mutex.unlock()
@@ -232,33 +220,33 @@ if __name__ == '__main__':
                       type="string",
                       help="Dest message queue path [default: %default].",
                       metavar="DEST_QUEUE")
+    parser.add_option("-l", "--log-config",
+                      dest="log_config", 
+                      default="/etc/link_shot_tweet_log.conf",
+                      type="string",
+                      help="Logging config file [default: %default].",
+                      metavar="LOG_CONFIG")
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
         parser.error("incorrect number of arguments") 
 
-    num_screenshot_threads = options.workers
-    max_width = options.max_width
- #   min_width = options.min_width
-    max_height = options.max_height
- #   min_height = options.min_height
-    source_mq = options.source_queue
-    dest_mq = options.dest_queue
-    timeout = options.timeout
+    logging.config.fileConfig(options.log_config)
+    logger = logging.getLogger("shot_service")
 
-    print("Workers: " + str(num_screenshot_threads))
-    print("Max width: " + str(max_width))
-    print("Max height: " + str(max_height))
-    print("Source queue: " + str(source_mq))
-    print("Dest queue: " + str(dest_mq))
-    print("Timeout: " + str(timeout))
+    logger.info("Workers: " + str(options.workers))
+    logger.info("Max width: " + str(options.max_width))
+    logger.info("Max height: " + str(options.max_height))
+    logger.info("Source queue: " + str(options.source_queue))
+    logger.info("Dest queue: " + str(options.dest_queue))
+    logger.info("Timeout: " + str(options.timeout))
 
     app = QApplication([])
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     ta = []
 
-    for i in range(num_screenshot_threads):
+    for i in range(options.workers):
         t = ScreenshotWorker()
         t.start()
         t.postSetup(str(i))
