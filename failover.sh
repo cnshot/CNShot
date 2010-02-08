@@ -24,12 +24,8 @@ stop_all(){
     exit 0
 }
 
-set -bm
-trap restart SIGCHLD
 trap stop_all SIGTERM SIGINT
 
-$CMD_LINE &
-CHILD_PID=$!
-echo $CHILD_PID
+restart
 
 wait
