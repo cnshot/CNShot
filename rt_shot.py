@@ -30,6 +30,11 @@ def onReceiveTask(m):
                     s.id, str(s.user.screen_name),
                     str(s.created_at), s.text.encode('utf-8'))
 
+        if options.dummy:
+            logger.info("No post with dummy mode: %i %s %s",
+                        s.id, str(s.user.screen_name), s.text.encode('utf-8'))
+            return
+
         try:
             twit = twitpic.TwitPicAPI(options.username, options.password)
 
@@ -39,6 +44,12 @@ def onReceiveTask(m):
             twitpic_url = twit.upload(task['filename'], 
                                       message = rt_text.encode('utf-8')[0:140],
                                       post_to_twitter=False)
+
+            if not options.tweet:
+                logger.info("Tweet disabled.")
+                return
+            
+            logger.info("Tweet enalbed.")
 
             t = unicode(twitpic_url) + u" " + rt_text
             api = twitter.Api(username=options.username, password=options.password)
@@ -53,10 +64,11 @@ def onReceiveTask(m):
             logger.error("%s", traceback.format_exc())
             logger.error('-'*60)
     finally:
-        try:
-            os.unlink(task['filename'])
-        except:
-            pass
+        if not options.keep_file:
+            try:
+                os.unlink(task['filename'])
+            except:
+                pass
 
 if __name__ == '__main__':
     description = '''RT screenshots.'''
@@ -79,12 +91,22 @@ if __name__ == '__main__':
                       default="password",
                       help="Twitter password [default: %default].",
                       metavar="PASSWORD")
+
     parser.add_option("-l", "--log-config",
                       dest="log_config", 
                       default="/etc/link_shot_tweet_log.conf",
                       type="string",
                       help="Logging config file [default: %default].",
-                      metavar="LOG_CONFIG");
+                      metavar="LOG_CONFIG")
+
+    parser.add_option("-d", "--dummy", action="store_true", dest="dummy", 
+                      default=False)
+
+    parser.add_option("-t", "--tweet", action="store_true", dest="tweet",
+                      default=False)
+
+    parser.add_option("-k", "--keep-file", action="store_true", dest="keep_file", 
+                      default=False)
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
@@ -98,6 +120,11 @@ if __name__ == '__main__':
     stomp = stompy.simple.Client()
     stomp.connect()
     stomp.subscribe(options.source_queue, ack='client')
+
+    logger.info("rt_shot started.")
+    if options.dummy:
+        logger.info("Dummy mode enabled.")
+
     while True:
         m=stomp.get(callback=onReceiveTask)
 
