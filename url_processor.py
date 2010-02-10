@@ -107,6 +107,7 @@ def http_header(url):
     logger.debug("http_header: %s", url)
 
     c = pycurl.Curl()
+    c.setopt(pycurl.NOSIGNAL, 1)
     c.setopt(pycurl.FOLLOWLOCATION, 0)
     c.setopt(pycurl.NOBODY, 1)
     c.setopt(pycurl.TIMEOUT, options.timeout)
@@ -147,7 +148,7 @@ def extend_url(s):
     if not m:
         return None
     
-    return m.group(1)
+    return m.group(1).rstrip()
     
 if __name__ == '__main__':
     description = '''Shot task URL pre-processor.'''
