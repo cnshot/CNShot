@@ -22,6 +22,13 @@ if __name__ == '__main__':
     parser.add_option("-s", "--since", dest="since", type="int",
                       help="Fetch updates after tweet id. Default for last 20 tweets.",
                       metavar="SINCE")
+
+    parser.add_option("-d", "--dest-queue", 
+                      dest="dest_queue", default="/queue/url_processor",
+                      type="string",
+                      help="Dest message queue path [default: %default].",
+                      metavar="DEST_QUEUE")
+
     parser.add_option("-c", "--count", dest="count", type="int", default=20,
                       help="Fetch at most COUNT tweets [default: %default].",
                       metavar="COUNT")
@@ -40,6 +47,8 @@ if __name__ == '__main__':
                       default="password",
                       help="Twitter password [default: %default].",
                       metavar="PASSWORD")
+
+
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
@@ -79,7 +88,7 @@ if __name__ == '__main__':
                 stomp.put(pickle.dumps({'id':id,
                                         'url':m[0],
                                         'filename':None}),
-                          destination="/queue/shot_source")
+                          destination=options.dest_queue)
                 
     if statuses:
         print statuses[0].id
