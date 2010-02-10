@@ -20,11 +20,11 @@ class ScreenshotWorker(QThread):
         self.webpage = QWebPage()
         self.mutex = QMutex()
         self.processing = QWaitCondition()
-        self.output_mq = None
+#        self.output_mq = None
         self.timer = QTimer(self.webpage)
-        if options.dest_queue:
-            self.output_mq = stompy.simple.Client()
-            self.output_mq.connect()
+#        if options.dest_queue:
+#            self.output_mq = stompy.simple.Client()
+#            self.output_mq.connect()
         QThread.__init__(self)
 
     def postSetup(self, name):
@@ -38,7 +38,7 @@ class ScreenshotWorker(QThread):
     def onTimer(self):
         self.mutex.lock()
 
-        logger.warn(self.objectName() + " Timeout")
+        logger.warn("%s Timeout", self.objectName())
 
         # enable task reader
         self.webpage.triggerAction(QWebPage.Stop)
@@ -54,19 +54,19 @@ class ScreenshotWorker(QThread):
             pass
 
         if (self.webpage.bytesReceived() == 0) or self.task is None:
-            logger.error(self.objectName() + " Request failed")
-            if self.output_mq:
-                # TODO: failure info
-                pass
+            logger.error("%s Request failed", self.objectName())
+            if options.cancel_queue:
+                # failure info
+                self.writeMQ(options.cancel_queue, self.task)
         else:
-            logger.info(self.objectName() + " Page loaded: " + self.task['url'])
+            logger.info("%s Page loaded: %s", self.objectName(), self.task['url'])
 
             # Set the size of the (virtual) browser window
             self.webpage.setViewportSize(self.webpage.mainFrame().contentsSize())
 
             # Paint this frame into an image
             qs = self.webpage.viewportSize()
-            logger.debug(self.objectName() + " View port size: " + str(qs))
+            logger.debug("%s View port size: %s", self.objectName(), str(qs))
             if qs.width() > options.max_width:
                 qs.setWidth(options.max_width)
 #            if qs.width() < min_width:
@@ -75,37 +75,27 @@ class ScreenshotWorker(QThread):
                 qs.setHeight(options.max_height)
 #            if qs.height() < min_height:
 #                qs.setHeight(min_height)
-            logger.debug(self.objectName() + " Size to save: " + str(qs))
+            logger.debug("%s Size to save: %s", self.objectName(), str(qs))
             image = QImage(qs, QImage.Format_ARGB32)
             painter = QPainter(image)
 
-            logger.debug(self.objectName() + " Rendering URL: " + self.task['url'])
+            logger.debug("%s Rendering URL: %s",
+                         self.objectName(), self.task['url'])
 
             self.webpage.mainFrame().render(painter)
             painter.end()
 
-            logger.info(self.objectName() + " Saving file: " + self.task['filename'])
+            logger.info("%s Saving file: %s",
+                        self.objectName(), self.task['filename'])
 
             image.save(self.task['filename'])
 
-            logger.info(self.objectName() + " File saved: " + self.task['filename'])
-            
+            logger.info("%s File saved: %s",
+                        self.objectName(), self.task['filename'])
 
-            if self.output_mq:
+            if options.dest_queue:
                 # success info
-                try:
-                    stomp = stompy.simple.Client()
-                    stomp.connect()
-
-                    stomp.put(pickle.dumps(self.task),
-                              destination=options.dest_queue)
-                finally:
-                    try:
-                        stomp.disconnect()
-                    except:
-                        logger.warn(self.objectName() + " Failed to enqueue finished task.")
-                        pass
-                pass
+                self.writeMQ(options.dest_queue, self.task)
 
         # enable task reader
         self.task = None
@@ -118,8 +108,25 @@ class ScreenshotWorker(QThread):
         self.processing.wakeOne()
         self.mutex.unlock()
 
+    def writeMQ(self, queue, task):
+        if not queue:
+            return
+
+        try:
+            stomp = stompy.simple.Client()
+            stomp.connect()
+
+            stomp.put(pickle.dumps(task),
+                      destination=queue)
+        finally:
+            try:
+                stomp.disconnect()
+            except:
+                logger.warn("%s Failed to enqueue finished task.",
+                            self.objectName())
+
     def onOpen(self, url):
-        logger.debug(self.objectName() + " onOpen: " + url)
+        logger.debug("%s onOpen: %s", self.objectName(), url)
         self.webpage.mainFrame().setHtml("<html></html>")
         self.webpage.setViewportSize(QSize(0,0))
 
@@ -143,7 +150,7 @@ class ScreenshotWorker(QThread):
                 stomp.connect()
                 stomp.subscribe(options.source_queue, ack='client')
             except:
-                logger.warn(self.objectName() + " STOMP subscribe failed.")
+                logger.warn("%s STOMP subscribe failed.", self.objectName())
                 try:
                     stomp.disconnect()
                 except:
@@ -155,7 +162,7 @@ class ScreenshotWorker(QThread):
                 m=stomp.get()
                 stomp.ack(m)
             except:
-                logger.warn(self.objectName() + " STOMP dequeue failed.")
+                logger.warn("%s STOMP dequeue failed.", self.objectName())
                 self.mutex.unlock()
                 continue
             finally:
@@ -163,7 +170,7 @@ class ScreenshotWorker(QThread):
                     stomp.unsubscribe(options.source_queue)
                     stomp.disconnect()
                 except:
-                    logger.warn(self.objectName() + " STOMP unsubscribe failed.")
+                    logger.warn("%s STOMP unsubscribe failed.", self.objectName())
                     pass
 
             self.task = pickle.loads(m.body)
@@ -175,7 +182,7 @@ class ScreenshotWorker(QThread):
                 self.task['filename'] = f.name
                 f.close()
 
-            logger.info(self.objectName() + " Run: " + self.task['url'])
+            logger.info("%s Run: %s", self.objectName(), self.task['url'])
             self.emit(SIGNAL("open"), self.task['url'])
 
             self.mutex.unlock()
@@ -211,7 +218,7 @@ if __name__ == '__main__':
                       help="Timeout of page loading in second [default: %default].",
                       metavar="TIMEOUT")
     parser.add_option("-s", "--source-queue",
-                      dest="source_queue", default="/queue/shot_source",
+                      dest="source_queue", default="/queue/shot_service",
                       type="string",
                       help="Source message queue path [default: %default].",
                       metavar="SOURCE_QUEUE")
@@ -220,6 +227,11 @@ if __name__ == '__main__':
                       type="string",
                       help="Dest message queue path [default: %default].",
                       metavar="DEST_QUEUE")
+    parser.add_option("-c", "--cancel-queue",
+                      dest="cancel_queue", default="/queue/cancel",
+                      type="string",
+                      help="Message queue of tasks to cancel [default: %default].",
+                      metavar="CANCEL_QUEUE")
     parser.add_option("-l", "--log-config",
                       dest="log_config", 
                       default="/etc/link_shot_tweet_log.conf",
@@ -234,12 +246,12 @@ if __name__ == '__main__':
     logging.config.fileConfig(options.log_config)
     logger = logging.getLogger("shot_service")
 
-    logger.info("Workers: " + str(options.workers))
-    logger.info("Max width: " + str(options.max_width))
-    logger.info("Max height: " + str(options.max_height))
-    logger.info("Source queue: " + str(options.source_queue))
-    logger.info("Dest queue: " + str(options.dest_queue))
-    logger.info("Timeout: " + str(options.timeout))
+    logger.info("Workers: %d", options.workers)
+    logger.info("Max width: %d", options.max_width)
+    logger.info("Max height: %d", options.max_height)
+    logger.info("Source queue: %s", options.source_queue)
+    logger.info("Dest queue: %s", options.dest_queue)
+    logger.info("Timeout: %d", options.timeout)
 
     app = QApplication([])
     signal.signal(signal.SIGINT, signal.SIG_DFL)
