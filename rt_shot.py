@@ -23,7 +23,7 @@ def onReceiveTask(m):
 
         if s is None:
             # expired
-            logger.error("Failed to get status of task id: %d", task['id'])
+            logger.error("Failed to get status of task id: %s", task['id'])
             return
 
         logger.info("Got tweet: %d %s %s %s",
@@ -31,7 +31,7 @@ def onReceiveTask(m):
                     str(s.created_at), s.text.encode('utf-8'))
 
         if options.dummy:
-            logger.info("No post with dummy mode: %i %s %s",
+            logger.info("No post with dummy mode: %d %s %s",
                         s.id, str(s.user.screen_name), s.text.encode('utf-8'))
             return
 
