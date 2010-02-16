@@ -20,11 +20,7 @@ class ScreenshotWorker(QThread):
         self.webpage = QWebPage()
         self.mutex = QMutex()
         self.processing = QWaitCondition()
-#        self.output_mq = None
         self.timer = QTimer(self.webpage)
-#        if options.dest_queue:
-#            self.output_mq = stompy.simple.Client()
-#            self.output_mq.connect()
         QThread.__init__(self)
 
     def postSetup(self, name):
