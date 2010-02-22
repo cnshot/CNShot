@@ -3,7 +3,8 @@ from django.db import models
 # Create your models here.
 
 class Link(models.Model):
-    url = models.CharField(max_length=2048)
+    id = models.AutoField(primary_key=True)
+    url = models.URLField(max_length=2048)
     alias_of = models.ForeignKey('Link', null=True)
 
     def __unicode__(self):
@@ -47,8 +48,9 @@ class Tweet(models.Model):
 
 class LinkShot(models.Model):
 #    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     link = models.ForeignKey('Link', null=True)
-    url = models.CharField(max_length=2048, null=True)
+    url = models.URLField(max_length=2048, null=True)
     shot_time = models.DateTimeField(null=True)
 
     def __unicode__(self):
@@ -67,13 +69,15 @@ class LinkShot(models.Model):
 
 class ShotPublish(models.Model):
 #    id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     link = models.ForeignKey('Link', null=True)
     shot = models.ForeignKey('LinkShot', null=True)
     publish_time = models.DateTimeField(null=True)
-    url = models.CharField(max_length=2048)
+    url = models.URLField(max_length=2048)
     site = models.CharField(max_length=128, null=True)
 
 class LinkRate(models.Model):
+    id = models.AutoField(primary_key=True)
     link = models.ForeignKey('Link')
     rate = models.IntegerField(null=True)
     rating_time = models.DateTimeField(null=True)
@@ -82,6 +86,7 @@ class LinkRate(models.Model):
         return self.link.url
 
 class ImageSitePattern(models.Model):
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=128)
     pattern = models.CharField(max_length=1024)
 
@@ -89,6 +94,7 @@ class ImageSitePattern(models.Model):
         return self.name
 
 class IgnoredSitePattern(models.Model):
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=128)
     pattern = models.CharField(max_length=1024)
 
