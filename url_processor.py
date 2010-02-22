@@ -212,12 +212,6 @@ if __name__ == '__main__':
                       help="Message queue of tasks to cancel [default: %default].",
                       metavar="CANCEL_QUEUE")
 
-    parser.add_option("-p", "--pattern-db", 
-                      dest="pattern_db", default="link_tweet_shot.sqlite",
-                      type="string",
-                      help="URL pattern database file [default: %default].",
-                      metavar="PATTERN_DB")
-
     parser.add_option("--timeout", 
                       dest="timeout", default=20, type="int",
                       help="Timeout of HTTP request in second [default: %default].",

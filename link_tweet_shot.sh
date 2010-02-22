@@ -17,5 +17,4 @@ nohup ${LTS_DIR}/failover.sh ${PYTHON25} ${LTS_DIR}/rt_shot.py -u ${USERNAME} -p
     -l ${LTS_DIR}/link_shot_tweet_log.conf &
 nohup ${LTS_DIR}/failover.sh task_gc.py &
 nohup ${LTS_DIR}/failover.sh ${PYTHON25} ${LTS_DIR}/url_processor.py \
-    -p ${LTS_DIR}/link_tweet_shot.sqlite \
     -l ${LTS_DIR}/link_shot_tweet_log.conf &
