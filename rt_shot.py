@@ -5,6 +5,9 @@ import twitpic, twitter
 
 from optparse import OptionParser
 
+#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+from lts.models import Link, LinkShot
+
 mc = None
 
 def onReceiveTask(m):
@@ -44,6 +47,15 @@ def onReceiveTask(m):
             twitpic_url = twit.upload(task['filename'], 
                                       message = rt_text.encode('utf-8')[0:140],
                                       post_to_twitter=False)
+
+            # update LinkShot
+            try:
+                l = Link.objects.get(url = task['url'])
+            except Link.DoesNotExist:
+                logger.warn("No link object for url: %s", task['url'])
+                l = None
+            ls = LinkShot(link=l, url=twitpic_url, shot_time=task['shot_time'])
+            ls.save()
 
             if not options.tweet:
                 logger.info("Tweet disabled.")

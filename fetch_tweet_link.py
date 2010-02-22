@@ -9,9 +9,14 @@ import uuid
 import sys
 import pickle
 import memcache
+import time, rfc822
 
 from optparse import OptionParser
 from stompy.simple import Client
+from datetime import timedelta, datetime
+
+#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+from lts.models import Link, Tweet
 
 if __name__ == '__main__':
     description = '''Fetch Twitter timeline and enqueue links.'''
@@ -82,13 +87,34 @@ if __name__ == '__main__':
         matches = re.findall(url_pattern,s.text)
         if matches:
             print s.id, " ", s.user.screen_name, " ", s.created_at, " ", s.text.encode('utf-8')
+
+            ls = []
+
             for m in matches:
-                id = str(uuid.uuid1())
-                mc.set(id, s, time=600)
-                stomp.put(pickle.dumps({'id':id,
+                task_id = str(uuid.uuid1())
+                mc.set(task_id, s, time=600)
+
+                # update Tweet and Link
+                try:
+                    l = Link.objects.get(url__exact=m[0])
+                except Link.DoesNotExist:
+                    l = Link(url=m[0])
+                    l.save()
+
+                ls.append(l)
+                
+                stomp.put(pickle.dumps({'id':task_id,
                                         'url':m[0],
                                         'filename':None}),
                           destination=options.dest_queue)
+
+            # update Tweet
+            t = Tweet(id = s.id,
+                      text = s.text,
+                      created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
+                      user_screenname = s.user.screen_name)
+            t.links = ls
+            t.save()
                 
     if statuses:
         print statuses[0].id

@@ -2,21 +2,96 @@ from django.db import models
 
 # Create your models here.
 
+class Link(models.Model):
+    url = models.CharField(primary_key=True, max_length=2048)
+    alias_of = models.ForeignKey('Link', null=True)
+
+    def __unicode__(self):
+        return self.url
+
+    def getRoot(self):
+        if self.alias_of is None:
+            return self
+
+        return self.alias_of.getRoot()
+
+    def getAliases(self):
+        # get child alias and self
+        ls = Link.objects.filter(alias_of=self).all()
+        aliases = []
+        for l in ls:
+            aliases += l.getAliases()
+        aliases.append(self)
+        return aliases
+
+    def getRateSum(self):
+        aliases = self.getAliases()
+        r = 0
+        for l in aliases:
+            try:
+                lr = LinkRate.objects.filter(link=l)[0]
+                r += lr.rate
+            except IndexError:
+                pass
+        return r
+
 class Tweet(models.Model):
     id = models.IntegerField(primary_key=True)
     text = models.CharField(max_length=500)
     created_at = models.DateTimeField()
     user_screenname = models.CharField(max_length=100)
-    links = models.ManyToManyField(Link)
+    links = models.ManyToManyField(Link, null=True)
 
-class Link(models.Model):
-    url = models.CharField(primary_key=True, max_length=2048)
+    def __unicode__(self):
+        return u"%s [%s] %s" % (self.user_screenname, self.created_at, self.text)
 
 class LinkShot(models.Model):
-    link = models.ForeignKey('Link')
-    shot_time = models.DateTimeField('date published')
+#    id = models.IntegerField(primary_key=True)
+    link = models.ForeignKey('Link', null=True)
+    url = models.CharField(max_length=2048, null=True)
+    shot_time = models.DateTimeField(null=True)
 
-class Choice(models.Model):
-    poll = models.ForeignKey('LinkShot')
-    choice = models.CharField(max_length=200)
-    votes = models.IntegerField()
+    def __unicode__(self):
+        return self.link.url
+
+    def getRate(self):
+        links = self.link.getAliases()
+        r = 0
+        for l in links:
+            try:
+                lr = LinkRate.filter(link=l)[0]
+            except IndexError:
+                continue
+            r += lr.rate
+        return r
+
+class ShotPublish(models.Model):
+#    id = models.AutoField(primary_key=True)
+    link = models.ForeignKey('Link', null=True)
+    shot = models.ForeignKey('LinkShot', null=True)
+    publish_time = models.DateTimeField(null=True)
+    url = models.CharField(max_length=2048)
+    site = models.CharField(max_length=128, null=True)
+
+class LinkRate(models.Model):
+    link = models.ForeignKey('Link')
+    rate = models.IntegerField(null=True)
+    rating_time = models.DateTimeField(null=True)
+
+    def __unicode__(self):
+        return self.link.url
+
+class ImageSitePattern(models.Model):
+    name = models.CharField(max_length=128)
+    pattern = models.CharField(max_length=1024)
+
+    def __unicode__(self):
+        return self.name
+
+class IgnoredSitePattern(models.Model):
+    name = models.CharField(max_length=128)
+    pattern = models.CharField(max_length=1024)
+
+    def __unicode__(self):
+        return self.name
+    

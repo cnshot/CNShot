@@ -2,6 +2,7 @@
 
 import sys, signal, xmlrpclib, pickle, stompy, tempfile, logging, logging.config
 
+from datetime import datetime
 from Queue import Queue
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -11,8 +12,6 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
 from optparse import OptionParser
-
-options = None
 
 class ScreenshotWorker(QThread):
     def __init__(self):
@@ -84,14 +83,20 @@ class ScreenshotWorker(QThread):
             logger.info("%s Saving file: %s",
                         self.objectName(), self.task['filename'])
 
-            image.save(self.task['filename'])
+            if image.save(self.task['filename']):
+                logger.info("%s File saved: %s",
+                            self.objectName(), self.task['filename'])
 
-            logger.info("%s File saved: %s",
-                        self.objectName(), self.task['filename'])
-
-            if options.dest_queue:
-                # success info
-                self.writeMQ(options.dest_queue, self.task)
+                if options.dest_queue:
+                    # success info
+                    self.task['shot_time']=datetime.now()
+                    self.writeMQ(options.dest_queue, self.task)
+            else:
+                logger.error("%s Failed to save file: %s",
+                             self.objectName(), self.task['filename'])
+                if options.cancel_queue:
+                    # failure info
+                    self.writeMQ(options.cancel_queue, self.task)
 
         # enable task reader
         self.task = None

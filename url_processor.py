@@ -1,14 +1,23 @@
 #!/usr/bin/python
 
-import pycurl, StringIO, re, threading, time, sqlite3, logging, logging.config
-import stompy, pickle
+import pycurl, StringIO, re, threading, time, logging, logging.config
+import stompy, pickle, os, sys
 
 from optparse import OptionParser
+
+# hacks for loading Django models
+#d=os.path.dirname(__file__)
+#sys.path.append('lts_web' if d == '' else (d+"/lts_web"))
+#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
+from lts.models import ImageSitePattern, IgnoredSitePattern, \
+    Link, Tweet, LinkShot, LinkRate, ShotPublish
 
 class TaskProcessingThread(threading.Thread):
     def __init__(self, task):
         threading.Thread.__init__(self)
         self.task = task
+#        self.options = options
+#        self.logger = logger
 
     def run(self):
         # processing shorten_url
@@ -22,11 +31,34 @@ class TaskProcessingThread(threading.Thread):
             if not new_url:
                 break
 
+            # update link alias
+            try:
+                org_link = Link.objects.get(url=self.task['url'])
+                try:
+                    new_link = Link.objects.get(url=new_url)
+                except Link.DoesNotExist:
+                    new_link = Link(url=new_url)
+                    new_link.save()
+                org_link.alias_of=new_link
+                org_link.save()
+            except:
+                continue
+
             # set alias
             if not self.task.has_key('url_alias'):
                 self.task['url_alias'] = []
             self.task['url_alias'].append(self.task['url'])
             self.task['url'] = new_url
+
+        # ignore links have shot already
+        try:
+            l = Link.objects.get(url=self.task['url'])
+            if len(LinkShot.objects.filter(link=l))>0:
+                logger.info("Skip shotted link: %s", l.url)
+                self.writeMQ(options.cancel_queue, self.task)
+                return
+        except Link.DoesNotExist:
+            logger.debug("Failed to get link: %s", self.task['url'])
 
         # accept mime type text or unknown
         mime_type = http_mime_type(h)
@@ -73,26 +105,26 @@ class TaskProcessingThread(threading.Thread):
                             self.objectName())
 
 class URLPatterns:
-    def __init__(self, db_filename):
-        conn = sqlite3.connect(db_filename)
-        c = conn.cursor()
+    def __init__(self):
+#        conn = sqlite3.connect(db_filename)
+#        c = conn.cursor()
 
         # ignored sites
-        c.execute('select * from ignore_site_patterns')
+#        c.execute('select * from ignore_site_patterns')
         self.ignore_patterns = map(lambda x: re.compile(x,re.M),
-                                   [x[2] for x in c.fetchall()])
+                                   [x.pattern for x in IgnoredSitePattern.objects.all()])
 
         # img sites
-        c.execute('select * from img_site_patterns')
+#        c.execute('select * from img_site_patterns')
         self.img_patterns = map(lambda x: re.compile(x,re.M),
-                                [x[2] for x in c.fetchall()])
+                                [x.pattern for x in ImageSitePattern.objects.all()])
 
         # shorten url sites
-        c.execute('select * from shorten_url_patterns')
-        self.shorten_url_patterns = map(lambda x: re.compile(x,re.M),
-                                        [x[2] for x in c.fetchall()])
+#        c.execute('select * from shorten_url_patterns')
+#        self.shorten_url_patterns = map(lambda x: re.compile(x,re.M),
+#                                        [x[2] for x in c.fetchall()])
         
-        conn.close()
+#        conn.close()
 
     def ignore(self, url):
         return any(map(lambda x: x.search(url), self.ignore_patterns))
@@ -205,7 +237,7 @@ if __name__ == '__main__':
     logging.config.fileConfig(options.log_config)
     logger = logging.getLogger("url_processor")
 
-    patterns = URLPatterns(options.pattern_db)
+    patterns = URLPatterns()
 
     # loop, dequeue source, create processing thread
     if not options.source_queue:

@@ -3,11 +3,13 @@
 PYTHON25=/usr/bin/python2.5
 PYTHON26=/usr/bin/python2.6
 
-USERNAME=pageshot
+USERNAME=cnshot
 PASSWORD=password
 
 LTS_DIR=`dirname $0`
 export PATH=$PATH:${LTS_DIR}
+export DJANGO_SETTINGS_MODULE=settings
+export PYTHONPATH=${LTS_DIR}/lts_web
 
 nohup ${LTS_DIR}/failover.sh ${PYTHON25} ${LTS_DIR}/shot_service.py -n 8 -t 30 \
     -l ${LTS_DIR}/link_shot_tweet_log.conf &
