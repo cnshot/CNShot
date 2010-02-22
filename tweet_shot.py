@@ -15,9 +15,9 @@ class TweetShot:
     def getLinks(cls, rank_time, count):
         tt = datetime.now() - timedelta(seconds = rank_time);
         lrs = LinkRate.objects.extra(select={'published':"SELECT COUNT(*) FROM lts_shotpublish WHERE lts_shotpublish.link_id=lts_linkrate.link_id",
-                          'shot':"SELECT COUNT(*) FROM lts_linkshot WHERE lts_linkshot.link_id=lts_linkrate.link_id"}, where=["published=0","shot>0"])
+                          'shot':"SELECT COUNT(*) FROM lts_linkshot WHERE lts_linkshot.link_id=lts_linkrate.link_id"})
             
-        lrs = lrs.filter(rating_time__gte=tt)
+        lrs = filter(lambda x: x.published==0 and x.shot>0, lrs.filter(rating_time__gte=tt))
         
         sorted_lrs = sorted(lrs, lambda x,y: y.link.getRateSum()-x.link.getRateSum())
         return map(lambda x: x.link.getRoot(), sorted_lrs[:count])

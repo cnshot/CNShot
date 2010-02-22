@@ -113,6 +113,7 @@ if __name__ == '__main__':
                       text = s.text,
                       created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
                       user_screenname = s.user.screen_name)
+            t.save()
             t.links = ls
             t.save()
                 

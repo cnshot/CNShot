@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.5
 
 import sys, signal, xmlrpclib, pickle, stompy, tempfile, logging, logging.config
 

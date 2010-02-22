@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 
 class Link(models.Model):
-    url = models.CharField(primary_key=True, max_length=2048)
+    url = models.CharField(max_length=2048)
     alias_of = models.ForeignKey('Link', null=True)
 
     def __unicode__(self):
@@ -33,10 +33,10 @@ class Link(models.Model):
                 r += lr.rate
             except IndexError:
                 pass
-        return r
+        return int(r)
 
 class Tweet(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.CharField(primary_key=True, max_length=64)
     text = models.CharField(max_length=500)
     created_at = models.DateTimeField()
     user_screenname = models.CharField(max_length=100)
