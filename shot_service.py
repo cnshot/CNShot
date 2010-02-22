@@ -1,4 +1,4 @@
-#!/usr/bin/python2.5
+#!/usr/bin/python
 
 import sys, signal, xmlrpclib, pickle, stompy, tempfile, logging, logging.config
 
@@ -89,7 +89,7 @@ class ScreenshotWorker(QThread):
 
                 if options.dest_queue:
                     # success info
-                    self.task['shot_time']=datetime.now()
+                    self.task['shot_time']=datetime.utcnow()
                     self.writeMQ(options.dest_queue, self.task)
             else:
                 logger.error("%s Failed to save file: %s",

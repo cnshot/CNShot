@@ -13,7 +13,7 @@ from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate
 class TweetShot:
     @classmethod
     def getLinks(cls, rank_time, count):
-        tt = datetime.now() - timedelta(seconds = rank_time);
+        tt = datetime.utcnow() - timedelta(seconds = rank_time);
         lrs = LinkRate.objects.extra(select={'published':"SELECT COUNT(*) FROM lts_shotpublish WHERE lts_shotpublish.link_id=lts_linkrate.link_id",
                           'shot':"SELECT COUNT(*) FROM lts_linkshot WHERE lts_linkshot.link_id=lts_linkrate.link_id"})
             

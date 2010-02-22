@@ -48,6 +48,8 @@ def onReceiveTask(m):
                                       message = rt_text.encode('utf-8')[0:140],
                                       post_to_twitter=False)
 
+            logger.info("Uploaded %d to %s", task['id'], twitpic_url)
+
             # update LinkShot
             try:
                 l = Link.objects.get(url = task['url'])

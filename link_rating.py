@@ -35,7 +35,7 @@ class LinkRatingThread(Thread):
             rate_sum = 0
             for l in task['links']:
                 # save time before the HTTP request
-                now = datetime.now()
+                now = datetime.utcnow()
             
                 r = self.rate_link(l, now)
                 # update output
@@ -46,10 +46,12 @@ class LinkRatingThread(Thread):
                     lr = LinkRate(link=l)
                     logger.debug("Created LinkRate: %s", lr)
 
-                lr.rate = r
-                lr.rating_time = now
+                if lr.rate is None or lr.rate != r:
+                    lr.rate = r
+                    lr.rating_time = now
 
-                lr.save()
+                    lr.save()
+                    logger.debug("Updated LinkRate: %s [%d]", lr, r)
 
                 rate_sum += r
 
@@ -74,6 +76,13 @@ class LinkRatingThread(Thread):
             return i
 
         t = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s[-1].created_at)))
+        logger.debug("Estimating rate: t=%s tt=%s delta=%s",
+                     str(t), str(tt), str(t-tt))
+
+        if options.ranking_time < (t-tt).seconds:
+            logger.warn("Ranking time is less than t_delta: %s", str(options.ranking_time))
+            return options.max_ranking_tweets
+
         td = options.ranking_time - (t-tt).seconds
         return float(options.max_ranking_tweets) / td * options.ranking_time
         
@@ -81,13 +90,13 @@ class TaskProcessor:
     @classmethod
     def loadTasks(cls, queue):
         # get links shotted in last 2 hours
-        lss = LinkShot.objects.filter(shot_time__gte=datetime.now()-timedelta(hours=2))
+        lss = LinkShot.objects.filter(shot_time__gte=datetime.utcnow()-timedelta(hours=2))
 
         for ls in lss:
             # if it's published, not more rate
             published = ShotPublish.objects.filter(link = ls.link)
             if len(published) > 0:
-                logger.debug("Skip published link: %s", link.url)
+                logger.debug("Skip published link: %s", ls.link.url)
                 continue
 
             # get existing rate
@@ -108,10 +117,10 @@ class TaskProcessor:
                     continue
 
             # if there's a new tweet after last rating, rate it
-            if len(lrs)>0 and latest_tweet_time < lrs[0].rating_time:
-                logger.debug("Original rating is functional. Skip rating: %s",
-                             ls.link.url)
-                continue
+#            if len(lrs)>0 and latest_tweet_time < lrs[0].rating_time:
+#                logger.debug("Original rating is functional. Skip rating: %s",
+#                             ls.link.url)
+#                continue
 
             # enqueue for ratings
             queue.put({'linkshot':ls, 'links':links})

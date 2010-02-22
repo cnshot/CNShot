@@ -101,6 +101,7 @@ if __name__ == '__main__':
                     l = Link(url=m[0])
                     l.save()
 
+                # NOTICE: l record may be updated by url_processor after stomp.put
                 ls.append(l)
                 
                 stomp.put(pickle.dumps({'id':task_id,
@@ -114,7 +115,7 @@ if __name__ == '__main__':
                       created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
                       user_screenname = s.user.screen_name)
             t.save()
-            t.links = ls
+            t.links = map(lambda x: x.id, ls)
             t.save()
                 
     if statuses:
