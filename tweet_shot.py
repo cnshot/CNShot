@@ -15,9 +15,11 @@ class TweetShot:
     def getLinks(cls, rank_time, count):
         tt = datetime.utcnow() - timedelta(seconds = rank_time);
         lrs = LinkRate.objects.extra(select={'published':"SELECT COUNT(*) FROM lts_shotpublish WHERE lts_shotpublish.link_id=lts_linkrate.link_id",
-                          'shot':"SELECT COUNT(*) FROM lts_linkshot WHERE lts_linkshot.link_id=lts_linkrate.link_id"})
+                          'shot':"SELECT COUNT(*) FROM lts_linkshot WHERE lts_linkshot.link_id=lts_linkrate.link_id"}).filter(rating_time__gte=tt)
+
+        logger.debug("Query for links to tweet: %s", lrs.query.as_sql())
             
-        lrs = filter(lambda x: x.published==0 and x.shot>0, lrs.filter(rating_time__gte=tt))
+        lrs = filter(lambda x: x.published==0 and x.shot>0, lrs)
         
         sorted_lrs = sorted(lrs, lambda x,y: y.link.getRateSum()-x.link.getRateSum())
         return map(lambda x: x.link.getRoot(), sorted_lrs[:count])
@@ -114,7 +116,7 @@ if __name__ == '__main__':
     links = TweetShot.getLinks(options.rank_time, options.number)
     for l in links:
         if options.tweet:
-            logger.info("Tweet: %s", l)
+            logger.info("Tweet: [%d] %s", l.id, l.url)
             TweetShot.tweetLink(l)
         else:
-            logger.info("Skip tweet: %s", l)
+            logger.info("Skip tweet: [%d] %s", l.id, l.url)

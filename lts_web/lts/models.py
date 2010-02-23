@@ -52,6 +52,7 @@ class LinkShot(models.Model):
     link = models.ForeignKey('Link', null=True)
     url = models.URLField(max_length=2048, null=True)
     shot_time = models.DateTimeField(null=True)
+    in_reply_to = models.ForeignKey(Tweet, null=True)
 
     def __unicode__(self):
         return self.link.url

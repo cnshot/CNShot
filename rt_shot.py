@@ -6,7 +6,7 @@ import twitpic, twitter
 from optparse import OptionParser
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import Link, LinkShot
+from lts.models import Link, LinkShot, Tweet
 
 mc = None
 
@@ -56,7 +56,15 @@ def onReceiveTask(m):
             except Link.DoesNotExist:
                 logger.warn("No link object for url: %s", task['url'])
                 l = None
-            ls = LinkShot(link=l, url=twitpic_url, shot_time=task['shot_time'])
+
+            try:
+                t = Tweet.objects.get(id=str(s.id))
+                ls = LinkShot(link=l, url=twitpic_url,
+                              shot_time=task['shot_time'],
+                              in_reply_to = t)
+            except Tweet.DoesNotExist:
+                ls = LinkShot(link=l, url=twitpic_url,
+                              shot_time=task['shot_time'])
             ls.save()
 
             if not options.tweet:

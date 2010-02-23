@@ -7,8 +7,78 @@ from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
 admin.site.register(ImageSitePattern)
 admin.site.register(IgnoredSitePattern)
 
-admin.site.register(Link)
-admin.site.register(Tweet)
-admin.site.register(LinkShot)
-admin.site.register(LinkRate)
-admin.site.register(ShotPublish)
+class LinkAdmin(admin.ModelAdmin):
+    list_display = ('id', 'url', 'alias_of', 'rate')
+    search_fields = ['url', 'alias_of__url']
+
+    def rate(self, obj):
+        try:
+            return obj.getRoot().getRateSum()
+        except LinkRate.DoesNotExist:
+            return 0
+    rate.short_description = 'Rate'
+
+admin.site.register(Link, LinkAdmin)
+
+class TweetAdmin(admin.ModelAdmin):
+    list_display = ('id', 'text', 'created_at', 'user_screenname')
+    search_fields = ['text', 'user_screenname']
+
+admin.site.register(Tweet, TweetAdmin)
+
+class LinkShotAdmin(admin.ModelAdmin):
+    list_display = ('id', 'url', 'link', 'tweet', 'rate', 'shot_time',)
+    search_fields = ['url', 'link__url']
+
+    def rate(self, obj):
+        try:
+            return obj.link.getRoot().getRateSum()
+        except LinkRate.DoesNotExist:
+            return 0
+    rate.short_description = 'Rate'
+
+    def tweet(self, obj):
+        try:
+            return obj.in_reply_to.text
+        except AttributeError, DoesNotExist:
+            return ''
+    tweet.short_description = 'Tweet'
+
+admin.site.register(LinkShot, LinkShotAdmin)
+
+class LinkRateAdmin(admin.ModelAdmin):
+    list_display = ('id', 'link_url', 'tweet', 'rate', 'rating_time',)
+#    list_filter = ('rate', )
+    search_fields = ['link__url']
+
+    def link_url(self, obj):
+      return ("%s" % (obj.link.url))
+    link_url.short_description = 'Link URL'
+
+    def tweet(self, obj):
+        try:
+            return Tweet.objects.filter(links=obj.link).all()[0]
+        except IndexError, DoesNotExist:
+            return ''
+    tweet.short_description = 'Tweet'
+admin.site.register(LinkRate, LinkRateAdmin)
+
+class ShotPublishAdmin(admin.ModelAdmin):
+    list_display = ('id', 'tweet', 'rate', 'url', 'link', 'publish_time',)
+    search_fields = ['url', 'link__url']
+
+    def rate(self, obj):
+        try:
+            return obj.link.getRoot().getRateSum()
+        except LinkRate.DoesNotExist:
+            return 0
+    rate.short_description = 'Rate'
+
+    def tweet(self, obj):
+        try:
+            return obj.shot.in_reply_to.text
+        except AttributeError, DoesNotExist:
+            return ''
+    tweet.short_description = 'Tweet'
+
+admin.site.register(ShotPublish, ShotPublishAdmin)
