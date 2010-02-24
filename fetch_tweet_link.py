@@ -14,6 +14,7 @@ import time, rfc822
 from optparse import OptionParser
 from stompy.simple import Client
 from datetime import timedelta, datetime
+from chinese_detecting import isChinesePhase
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, Tweet
@@ -83,6 +84,10 @@ if __name__ == '__main__':
     for s in statuses:
         if s.user.screen_name == options.username :
             # don't RT myself
+            continue
+        if not isChinesePhase(s.text.encode("utf-8", "ignore")):
+            # Chinese tweet only
+            # print "Skip none Chinese tweet: %s" % s.text
             continue
         matches = re.findall(url_pattern,s.text)
         if matches:
