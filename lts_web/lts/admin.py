@@ -4,8 +4,12 @@ from django.contrib import admin
 from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish
 
-admin.site.register(ImageSitePattern)
-admin.site.register(IgnoredSitePattern)
+class SiteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'pattern')
+    search_fields = ['name', 'pattern']
+
+admin.site.register(ImageSitePattern, SiteAdmin)
+admin.site.register(IgnoredSitePattern, SiteAdmin)
 
 class LinkAdmin(admin.ModelAdmin):
     list_display = ('id', 'url', 'alias_of', 'rate')
