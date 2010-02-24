@@ -7,6 +7,7 @@ from Queue import Queue
 from threading import Thread
 from datetime import timedelta, datetime
 from optparse import OptionParser
+from urllib2 import HTTPError
 
 # hacks for loading Django models
 #d=os.path.dirname(__file__)
@@ -46,7 +47,7 @@ class LinkRatingThread(Thread):
                     lr = LinkRate(link=l)
                     logger.debug("Created LinkRate: %s", lr)
 
-                if lr.rate is None or lr.rate != r:
+                if lr.rate is None or lr.rate < r:
                     lr.rate = r
                     lr.rating_time = now
 
@@ -59,7 +60,11 @@ class LinkRatingThread(Thread):
         api = twitter.Api(username=options.username,
                           password=options.password)
 #        api = twitter.Api()
-        s = api.GetSearch(url, lang='', per_page=options.max_ranking_tweets)
+        try:
+            s = api.GetSearch(url, lang='', per_page=options.max_ranking_tweets)
+        except HTTPError:
+            logger.warn("Failed to call search API: %s", url)
+            return 0
         
         tt = now - timedelta(seconds = options.ranking_time)
         filted_s = filter(lambda x: True if (datetime.fromtimestamp(time.mktime(rfc822.parsedate(x.created_at))) > tt) else False, s)
