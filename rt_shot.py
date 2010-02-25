@@ -48,6 +48,10 @@ def onReceiveTask(m):
                                       message = rt_text.encode('utf-8')[0:140],
                                       post_to_twitter=False)
 
+            if isinstance(twitpic_url, int):
+                logger.info("Failed to update image to Twitpic: %d", twitpic_url)
+                return
+
             logger.info("Uploaded %d to %s", task['id'], twitpic_url)
 
             # update LinkShot
