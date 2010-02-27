@@ -3,17 +3,34 @@
 
 from mmseg import seg_txt
 
+def getCJKType(uc):
+    if u"一" <= uc <= u"龥":
+        return "CN"
+    elif unichr(0x3040) <= uc <= unichr(0x30FF) or unichr(0x31F0) <= uc <= unichr(0x31FF):
+        return "JP"
+    elif unichr(0xAC00) <= uc <= unichr(0xD7AF) or unichr(0x1100) <= uc <= unichr(0x11FF) or unichr(0x3130) <= uc <= unichr(0x318F):
+        return "KR"
+    else:
+        return None
+
 def isChinesePhase(t, min_word_count=1, thredhold=0.3):
     word_count = 0
     chinese_word_count = 0
+    other_cjk_word_count = 0
 
     for i in seg_txt(t):
         if len(i)>0:
             word_count += 1
-            if u"一" <= i.decode("utf-8", "ignore")[0] <= u"龥": 
+            wt = getCJKType(i.decode("utf-8", "ignore")[0])
+            if wt == 'CN': 
                 chinese_word_count += 1
+            elif wt == 'JP' or wt == 'KR':
+                other_cjk_word_count += 1
 
-    return (word_count > min_word_count and float(chinese_word_count)/word_count > thredhold)
+    return (word_count > min_word_count and
+            chinese_word_count > 0 and
+            float(chinese_word_count)/word_count > thredhold and 
+            float(other_cjk_word_count)/chinese_word_count < thredhold)
 
 if __name__ == '__main__':
     import sys

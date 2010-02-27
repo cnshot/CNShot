@@ -58,7 +58,7 @@ class TweetShot:
         first_t = datetime.utcnow()
         for l in ls:
             try:
-                tweet = Tweet.objects.filter(links=l).order_by('-created_at')[0]
+                tweet = Tweet.objects.filter(links=l).order_by('created_at')[0]
                 if tweet.created_at < first_t:
                     first_tweet = tweet
                     first_t = tweet.created_at
