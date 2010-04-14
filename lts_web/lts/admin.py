@@ -2,7 +2,7 @@ from django.contrib import admin
 
 # Site patterns
 from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
-    Link, Tweet, LinkShot, LinkRate, ShotPublish
+    Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser
 
 class SiteAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'pattern')
@@ -86,3 +86,5 @@ class ShotPublishAdmin(admin.ModelAdmin):
     tweet.short_description = 'Tweet'
 
 admin.site.register(ShotPublish, ShotPublishAdmin)
+
+admin.site.register(TwitterUser)

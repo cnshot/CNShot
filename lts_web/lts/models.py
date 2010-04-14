@@ -86,6 +86,25 @@ class LinkRate(models.Model):
     def __unicode__(self):
         return self.link.url
 
+class TwitterUser(models.Model):
+    id = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=128)
+    screen_name = models.CharField(max_length=128)
+    location = models.CharField(max_length=256, null=True)
+    description = models.CharField(max_length=256, null=True)
+    profile_image_url = models.CharField(max_length=2048, null=True)
+    protected = models.BooleanField()
+    utc_offset = models.IntegerField(null=True)
+    time_zone = models.CharField(max_length=32, null=True)
+    followers_count = models.IntegerField(null=True)
+    friends_count = models.IntegerField(null=True)
+    statuses_count = models.IntegerField(null=True)
+    favourites_count = models.IntegerField(null=True)
+    url = models.CharField(max_length=2048, null=True)
+
+    def __unicode__(self):
+        return self.screen_name
+
 class ImageSitePattern(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=128)
