@@ -1,10 +1,9 @@
 #!/usr/bin/python
 
-import pycurl, StringIO, re, threading, time, logging, logging.config, \
-    stompy, pickle, os, sys, socket
+import pycurl, StringIO, re, threading, time, logging, logging.config
+import stompy, pickle, os, sys
 
 from optparse import OptionParser
-from config import Config, ConfigMerger
 
 # hacks for loading Django models
 #d=os.path.dirname(__file__)
@@ -42,7 +41,6 @@ class TaskProcessingThread(threading.Thread):
                     new_link.save()
                 org_link.alias_of=new_link
                 org_link.save()
-                LinkShot.objects.filter(link=org_link).update(link=new_link)
             except:
                 continue
 
@@ -57,7 +55,7 @@ class TaskProcessingThread(threading.Thread):
             l = Link.objects.get(url=self.task['url'])
             if len(LinkShot.objects.filter(link=l))>0:
                 logger.info("Skip shotted link: %s", l.url)
-                self.writeMQ(cfg.queues.cancel, self.task)
+                self.writeMQ(options.cancel_queue, self.task)
                 return
         except Link.DoesNotExist:
             logger.debug("Failed to get link: %s", self.task['url'])
@@ -68,26 +66,26 @@ class TaskProcessingThread(threading.Thread):
             if mime_type[0]!='text':
                 logger.info("Ignore MIME type %s of URL: %s",
                             mime_type[1], self.task['url'])
-                self.writeMQ(cfg.queues.cancel, self.task)
+                self.writeMQ(options.cancel_queue, self.task)
                 return
 
         if patterns.ignore(self.task['url']):
             # enqueue cancel
             logger.info("Ingore URL: %s",
                         self.task['url'])            
-            self.writeMQ(cfg.queues.cancel, self.task)
+            self.writeMQ(options.cancel_queue, self.task)
             return
 
         if patterns.image(self.task['url']):
             # enqueue cancel
             logger.info("Image URL: %s",
                         self.task['url'])                        
-            self.writeMQ(cfg.queues.cancel, self.task)
+            self.writeMQ(options.cancel_queue, self.task)
             return
             
         # enqueue shot
         logger.info("Enqueue task for shot: %s", self.task['url'])
-        self.writeMQ(cfg.queues.processed, self.task)
+        self.writeMQ(options.shot_queue, self.task)
 
     def writeMQ(self, queue, task):
         if not queue:
@@ -144,7 +142,7 @@ def http_header(url):
     c.setopt(pycurl.NOSIGNAL, 1)
     c.setopt(pycurl.FOLLOWLOCATION, 0)
     c.setopt(pycurl.NOBODY, 1)
-    c.setopt(pycurl.TIMEOUT, cfg.url_processor.timeout)
+    c.setopt(pycurl.TIMEOUT, options.timeout)
     c.setopt(pycurl.URL, str(url))
     c.setopt(pycurl.HTTPHEADER, ["Accept:"])
     h = StringIO.StringIO()
@@ -190,66 +188,53 @@ if __name__ == '__main__':
                           version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
                           description=description)
 
-    # parser.add_option("-s", "--source-queue",
-    #                   dest="source_queue", default="/queue/url_processor",
-    #                   type="string",
-    #                   help="Source message queue path [default: %default].",
-    #                   metavar="SOURCE_QUEUE")
-
-    # parser.add_option("-t", "--shot-queue",
-    #                   dest="shot_queue", default="/queue/shot_service",
-    #                   type="string",
-    #                   help="Message queue path for shot [default: %default].",
-    #                   metavar="SHOT_QUEUE")
-
-    # parser.add_option("-d", "--dest-queue", 
-    #                   dest="dest_queue", default="/queue/shot_dest",
-    #                   type="string",
-    #                   help="Dest message queue path [default: %default].",
-    #                   metavar="DEST_QUEUE")
-
-    # parser.add_option("-c", "--cancel-queue",
-    #                   dest="cancel_queue", default="/queue/cancel",
-    #                   type="string",
-    #                   help="Message queue of tasks to cancel [default: %default].",
-    #                   metavar="CANCEL_QUEUE")
-
-    # parser.add_option("--timeout", 
-    #                   dest="timeout", default=20, type="int",
-    #                   help="Timeout of HTTP request in second [default: %default].",
-    #                   metavar="TIMEOUT")
-
-    # parser.add_option("-l", "--log-config",
-    #                   dest="log_config", 
-    #                   default="/etc/link_shot_tweet_log.conf",
-    #                   type="string",
-    #                   help="Logging config file [default: %default].",
-    #                   metavar="LOG_CONFIG")
-
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
+    parser.add_option("-s", "--source-queue",
+                      dest="source_queue", default="/queue/url_processor",
                       type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
+                      help="Source message queue path [default: %default].",
+                      metavar="SOURCE_QUEUE")
+
+    parser.add_option("-t", "--shot-queue",
+                      dest="shot_queue", default="/queue/shot_service",
+                      type="string",
+                      help="Message queue path for shot [default: %default].",
+                      metavar="SHOT_QUEUE")
+
+    parser.add_option("-d", "--dest-queue", 
+                      dest="dest_queue", default="/queue/shot_dest",
+                      type="string",
+                      help="Dest message queue path [default: %default].",
+                      metavar="DEST_QUEUE")
+
+    parser.add_option("-c", "--cancel-queue",
+                      dest="cancel_queue", default="/queue/cancel",
+                      type="string",
+                      help="Message queue of tasks to cancel [default: %default].",
+                      metavar="CANCEL_QUEUE")
+
+    parser.add_option("--timeout", 
+                      dest="timeout", default=20, type="int",
+                      help="Timeout of HTTP request in second [default: %default].",
+                      metavar="TIMEOUT")
+
+    parser.add_option("-l", "--log-config",
+                      dest="log_config", 
+                      default="/etc/link_shot_tweet_log.conf",
+                      type="string",
+                      help="Logging config file [default: %default].",
+                      metavar="LOG_CONFIG")
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
         parser.error("incorrect number of arguments") 
 
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
-
-    logging.config.fileConfig(cfg.common.log_config)
+    logging.config.fileConfig(options.log_config)
     logger = logging.getLogger("url_processor")
 
     patterns = URLPatterns()
 
     # loop, dequeue source, create processing thread
-    if not cfg.queues.fetched:
+    if not options.source_queue:
         logger.error("Source queue is undefined.")
         exit(1)
 
@@ -260,12 +245,12 @@ if __name__ == '__main__':
         try:
             stomp = stompy.simple.Client()
             stomp.connect()
-            stomp.subscribe(cfg.queues.fetched, ack='client')
-        except (stompy.stomp.ConnectionError, stompy.stomp.NotConnectedError):
+            stomp.subscribe(options.source_queue, ack='client')
+        except stompy.stomp.ConnectionError, stompy.stomp.NotConnectedError:
             logger.warn("STOMP subscribe failed.")
             try:
                 stomp.disconnect()
-            except (stompy.stomp.ConnectionError, stompy.stomp.NotConnectedError):
+            except stompy.stomp.ConnectionError, stompy.stomp.NotConnectedError:
                 pass
             continue
 
@@ -273,16 +258,14 @@ if __name__ == '__main__':
             m = stomp.get()
             stomp.ack(m)
             logger.debug("Got message: %s", m.body)
-        except (stompy.stomp.ConnectionError, stompy.stomp.NotConnectedError):
+        except stompy.stomp.ConnectionError, stompy.stomp.NotConnectedError:
             logger.warn("STOMP dequeue failed.")
             continue
         finally:
             try:
-                stomp.unsubscribe(cfg.queues.fetched)
+                stomp.unsubscribe(options.source_queue)
                 stomp.disconnect()
-            except (stompy.stomp.ConnectionError, 
-                    stompy.stomp.NotConnectedError,
-                    socket.error):
+            except stompy.stomp.ConnectionError, stompy.stomp.NotConnectedError:
                 logger.warn("STOMP unsubscribe failed.")
                 pass
 

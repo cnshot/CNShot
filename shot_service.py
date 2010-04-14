@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-import sys, signal, xmlrpclib, pickle, stompy, tempfile, os, \
-    logging, logging.config
+import sys, signal, xmlrpclib, pickle, stompy, tempfile, logging, logging.config
 
 from datetime import datetime
 from Queue import Queue
@@ -13,7 +12,6 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
 from optparse import OptionParser
-from config import Config, ConfigMerger
 
 class ScreenshotWorker(QThread):
     def __init__(self):
@@ -52,9 +50,9 @@ class ScreenshotWorker(QThread):
 
         if (self.webpage.bytesReceived() == 0) or self.task is None:
             logger.error("%s Request failed", self.objectName())
-            if cfg.queues.cancel:
+            if options.cancel_queue:
                 # failure info
-                self.writeMQ(cfg.queues.cancel, self.task)
+                self.writeMQ(options.cancel_queue, self.task)
         else:
             logger.info("%s Page loaded: %s", self.objectName(), self.task['url'])
 
@@ -64,12 +62,12 @@ class ScreenshotWorker(QThread):
             # Paint this frame into an image
             qs = self.webpage.viewportSize()
             logger.debug("%s View port size: %s", self.objectName(), str(qs))
-            if qs.width() > cfg.shot_service.max_width:
-                qs.setWidth(cfg.shot_service.max_width)
+            if qs.width() > options.max_width:
+                qs.setWidth(options.max_width)
 #            if qs.width() < min_width:
 #                qs.setWidth(min_width)
-            if qs.height() > cfg.shot_service.max_height:
-                qs.setHeight(cfg.shot_service.max_height)
+            if qs.height() > options.max_height:
+                qs.setHeight(options.max_height)
 #            if qs.height() < min_height:
 #                qs.setHeight(min_height)
             logger.debug("%s Size to save: %s", self.objectName(), str(qs))
@@ -89,16 +87,16 @@ class ScreenshotWorker(QThread):
                 logger.info("%s File saved: %s",
                             self.objectName(), self.task['filename'])
 
-                if cfg.queues.shotted:
+                if options.dest_queue:
                     # success info
                     self.task['shot_time']=datetime.utcnow()
-                    self.writeMQ(cfg.queues.shotted, self.task)
+                    self.writeMQ(options.dest_queue, self.task)
             else:
                 logger.error("%s Failed to save file: %s",
                              self.objectName(), self.task['filename'])
-                if cfg.queues.cancel:
+                if options.cancel_queue:
                     # failure info
-                    self.writeMQ(cfg.queues.cancel, self.task)
+                    self.writeMQ(options.cancel_queue, self.task)
 
         # enable task reader
         self.task = None
@@ -133,7 +131,7 @@ class ScreenshotWorker(QThread):
         self.webpage.mainFrame().setHtml("<html></html>")
         self.webpage.setViewportSize(QSize(0,0))
 
-        self.timer.start(cfg.shot_service.timeout * 1000)
+        self.timer.start(options.timeout * 1000)
 
         QObject.connect(self.webpage, SIGNAL("loadFinished(bool)"), 
                         self.onLoadFinished, Qt.QueuedConnection)
@@ -151,7 +149,7 @@ class ScreenshotWorker(QThread):
                 # persistent stomp is unsafe :(
                 stomp = stompy.simple.Client()
                 stomp.connect()
-                stomp.subscribe(cfg.queues.processed, ack='client')
+                stomp.subscribe(options.source_queue, ack='client')
             except:
                 logger.warn("%s STOMP subscribe failed.", self.objectName())
                 try:
@@ -170,7 +168,7 @@ class ScreenshotWorker(QThread):
                 continue
             finally:
                 try:
-                    stomp.unsubscribe(cfg.queues.processed)
+                    stomp.unsubscribe(options.source_queue)
                     stomp.disconnect()
                 except:
                     logger.warn("%s STOMP unsubscribe failed.", self.objectName())
@@ -196,85 +194,72 @@ if __name__ == '__main__':
                           version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
                           description=description)
     
-    # parser.add_option("-n", "--workers", 
-    #                   dest="workers", default=4, type="int",
-    #                   help="Number or worker threads [default: %default].",
-    #                   metavar="WORKERS")
-    # parser.add_option("-w", "--max-width", 
-    #                   dest="max_width", default=2048, type="int",
-    #                   help="Max width of the screenshot image [default: %default].",
-    #                   metavar="MAX_WIDTH")
+    parser.add_option("-n", "--workers", 
+                      dest="workers", default=4, type="int",
+                      help="Number or worker threads [default: %default].",
+                      metavar="WORKERS")
+    parser.add_option("-w", "--max-width", 
+                      dest="max_width", default=2048, type="int",
+                      help="Max width of the screenshot image [default: %default].",
+                      metavar="MAX_WIDTH")
 #    parser.add_option("--min-width", 
 #                      dest="min_width", default=640, type="int",
 #                      help="Min width of the screenshot image [default: %default].",
 #                      metavar="MAX_WIDTH")
-    # parser.add_option("-g", "--max-height", 
-    #                   dest="max_height", default=4096, type="int",
-    #                   help="Max height of the screenshot image [default: %default].",
-    #                   metavar="MAX_HEIGHT")
+    parser.add_option("-g", "--max-height", 
+                      dest="max_height", default=4096, type="int",
+                      help="Max height of the screenshot image [default: %default].",
+                      metavar="MAX_HEIGHT")
 #    parser.add_option("--min-height", 
 #                      dest="min_height", default=480, type="int",
 #                      help="Min height of the screenshot image [default: %default].",
 #                      metavar="MIN_HEIGHT")
-    # parser.add_option("-t", "--timeout", 
-    #                   dest="timeout", default=20, type="int",
-    #                   help="Timeout of page loading in second [default: %default].",
-    #                   metavar="TIMEOUT")
-    # parser.add_option("-s", "--source-queue",
-    #                   dest="source_queue", default="/queue/shot_service",
-    #                   type="string",
-    #                   help="Source message queue path [default: %default].",
-    #                   metavar="SOURCE_QUEUE")
-    # parser.add_option("-d", "--dest-queue", 
-    #                   dest="dest_queue", default="/queue/shot_dest",
-    #                   type="string",
-    #                   help="Dest message queue path [default: %default].",
-    #                   metavar="DEST_QUEUE")
-    # parser.add_option("-c", "--cancel-queue",
-    #                   dest="cancel_queue", default="/queue/cancel",
-    #                   type="string",
-    #                   help="Message queue of tasks to cancel [default: %default].",
-    #                   metavar="CANCEL_QUEUE")
-    # parser.add_option("-l", "--log-config",
-    #                   dest="log_config", 
-    #                   default="/etc/link_shot_tweet_log.conf",
-    #                   type="string",
-    #                   help="Logging config file [default: %default].",
-    #                   metavar="LOG_CONFIG")
-
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
+    parser.add_option("-t", "--timeout", 
+                      dest="timeout", default=20, type="int",
+                      help="Timeout of page loading in second [default: %default].",
+                      metavar="TIMEOUT")
+    parser.add_option("-s", "--source-queue",
+                      dest="source_queue", default="/queue/shot_service",
                       type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
+                      help="Source message queue path [default: %default].",
+                      metavar="SOURCE_QUEUE")
+    parser.add_option("-d", "--dest-queue", 
+                      dest="dest_queue", default="/queue/shot_dest",
+                      type="string",
+                      help="Dest message queue path [default: %default].",
+                      metavar="DEST_QUEUE")
+    parser.add_option("-c", "--cancel-queue",
+                      dest="cancel_queue", default="/queue/cancel",
+                      type="string",
+                      help="Message queue of tasks to cancel [default: %default].",
+                      metavar="CANCEL_QUEUE")
+    parser.add_option("-l", "--log-config",
+                      dest="log_config", 
+                      default="/etc/link_shot_tweet_log.conf",
+                      type="string",
+                      help="Logging config file [default: %default].",
+                      metavar="LOG_CONFIG")
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
         parser.error("incorrect number of arguments") 
 
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
-
-    logging.config.fileConfig(cfg.common.log_config)
+    logging.config.fileConfig(options.log_config)
     logger = logging.getLogger("shot_service")
 
-    logger.info("Workers: %d", cfg.shot_service.workers)
-    logger.info("Max width: %d", cfg.shot_service.max_width)
-    logger.info("Max height: %d", cfg.shot_service.max_height)
-    logger.info("Source queue: %s", cfg.queues.processed)
-    logger.info("Dest queue: %s", cfg.queues.shotted)
-    logger.info("Timeout: %d", cfg.shot_service.timeout)
+    logger.info("Workers: %d", options.workers)
+    logger.info("Max width: %d", options.max_width)
+    logger.info("Max height: %d", options.max_height)
+    logger.info("Source queue: %s", options.source_queue)
+    logger.info("Dest queue: %s", options.dest_queue)
+    logger.info("Timeout: %d", options.timeout)
 
     app = QApplication([])
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     ta = []
 
-    for i in range(cfg.shot_service.workers):
+    for i in range(options.workers):
         t = ScreenshotWorker()
         t.start()
         t.postSetup(str(i))

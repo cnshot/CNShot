@@ -1,14 +1,13 @@
 #!/usr/bin/python
 
-import stompy, sys, traceback, logging, logging.config, os, time, rfc822, \
-    twitter, ConfigParser
+import stompy, sys, traceback, logging, logging.config, os, time, rfc822
+import twitter
 
 from Queue import Queue
 from threading import Thread
 from datetime import timedelta, datetime
 from optparse import OptionParser
 from urllib2 import HTTPError
-from config import Config, ConfigMerger
 
 # hacks for loading Django models
 #d=os.path.dirname(__file__)
@@ -58,16 +57,16 @@ class LinkRatingThread(Thread):
                 rate_sum += r
 
     def rate_link(self, url, now):
-        api = twitter.Api(username=cfg.common.username,
-                          password=cfg.common.password)
+        api = twitter.Api(username=options.username,
+                          password=options.password)
 #        api = twitter.Api()
         try:
-            s = api.GetSearch(url, lang='', per_page=cfg.link_rating.max_ranking_tweets)
+            s = api.GetSearch(url, lang='', per_page=options.max_ranking_tweets)
         except HTTPError:
             logger.warn("Failed to call search API: %s", url)
             return 0
         
-        tt = now - timedelta(seconds = cfg.link_rating.ranking_time)
+        tt = now - timedelta(seconds = options.ranking_time)
         filted_s = filter(lambda x: True if (datetime.fromtimestamp(time.mktime(rfc822.parsedate(x.created_at))) > tt) else False, s)
 
 #        for i in range(len(s)):
@@ -78,19 +77,19 @@ class LinkRatingThread(Thread):
 
 #        i+=1
         i = len(filted_s)
-        if i < len(s) or len(s) < cfg.ranking_time.max_ranking_tweets:
+        if i < len(s) or len(s) < options.max_ranking_tweets:
             return i
 
         t = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s[-1].created_at)))
         logger.debug("Estimating rate: t=%s tt=%s delta=%s",
                      str(t), str(tt), str(t-tt))
 
-        if cfg.link_rating.ranking_time < (t-tt).seconds:
-            logger.warn("Ranking time is less than t_delta: %s", str(cfg.link_rating.ranking_time))
-            return cfg.link_rating.max_ranking_tweets
+        if options.ranking_time < (t-tt).seconds:
+            logger.warn("Ranking time is less than t_delta: %s", str(options.ranking_time))
+            return options.max_ranking_tweets
 
-        td = cfg.link_rating.ranking_time - (t-tt).seconds
-        return float(cfg.link_rating.max_ranking_tweets) / td * cfg.link_rating.ranking_time
+        td = options.ranking_time - (t-tt).seconds
+        return float(options.max_ranking_tweets) / td * options.ranking_time
         
 class TaskProcessor:
     @classmethod
@@ -149,15 +148,15 @@ if __name__ == '__main__':
 #                      help="Dest message queue path [default: %default].",
 #                      metavar="DEST_QUEUE")
 
-    # parser.add_option("-t", "--timeout", 
-    #                   dest="timeout", default=20, type="int",
-    #                   help="Timeout of HTTP request in second [default: %default].",
-    #                   metavar="TIMEOUT")
+    parser.add_option("-t", "--timeout", 
+                      dest="timeout", default=20, type="int",
+                      help="Timeout of HTTP request in second [default: %default].",
+                      metavar="TIMEOUT")
 
-    # parser.add_option("-n", "--workers", 
-    #                   dest="workers", default=8, type="int",
-    #                   help="Number or worker threads [default: %default].",
-    #                   metavar="WORKERS")
+    parser.add_option("-n", "--workers", 
+                      dest="workers", default=8, type="int",
+                      help="Number or worker threads [default: %default].",
+                      metavar="WORKERS")
 
     parser.add_option("-l", "--log-config",
                       dest="log_config", 
@@ -166,47 +165,31 @@ if __name__ == '__main__':
                       help="Logging config file [default: %default].",
                       metavar="LOG_CONFIG")
 
-    # parser.add_option("-r", "--ranking-time",
-    #                   dest="ranking_time", default="7200", type="int",
-    #                   help="Time perioud of link ranking in second [default: %default].",
-    #                   metavar="RANKING_TIME")
+    parser.add_option("-r", "--ranking-time",
+                      dest="ranking_time", default="7200", type="int",
+                      help="Time perioud of link ranking in second [default: %default].",
+                      metavar="RANKING_TIME")
 
-    # parser.add_option("-m", "--max-ranking-tweets",
-    #                   dest="max_ranking_tweets", default="100", type="int",
-    #                   help="Max tweet numbers to search for every link [default: %default].",
-    #                   metavar="MAX_RANKING_TWEETS")
+    parser.add_option("-m", "--max-ranking-tweets",
+                      dest="max_ranking_tweets", default="100", type="int",
+                      help="Max tweet numbers to search for every link [default: %default].",
+                      metavar="MAX_RANKING_TWEETS")
 
-    # parser.add_option("-u", "--username", dest="username", type="string",
-    #                   default="username",
-    #                   help="Twitter username [default: %default].",
-    #                   metavar="USERNAME")
+    parser.add_option("-u", "--username", dest="username", type="string",
+                      default="username",
+                      help="Twitter username [default: %default].",
+                      metavar="USERNAME")
 
-    # parser.add_option("-p", "--password", dest="password", type="string",
-    #                   default="password",
-    #                   help="Twitter password [default: %default].",
-    #                   metavar="PASSWORD")
-
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
-                      type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
+    parser.add_option("-p", "--password", dest="password", type="string",
+                      default="password",
+                      help="Twitter password [default: %default].",
+                      metavar="PASSWORD")
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
         parser.error("incorrect number of arguments") 
 
-#    config = ConfigParser.SafeConfigParser()
-#    config.read([options.config, os.path.expanduser('~/.lts.cfg')])
-
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
-
-    logging.config.fileConfig(cfg.common.log_config)
+    logging.config.fileConfig(options.log_config)
     logger = logging.getLogger("link_rating")
                       
     q=Queue()
@@ -219,10 +202,10 @@ if __name__ == '__main__':
     # start rating threads
     # wait for rating threads exit
     workers = []
-    for i in range(cfg.link_rating.workers):
+    for i in range(options.workers):
         w = LinkRatingThread(i, q)
         w.start()
         workers.append(w)
 
-    for i in range(cfg.link_rating.workers):
+    for i in range(options.workers):
         workers[i].join()
