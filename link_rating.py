@@ -78,7 +78,7 @@ class LinkRatingThread(Thread):
 
 #        i+=1
         i = len(filted_s)
-        if i < len(s) or len(s) < cfg.ranking_time.max_ranking_tweets:
+        if i < len(s) or len(s) < cfg.link_rating.max_ranking_tweets:
             return i
 
         t = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s[-1].created_at)))
