@@ -2,20 +2,14 @@
 
 from __future__ import with_statement
 
-import md5
-import twitter
-import re
-import uuid
-import sys
-import pickle
-import memcache
-import time, rfc822
-import logging, logging.config
+import os, md5, twitter, re, uuid, sys, pickle, memcache, time, rfc822, \
+    logging, logging.config
 
 from optparse import OptionParser
 from stompy.simple import Client
 from datetime import timedelta, datetime
 from chinese_detecting import isChinesePhase
+from config import Config, ConfigMerger, ConfigList
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, Tweet
@@ -26,24 +20,33 @@ def fetchTweetLink():
     stomp.connect()
     mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 
-    if options.since_file and ( not options.since ):
+    try:
+        cfg.fetch_tweet_link.since
+    except AttributeError:
+        cfg.fetch_tweet_link.since = None
+
+    if cfg.fetch_tweet_link.since_file and ( not cfg.fetch_tweet_link.since ):
         try:
-            with open(options.since_file, 'r') as f:
+            with open(cfg.fetch_tweet_link.since_file, 'r') as f:
                 try:
-                    options.since=int(f.read())
+                    cfg.fetch_tweet_link.since=int(f.read())
                 except:
-                    options.since=None
+                    cfg.fetch_tweet_link.since=None
         except:
             pass
 
-    api = twitter.Api(username=options.username, password=options.password)
-    if options.since:
-        logger.info("Since: %d", options.since)
-        statuses = api.GetFriendsTimeline(options.username, count=options.count, since_id=options.since)
+    api = twitter.Api(username=cfg.common.username,
+                      password=cfg.common.password)
+    if cfg.fetch_tweet_link.since:
+        logger.info("Since: %d", cfg.fetch_tweet_link.since)
+        statuses = api.GetFriendsTimeline(cfg.common.username,
+                                          count=cfg.fetch_tweet_link.count,
+                                          since_id=cfg.fetch_tweet_link.since)
     else:
-        statuses = api.GetFriendsTimeline(options.username, count=options.count)
+        statuses = api.GetFriendsTimeline(cfg.common.username,
+                                          count=cfg.fetch_tweet_link.count)
     for s in statuses:
-        if s.user.screen_name == options.username :
+        if s.user.screen_name == cfg.common.username :
             # don't RT myself
             continue
         if not isChinesePhase(s.text.encode("utf-8", "ignore")):
@@ -75,7 +78,7 @@ def fetchTweetLink():
                 stomp.put(pickle.dumps({'id':task_id,
                                         'url':m[0],
                                         'filename':None}),
-                          destination=options.dest_queue)
+                          destination=cfg.queues.fetched)
 
             # update Tweet
             t = Tweet(id = s.id,
@@ -88,9 +91,9 @@ def fetchTweetLink():
                 
     if statuses:
         logger.info("Latest status ID: %d", statuses[0].id)
-        if options.since_file:
+        if cfg.fetch_tweet_link.since_file:
             try:
-                with open(options.since_file, 'w') as f:
+                with open(cfg.fetch_tweet_link.since_file, 'w') as f:
                     f.write(str(statuses[0].id))
             except:
                 pass    
@@ -105,47 +108,66 @@ if __name__ == '__main__':
                       help="Fetch updates after tweet id. Default for last 20 tweets.",
                       metavar="SINCE")
 
-    parser.add_option("-d", "--dest-queue", 
-                      dest="dest_queue", default="/queue/url_processor",
+    # parser.add_option("-d", "--dest-queue", 
+    #                   dest="dest_queue", default="/queue/url_processor",
+    #                   type="string",
+    #                   help="Dest message queue path [default: %default].",
+    #                   metavar="DEST_QUEUE")
+
+    # parser.add_option("-c", "--count", dest="count", type="int", default=20,
+    #                   help="Fetch at most COUNT tweets [default: %default].",
+    #                   metavar="COUNT")
+
+    # parser.add_option("-f", "--since-file", dest="since_file", type="string",
+    #                   default="/var/run/fetch_tweet_link.since",
+    #                   help="Status ID file to read/write [default: %default].",
+    #                   metavar="SINCE_FILE")
+
+    # parser.add_option("-u", "--username", dest="username", type="string",
+#                      default="username",
+                      # help="Twitter username [default: %default].",
+                      # metavar="USERNAME")
+
+    # parser.add_option("-p", "--password", dest="password", type="string",
+#                      default="password",
+    #                   help="Twitter password [default: %default].",
+    #                   metavar="PASSWORD")
+
+    # parser.add_option("-l", "--log-config",
+                      # dest="log_config", 
+#                      default="/etc/link_shot_tweet_log.conf",
+                      # type="string",
+                      # help="Logging config file [default: %default].",
+                      # metavar="LOG_CONFIG")
+
+    parser.add_option("-c", "--config",
+                      dest="config",
+                      default="lts.cfg",
                       type="string",
-                      help="Dest message queue path [default: %default].",
-                      metavar="DEST_QUEUE")
-
-    parser.add_option("-c", "--count", dest="count", type="int", default=20,
-                      help="Fetch at most COUNT tweets [default: %default].",
-                      metavar="COUNT")
-
-    parser.add_option("-f", "--since-file", dest="since_file", type="string",
-                      default="/var/run/fetch_tweet_link.since",
-                      help="Status ID file to read/write [default: %default].",
-                      metavar="SINCE_FILE")
-
-    parser.add_option("-u", "--username", dest="username", type="string",
-                      default="username",
-                      help="Twitter username [default: %default].",
-                      metavar="USERNAME")
-
-    parser.add_option("-p", "--password", dest="password", type="string",
-                      default="password",
-                      help="Twitter password [default: %default].",
-                      metavar="PASSWORD")
-
-    parser.add_option("-l", "--log-config",
-                      dest="log_config", 
-                      default="/etc/link_shot_tweet_log.conf",
-                      type="string",
-                      help="Logging config file [default: %default].",
-                      metavar="LOG_CONFIG")
+                      help="Config file [default %default].",
+                      metavar="CONFIG")
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
         parser.error("incorrect number of arguments") 
 
+    cfg=Config(file(filter(lambda x: os.path.isfile(x),
+                           [options.config,
+                            os.path.expanduser('~/.lts.cfg'),
+                            '/etc/lts.cfg'])[0]))
+
+    # cmd_cfg=Config(file('lts_cmd.cfg'))
+    cfg.addNamespace(options, 'cmdline')
+
+    # print(cfg)
+    # print(cmd_cfg)
+    # print(options)
+
     # walk around encoding issue
     reload(sys)
     sys.setdefaultencoding('utf-8') 
 
-    logging.config.fileConfig(options.log_config)
+    logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("fetch_tweet_link")
 
     fetchTweetLink()

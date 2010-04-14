@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
-import stompy, pickle, memcache, sys, traceback, logging, logging.config, os
-import twitpic, twitter
+import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
+    twitpic, twitter
 
 from optparse import OptionParser
+from config import Config, ConfigMerger
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, LinkShot, Tweet
@@ -33,13 +34,14 @@ def onReceiveTask(m):
                     s.id, str(s.user.screen_name),
                     str(s.created_at), s.text.encode('utf-8'))
 
-        if options.dummy:
+        if cfg.rt_shot.dummy:
             logger.info("No post with dummy mode: %d %s %s",
                         s.id, str(s.user.screen_name), s.text.encode('utf-8'))
             return
 
         try:
-            twit = twitpic.TwitPicAPI(options.username, options.password)
+            twit = twitpic.TwitPicAPI(cfg.common.username,
+                                      cfg.common.password)
 
             rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
             logger.debug("%s", rt_text.encode('utf-8'))
@@ -71,14 +73,15 @@ def onReceiveTask(m):
                               shot_time=task['shot_time'])
             ls.save()
 
-            if not options.tweet:
+            if not cfg.rt_shot.tweet:
                 logger.info("Tweet disabled.")
                 return
             
             logger.info("Tweet enalbed.")
 
             t = unicode(twitpic_url) + u" " + rt_text
-            api = twitter.Api(username=options.username, password=options.password)
+            api = twitter.Api(username=cfg.common.username,
+                              password=cfg.common.password)
             rts = api.PostUpdate(t[0:140], in_reply_to_status_id=s.id)
 
             logger.info("New tweet: %d %s %s", 
@@ -90,7 +93,7 @@ def onReceiveTask(m):
             logger.error("%s", traceback.format_exc())
             logger.error('-'*60)
     finally:
-        if not options.keep_file:
+        if not cfg.rt_shot.keep_file:
             try:
                 os.unlink(task['filename'])
             except:
@@ -102,53 +105,66 @@ if __name__ == '__main__':
                           version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
                           description=description)
 
-    parser.add_option("-s", "--source-queue",
-                      dest="source_queue", default="/queue/shot_dest",
+    # parser.add_option("-s", "--source-queue",
+    #                   dest="source_queue", default="/queue/shot_dest",
+    #                   type="string",
+    #                   help="Source message queue path [default: %default].",
+    #                   metavar="SOURCE_QUEUE")
+
+    # parser.add_option("-u", "--username", dest="username", type="string",
+    #                   default="username",
+    #                   help="Twitter username [default: %default].",
+    #                   metavar="USERNAME")
+
+    # parser.add_option("-p", "--password", dest="password", type="string",
+    #                   default="password",
+    #                   help="Twitter password [default: %default].",
+    #                   metavar="PASSWORD")
+
+    # parser.add_option("-l", "--log-config",
+    #                   dest="log_config", 
+    #                   default="/etc/link_shot_tweet_log.conf",
+    #                   type="string",
+    #                   help="Logging config file [default: %default].",
+    #                   metavar="LOG_CONFIG")
+
+    parser.add_option("-c", "--config",
+                      dest="config",
+                      default="lts.cfg",
                       type="string",
-                      help="Source message queue path [default: %default].",
-                      metavar="SOURCE_QUEUE")
+                      help="Config file [default %default].",
+                      metavar="CONFIG")
 
-    parser.add_option("-u", "--username", dest="username", type="string",
-                      default="username",
-                      help="Twitter username [default: %default].",
-                      metavar="USERNAME")
+    # parser.add_option("-d", "--dummy", action="store_true", dest="dummy", 
+    #                   default=False)
 
-    parser.add_option("-p", "--password", dest="password", type="string",
-                      default="password",
-                      help="Twitter password [default: %default].",
-                      metavar="PASSWORD")
+    # parser.add_option("-t", "--tweet", action="store_true", dest="tweet",
+    #                   default=False)
 
-    parser.add_option("-l", "--log-config",
-                      dest="log_config", 
-                      default="/etc/link_shot_tweet_log.conf",
-                      type="string",
-                      help="Logging config file [default: %default].",
-                      metavar="LOG_CONFIG")
-
-    parser.add_option("-d", "--dummy", action="store_true", dest="dummy", 
-                      default=False)
-
-    parser.add_option("-t", "--tweet", action="store_true", dest="tweet",
-                      default=False)
-
-    parser.add_option("-k", "--keep-file", action="store_true", dest="keep_file", 
-                      default=False)
+    # parser.add_option("-k", "--keep-file", action="store_true", dest="keep_file", 
+    #                   default=False)
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
         parser.error("incorrect number of arguments")
 
-    logging.config.fileConfig(options.log_config)
+    cfg=Config(file(filter(lambda x: os.path.isfile(x),
+                           [options.config,
+                            os.path.expanduser('~/.lts.cfg'),
+                            '/etc/lts.cfg'])[0]))
+    # cfg.addNamespace(options,'common')
+
+    logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("rt_shot")
 
     mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 
     stomp = stompy.simple.Client()
     stomp.connect()
-    stomp.subscribe(options.source_queue, ack='client')
+    stomp.subscribe(cfg.queues.shotted, ack='client')
 
     logger.info("rt_shot started.")
-    if options.dummy:
+    if cfg.rt_shot.dummy:
         logger.info("Dummy mode enabled.")
 
     while True:

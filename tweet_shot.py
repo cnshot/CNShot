@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
-import stompy, pickle, memcache, sys, traceback, logging, logging.config, os
-import twitpic, twitter
+import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
+    twitpic, twitter
 
 from optparse import OptionParser
 from datetime import datetime, timedelta
 from django.core.exceptions import ObjectDoesNotExist
+from config import Config, ConfigMerger
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate
@@ -38,7 +39,8 @@ class TweetShot:
             return
 
         rt_text = unicode(ls.url) + ' RT @' + t.user_screenname + u': ' + t.text
-        api = twitter.Api(username=options.username, password=options.password)
+        api = twitter.Api(username=cfg.common.username,
+                          password=cfg.common.password)
         rts = api.PostUpdate(rt_text[0:140], in_reply_to_status_id=t.id)
         logger.info("New tweet: %d %s %s", 
                     rts.id, str(rts.created_at),
@@ -55,7 +57,7 @@ class TweetShot:
     def getFirstTweet(cls, link):
         ls = link.getRoot().getAliases()
         first_tweet = None
-        first_t = datetime.utcnow()
+        first_t = datetime.utcnow() + timedelta(days = 1)
         for l in ls:
             try:
                 tweet = Tweet.objects.filter(links=l).order_by('created_at')[0]
@@ -63,6 +65,7 @@ class TweetShot:
                     first_tweet = tweet
                     first_t = tweet.created_at
             except IndexError:
+                logger.debug("Failed to get the first tweet of link: [%d] %s", l.id, l)
                 pass
         return first_tweet
 
@@ -72,50 +75,63 @@ if __name__ == '__main__':
                           version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
                           description=description)
 
-    parser.add_option("-u", "--username", dest="username", type="string",
-                      default="username",
-                      help="Twitter username [default: %default].",
-                      metavar="USERNAME")
+    # parser.add_option("-u", "--username", dest="username", type="string",
+    #                   default="username",
+    #                   help="Twitter username [default: %default].",
+    #                   metavar="USERNAME")
 
-    parser.add_option("-p", "--password", dest="password", type="string",
-                      default="password",
-                      help="Twitter password [default: %default].",
-                      metavar="PASSWORD")
+    # parser.add_option("-p", "--password", dest="password", type="string",
+    #                   default="password",
+    #                   help="Twitter password [default: %default].",
+    #                   metavar="PASSWORD")
 
-    parser.add_option("-l", "--log-config",
-                      dest="log_config", 
-                      default="/etc/link_shot_tweet_log.conf",
+    # parser.add_option("-l", "--log-config",
+    #                   dest="log_config", 
+    #                   default="/etc/link_shot_tweet_log.conf",
+    #                   type="string",
+    #                   help="Logging config file [default: %default].",
+    #                   metavar="LOG_CONFIG")
+
+    parser.add_option("-c", "--config",
+                      dest="config",
+                      default="lts.cfg",
                       type="string",
-                      help="Logging config file [default: %default].",
-                      metavar="LOG_CONFIG")
+                      help="Config file [default %default].",
+                      metavar="CONFIG")
 
-    parser.add_option("-t", "--tweet", action="store_true", dest="tweet",
-                      default=False)
+    # parser.add_option("-t", "--tweet", action="store_true", dest="tweet",
+    #                   default=False)
 
-    parser.add_option("-r", "--rank_time",
-                      dest="rank_time", default="7200", type="int",
-                      help="Time perioud of link ranks to sort in second [default: %default].",
-                      metavar="RANK_TIME")
+    # parser.add_option("-r", "--rank_time",
+    #                   dest="rank_time", default="7200", type="int",
+    #                   help="Time perioud of link ranks to sort in second [default: %default].",
+    #                   metavar="RANK_TIME")
 
-    parser.add_option("-n", "--number", dest="number", default=1, type="int",
-                      help="Number of links to tweet [default:%default].",
-                      metavar="NUMBER")
+    # parser.add_option("-n", "--number", dest="number", default=1, type="int",
+    #                   help="Number of links to tweet [default:%default].",
+    #                   metavar="NUMBER")
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
         parser.error("incorrect number of arguments")
 
+    cfg=Config(file(filter(lambda x: os.path.isfile(x),
+                           [options.config,
+                            os.path.expanduser('~/.lts.cfg'),
+                            '/etc/lts.cfg'])[0]))
+    # cfg.addNamespace(options,'common')
+
     # walk around encoding issue
     reload(sys)
     sys.setdefaultencoding('utf-8') 
 
-    logging.config.fileConfig(options.log_config)
+    logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("tweet_shot")
 
     # get links; if options.tweet, tweet them
-    links = TweetShot.getLinks(options.rank_time, options.number)
+    links = TweetShot.getLinks(cfg.tweet_shot.rank_time, cfg.tweet_shot.number)
     for l in links:
-        if options.tweet:
+        if cfg.tweet_shot.tweet:
             logger.info("Tweet: [%d] %s", l.id, l.url)
             TweetShot.tweetLink(l)
         else:
