@@ -54,7 +54,7 @@ def onReceiveTask(m):
                 logger.info("Failed to update image to Twitpic: %d", twitpic_url)
                 return
 
-            logger.info("Uploaded %d to %s", task['id'], twitpic_url)
+            logger.info("Uploaded %s to %s", task['id'], twitpic_url)
 
             # update LinkShot
             try:

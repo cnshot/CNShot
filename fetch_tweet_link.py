@@ -221,7 +221,7 @@ if __name__ == '__main__':
     # walk around encoding issue
     reload(sys)
     sys.setdefaultencoding('utf-8') 
-    locale.setlocale(locale.LC_ALL, 'C')
+    # locale.setlocale(locale.LC_ALL, 'C')
 
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("fetch_tweet_link")
