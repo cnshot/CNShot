@@ -2,8 +2,10 @@
 
 from __future__ import with_statement
 
-import os, md5, twitter, re, uuid, sys, pickle, memcache, time, rfc822, \
+import os, md5, re, uuid, sys, pickle, memcache, time, rfc822, \
     logging, logging.config
+# import twitter
+import tweepy
 
 from optparse import OptionParser
 from stompy.simple import Client
@@ -13,6 +15,44 @@ from config import Config, ConfigMerger, ConfigList
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, Tweet
+
+def fetchFriendsTimeline(api, count=20, since_id=None, page_size=20):
+    if count<=0 or page_size<=0:
+        return []
+
+    statuses = []
+    left = count
+    last_fetch_count = page_size
+    max_id = None
+    while left > 0 and last_fetch_count > 0:
+        n = page_size
+        if n>left:
+            n=left
+
+        if since_id is None:
+            if max_id is None:
+                logger.debug("Fetch status without max or since.")
+                ss = api.friends_timeline(count=page_size)
+            else:
+                logger.debug("Fetch status: max=%d", max_id)
+                ss = api.friends_timeline(count=page_size, max_id=max_id)
+        else:
+            if max_id is None:
+                logger.debug("Fetch status: since=%d", since_id)
+                ss = api.friends_timeline(count=page_size, since_id=since_id)
+            else:
+                logger.debug("Fetch status: since_id=%d, max_id=%d",
+                             since_id, max_id)
+                ss = api.friends_timeline(count=page_size,
+                                          max_id=max_id,
+                                          since_id=since_id)
+        last_fetch_count = len(ss)
+        left -= last_fetch_count
+        if(last_fetch_count > 0):
+            max_id = ss[-1].id
+            statuses += ss
+
+    return statuses
 
 def fetchTweetLink():
     url_pattern = re.compile('((http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?)')
@@ -35,16 +75,29 @@ def fetchTweetLink():
         except:
             pass
 
-    api = twitter.Api(username=cfg.common.username,
-                      password=cfg.common.password)
+    # api = twitter.Api(username=cfg.common.username,
+    #                   password=cfg.common.password)
+    auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
+    api = tweepy.API(auth,
+                     host=cfg.common.api_host,
+                     search_host=cfg.common.search_host,
+                     api_root=cfg.common.api_root,
+                     search_root=cfg.common.search_root)
+
     if cfg.fetch_tweet_link.since:
         logger.info("Since: %d", cfg.fetch_tweet_link.since)
-        statuses = api.GetFriendsTimeline(cfg.common.username,
-                                          count=cfg.fetch_tweet_link.count,
-                                          since_id=cfg.fetch_tweet_link.since)
+        # statuses = api.GetFriendsTimeline(cfg.common.username,
+        #                                   count=cfg.fetch_tweet_link.count,
+        #                                   since_id=cfg.fetch_tweet_link.since)
+        statuses = fetchFriendsTimeline(api,
+                                        count=cfg.fetch_tweet_link.count,
+                                        page_size=cfg.fetch_tweet_link.page_size,
+                                        since_id=cfg.fetch_tweet_link.since)
     else:
-        statuses = api.GetFriendsTimeline(cfg.common.username,
-                                          count=cfg.fetch_tweet_link.count)
+        statuses = fetchFriendsTimeline(api,
+                                        count=cfg.fetch_tweet_link.count,
+                                        page_size=cfg.fetch_tweet_link.page_size)
+
     for s in statuses:
         if s.user.screen_name == cfg.common.username :
             # don't RT myself
@@ -83,7 +136,8 @@ def fetchTweetLink():
             # update Tweet
             t = Tweet(id = s.id,
                       text = s.text,
-                      created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
+#                      created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
+                      created_at = s.created_at,
                       user_screenname = s.user.screen_name)
             t.save()
             t.links = map(lambda x: x.id, ls)
