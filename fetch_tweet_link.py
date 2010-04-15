@@ -49,7 +49,8 @@ def fetchFriendsTimeline(api, count=20, since_id=None, page_size=20):
         last_fetch_count = len(ss)
         left -= last_fetch_count
         if(last_fetch_count > 0):
-            max_id = ss[-1].id
+            logger.debug("Fetched status: %d - %d", ss[-1].id, ss[0].id)
+            max_id = ss[-1].id - 1
             statuses += ss
 
     return statuses
@@ -220,6 +221,7 @@ if __name__ == '__main__':
     # walk around encoding issue
     reload(sys)
     sys.setdefaultencoding('utf-8') 
+    locale.setlocale(locale.LC_ALL, 'C')
 
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("fetch_tweet_link")
