@@ -2,7 +2,8 @@ from django.contrib import admin
 
 # Site patterns
 from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
-    Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser
+    SizedCanvasSitePattern, \
+    Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser, TwitterUserExt    
 
 class SiteAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'pattern')
@@ -10,6 +11,12 @@ class SiteAdmin(admin.ModelAdmin):
 
 admin.site.register(ImageSitePattern, SiteAdmin)
 admin.site.register(IgnoredSitePattern, SiteAdmin)
+
+class SizedCanvasSitePatternAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'pattern', 'width', 'height')
+    search_fields = ['name', 'pattern']
+
+admin.site.register(SizedCanvasSitePattern, SizedCanvasSitePatternAdmin)
 
 class LinkAdmin(admin.ModelAdmin):
     list_display = ('id', 'url', 'alias_of', 'rate')
@@ -87,4 +94,20 @@ class ShotPublishAdmin(admin.ModelAdmin):
 
 admin.site.register(ShotPublish, ShotPublishAdmin)
 
-admin.site.register(TwitterUser)
+class TwitterUserAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'screen_name', 
+                    'followers_count','friends_count',
+                    'statuses_count','favourites_count',
+                    'last_update')
+    search_fields = ['name', 'screen_name']
+
+admin.site.register(TwitterUser, TwitterUserAdmin)
+
+class TwitterUserExtAdmin(admin.ModelAdmin):
+    list_display = ('twitteruser',
+                    'following_me', 'followed_by_me',
+                    'link_rate', 'chinese_rate',
+                    'allowing_shot', 'last_update')
+    search_fields = ['twitteruser__name', 'twitteruser__screen_name']
+
+admin.site.register(TwitterUserExt, TwitterUserExtAdmin)

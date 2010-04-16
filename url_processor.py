@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import pycurl, StringIO, re, threading, time, logging, logging.config, \
-    stompy, pickle, os, sys, socket
+    stompy, pickle, os, sys, socket, itertools
 
 from optparse import OptionParser
 from config import Config, ConfigMerger
@@ -11,7 +11,7 @@ from config import Config, ConfigMerger
 #sys.path.append('lts_web' if d == '' else (d+"/lts_web"))
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import ImageSitePattern, IgnoredSitePattern, \
-    Link, Tweet, LinkShot, LinkRate, ShotPublish
+    Link, Tweet, LinkShot, LinkRate, ShotPublish, SizedCanvasSitePattern
 
 class TaskProcessingThread(threading.Thread):
     def __init__(self, task):
@@ -85,6 +85,14 @@ class TaskProcessingThread(threading.Thread):
             self.writeMQ(cfg.queues.cancel, self.task)
             return
             
+        canvas_pattern = patterns.sized_canvas(self.task['url'])
+        if canvas_pattern:
+            logger.debug("Canvas pattern obj: %s", dir(canvas_pattern))
+            self.task['canvas_size'] = {
+                'height':canvas_pattern.height,
+                'width':canvas_pattern.width
+                }
+
         # enqueue shot
         logger.info("Enqueue task for shot: %s", self.task['url'])
         self.writeMQ(cfg.queues.processed, self.task)
@@ -121,6 +129,10 @@ class URLPatterns:
         self.img_patterns = map(lambda x: re.compile(x,re.M),
                                 [x.pattern for x in ImageSitePattern.objects.all()])
 
+        # sized canvas sites
+        self.sized_canvas_patterns = SizedCanvasSitePattern.objects.all()
+        map(lambda x: setattr(x,'p',re.compile(x.pattern, re.M)), self.sized_canvas_patterns)
+
         # shorten url sites
 #        c.execute('select * from shorten_url_patterns')
 #        self.shorten_url_patterns = map(lambda x: re.compile(x,re.M),
@@ -134,8 +146,14 @@ class URLPatterns:
     def image(self, url):
         return any(map(lambda x: x.search(url), self.img_patterns))
 
-    def shorten_url(self, url):
-        return any(map(lambda x: x.search(url), self.shorten_url_patterns))
+    # def shorten_url(self, url):
+    #     return any(map(lambda x: x.search(url), self.shorten_url_patterns))
+
+    def sized_canvas(self, url):
+        try:
+            return itertools.dropwhile(lambda x: not x.p.search(url), self.sized_canvas_patterns).next()
+        except StopIteration:
+            return None
 
 def http_header(url):
     logger.debug("http_header: %s", url)

@@ -101,9 +101,22 @@ class TwitterUser(models.Model):
     statuses_count = models.IntegerField(null=True)
     favourites_count = models.IntegerField(null=True)
     url = models.CharField(max_length=2048, null=True)
+    last_update = models.DateTimeField(null=False,auto_now=True)
 
     def __unicode__(self):
         return self.screen_name
+
+class TwitterUserExt(models.Model):
+    twitteruser = models.OneToOneField('TwitterUser', primary_key=True)
+    following_me = models.BooleanField(default=False)
+    followed_by_me = models.BooleanField(default=False)
+    link_rate = models.FloatField(null=True)
+    chinese_rate = models.FloatField(null=True)
+    allowing_shot = models.BooleanField(default=True)
+    last_update = models.DateTimeField(null=False,auto_now=True)
+
+    def __unicode__(self):
+        return self.twitteruser.screen_name
 
 class ImageSitePattern(models.Model):
     id = models.AutoField(primary_key=True)
@@ -121,3 +134,9 @@ class IgnoredSitePattern(models.Model):
     def __unicode__(self):
         return self.name
     
+class SizedCanvasSitePattern(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=128)
+    pattern = models.CharField(max_length=1024)
+    width = models.IntegerField(null=True)
+    height = models.IntegerField(null=True)

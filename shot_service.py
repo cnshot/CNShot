@@ -131,7 +131,11 @@ class ScreenshotWorker(QThread):
     def onOpen(self, url):
         logger.debug("%s onOpen: %s", self.objectName(), url)
         self.webpage.mainFrame().setHtml("<html></html>")
-        self.webpage.setViewportSize(QSize(0,0))
+        if(self.task.has_key('canvas_size')):
+            self.webpage.setViewportSize(QSize(self.task['canvas_size']['width'],
+                                               self.task['canvas_size']['height']))
+        else:
+            self.webpage.setViewportSize(QSize(0,0))
 
         self.timer.start(cfg.shot_service.timeout * 1000)
 
