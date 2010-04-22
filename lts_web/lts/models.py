@@ -39,8 +39,8 @@ class Link(models.Model):
 class Tweet(models.Model):
     id = models.CharField(primary_key=True, max_length=64)
     text = models.CharField(max_length=500)
-    created_at = models.DateTimeField()
-    user_screenname = models.CharField(max_length=100)
+    created_at = models.DateTimeField(db_index=True)
+    user_screenname = models.CharField(max_length=100, db_index=True)
     links = models.ManyToManyField(Link, null=True)
 
     def __unicode__(self):
@@ -51,8 +51,10 @@ class LinkShot(models.Model):
     id = models.AutoField(primary_key=True)
     link = models.ForeignKey('Link', null=True)
     url = models.URLField(max_length=2048, null=True)
-    shot_time = models.DateTimeField(null=True)
+    shot_time = models.DateTimeField(null=True, db_index=True)
     in_reply_to = models.ForeignKey(Tweet, null=True)
+    title = models.TextField(max_length=2048)
+    text = models.TextField()
 
     def __unicode__(self):
         return self.link.url
@@ -73,23 +75,23 @@ class ShotPublish(models.Model):
     id = models.AutoField(primary_key=True)
     link = models.ForeignKey('Link', null=True)
     shot = models.ForeignKey('LinkShot', null=True)
-    publish_time = models.DateTimeField(null=True)
+    publish_time = models.DateTimeField(null=True, db_index=True)
     url = models.URLField(max_length=2048)
-    site = models.CharField(max_length=128, null=True)
+    site = models.CharField(max_length=128, null=True, db_index=True)
 
 class LinkRate(models.Model):
     id = models.AutoField(primary_key=True)
     link = models.ForeignKey('Link')
-    rate = models.IntegerField(null=True)
-    rating_time = models.DateTimeField(null=True)
+    rate = models.IntegerField(null=True, db_index=True)
+    rating_time = models.DateTimeField(null=True, db_index=True)
 
     def __unicode__(self):
         return self.link.url
 
-class TwitterUser(models.Model):
+class TwitterAccount(models.Model):
     id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=128)
-    screen_name = models.CharField(max_length=128)
+    screen_name = models.CharField(max_length=128, db_index=True)
     location = models.CharField(max_length=256, null=True)
     description = models.CharField(max_length=256, null=True)
     profile_image_url = models.CharField(max_length=2048, null=True)
@@ -101,19 +103,61 @@ class TwitterUser(models.Model):
     statuses_count = models.IntegerField(null=True)
     favourites_count = models.IntegerField(null=True)
     url = models.CharField(max_length=2048, null=True)
+    # app info
+    password = models.CharField(max_length=128)
+    active = models.BooleanField(default=False)
     last_update = models.DateTimeField(null=False,auto_now=True)
+
+    def __unicode__(self):
+        return self.screen_name
+
+class TwitterApiSite(models.Model):
+    id = models.AutoField(primary_key=True)
+    api_protocol = models.CharField(max_length=128, default="http")
+    api_host = models.CharField(max_length=128)
+    api_root = models.CharField(max_length=128)
+    search_protocol = models.CharField(max_length=128, default="http")
+    search_host = models.CharField(max_length=128)
+    search_root = models.CharField(max_length=128)
+    active = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return "%s://%s%s %s://%s%s" % \
+            (self.api_protocol, self.api_host, self.api_root,
+             self.search_protocol, self.search_host, self.search_root)
+
+class TwitterUser(models.Model):
+    id = models.IntegerField(primary_key=True)
+    name = models.CharField(max_length=128)
+    screen_name = models.CharField(max_length=128, db_index=True)
+    location = models.CharField(max_length=256, null=True)
+    description = models.CharField(max_length=256, null=True)
+    profile_image_url = models.CharField(max_length=2048, null=True)
+    protected = models.BooleanField(default=False)
+    utc_offset = models.IntegerField(null=True)
+    time_zone = models.CharField(max_length=32, null=True)
+    followers_count = models.IntegerField(null=True)
+    friends_count = models.IntegerField(null=True)
+    statuses_count = models.IntegerField(null=True)
+    favourites_count = models.IntegerField(null=True)
+    url = models.CharField(max_length=2048, null=True)
+    last_update = models.DateTimeField(null=False,auto_now=True, db_index=True)
 
     def __unicode__(self):
         return self.screen_name
 
 class TwitterUserExt(models.Model):
     twitteruser = models.OneToOneField('TwitterUser', primary_key=True)
-    following_me = models.BooleanField(default=False)
-    followed_by_me = models.BooleanField(default=False)
-    link_rate = models.FloatField(null=True)
-    chinese_rate = models.FloatField(null=True)
-    allowing_shot = models.BooleanField(default=True)
-    last_update = models.DateTimeField(null=False,auto_now=True)
+    following_account = models.ForeignKey('TwitterAccount', 
+                                          related_name='twitteruserext_follower_set',
+                                          null=True)
+    followed_by_account = models.ForeignKey('TwitterAccount',
+                                            related_name='twitteruserext_friend_set',
+                                            null=True)
+    link_rate = models.FloatField(null=True, db_index=True)
+    chinese_rate = models.FloatField(null=True, db_index=True)
+    allowing_shot = models.BooleanField(default=True, db_index=True)
+    last_update = models.DateTimeField(null=False,auto_now=True, db_index=True)
 
     def __unicode__(self):
         return self.twitteruser.screen_name
@@ -140,3 +184,5 @@ class SizedCanvasSitePattern(models.Model):
     pattern = models.CharField(max_length=1024)
     width = models.IntegerField(null=True)
     height = models.IntegerField(null=True)
+
+    

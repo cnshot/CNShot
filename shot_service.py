@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-import sys, signal, xmlrpclib, pickle, stompy, tempfile, os, \
-    logging, logging.config
+import sys, signal, xmlrpclib, pickle, stompy, tempfile, os, re, \
+    logging, logging.config, codecs, time, threading, html5lib, StringIO
 
 from datetime import datetime
 from Queue import Queue
@@ -14,6 +14,13 @@ from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 
 from optparse import OptionParser
 from config import Config, ConfigMerger
+
+from html5lib import treebuilders
+
+def fixXml(s):
+    parser = html5lib.HTMLParser(tree=treebuilders.getTreeBuilder("dom"))
+    dom = parser.parse(StringIO.StringIO(s), 'utf-8')
+    return dom.toxml().encode('utf-8')
 
 class ScreenshotWorker(QThread):
     def __init__(self):
@@ -58,6 +65,8 @@ class ScreenshotWorker(QThread):
         else:
             logger.info("%s Page loaded: %s", self.objectName(), self.task['url'])
 
+#            logger.info("HTML text: \n%s\n", self.webpage.mainFrame().toHtml())
+
             # Set the size of the (virtual) browser window
             self.webpage.setViewportSize(self.webpage.mainFrame().contentsSize())
 
@@ -85,13 +94,32 @@ class ScreenshotWorker(QThread):
             logger.info("%s Saving file: %s",
                         self.objectName(), self.task['filename'])
 
-            if image.save(self.task['filename']):
-                logger.info("%s File saved: %s",
-                            self.objectName(), self.task['filename'])
+            image_save_result = image.save(self.task['filename'])
+            html_save_result = False
+            if(self.task['html_filename']):
+                # logger.debug("HTML: \n%s\n", self.webpage.mainFrame().toHtml())
+
+                f = open(self.task['html_filename'],'wb')
+                f.write(fixXml(self.webpage.mainFrame().toHtml().toUtf8()))
+                f.close()
+                html_save_result = True
+
+                child_frames = self.webpage.mainFrame().childFrames()
+                self.task['sub_frame_count'] = len(child_frames)
+                for i in range(len(child_frames)):
+                    f = open(self.task['html_filename']+str(i),'wb')
+                    f.write(fixXml(child_frames[i].toHtml().toUtf8()))
+                    f.close()
+
+            if image_save_result or html_save_result:
+                logger.info("%s File saved: %s %s",
+                            self.objectName(), self.task['filename'], 
+                            self.task['html_filename'])
 
                 if cfg.queues.shotted:
                     # success info
                     self.task['shot_time']=datetime.utcnow()
+                    # self.task['html'] = self.webpage.mainFrame().toHtml()
                     self.writeMQ(cfg.queues.shotted, self.task)
             else:
                 logger.error("%s Failed to save file: %s",
@@ -121,15 +149,21 @@ class ScreenshotWorker(QThread):
 
             stomp.put(pickle.dumps(task),
                       destination=queue)
+
+            # conn = stomp.Connection()
+            # conn.start()
+            # conn.connect()
+            # conn.send(pickle.dumps(task), destination=queue)
         finally:
             try:
                 stomp.disconnect()
+                # conn.disconnect()
             except:
                 logger.warn("%s Failed to enqueue finished task.",
                             self.objectName())
 
     def onOpen(self, url):
-        logger.debug("%s onOpen: %s", self.objectName(), url)
+        logger.debug("%s onOpen: [%s]", self.objectName(), url)
         self.webpage.mainFrame().setHtml("<html></html>")
         if(self.task.has_key('canvas_size')):
             self.webpage.setViewportSize(QSize(self.task['canvas_size']['width'],
@@ -138,6 +172,10 @@ class ScreenshotWorker(QThread):
             self.webpage.setViewportSize(QSize(0,0))
 
         self.timer.start(cfg.shot_service.timeout * 1000)
+
+        # n = 0
+        # for i in range(1000000):
+        #     n+=i
 
         QObject.connect(self.webpage, SIGNAL("loadFinished(bool)"), 
                         self.onLoadFinished, Qt.QueuedConnection)
@@ -189,10 +227,74 @@ class ScreenshotWorker(QThread):
                 self.task['filename'] = f.name
                 f.close()
 
+            if not self.task.has_key('html_filename') or \
+                    self.task['html_filename'] is None:
+                if sys.hexversion >= 0x02060000:
+                    f = tempfile.NamedTemporaryFile(suffix='.html', delete=False)
+                else:
+                    f = tempfile.NamedTemporaryFile(suffix='.html')
+                self.task['html_filename']=f.name
+                f.close()
+
+            self.task['sub_frame_count']=0
+
             logger.info("%s Run: %s", self.objectName(), self.task['url'])
             self.emit(SIGNAL("open"), self.task['url'])
 
             self.mutex.unlock()
+
+class ShotProcessWorker:
+    def __init__(self, id='UNKNOWN', lifetime=None):
+        self.id = id
+        self.lifetime = lifetime
+
+    def run(self):
+        pid = os.fork()
+        if pid > 0:
+            return pid
+
+        app = QApplication([])
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+
+        shotter = ScreenshotWorker()
+
+        shotter.start()
+        shotter.postSetup(self.id)
+    
+        if(self.lifetime):
+            threading.Timer(self.lifetime, app.exit).start()
+        
+        exit(app.exec_())
+
+def killChildProcesses(signum, frame):
+    signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+    try:
+        for pid in child_processes:
+            os.kill(pid, signal.SIGINT)
+    except UnboundLocalError:
+        return 0
+
+    child_processes=[]
+    return 0
+
+def restartChildProcess(signum, frame):
+    logger.warn("Child exited ...")
+    for i in range(len(child_processes)):
+        if child_processes[i] == 0:
+            continue
+        logger.warn("Testing child %d: %d", i, child_processes[i])
+        try:
+            done_pid = 0
+            exit_status = 0
+            done_pid, exit_status = os.waitpid(child_processes[i], os.WNOHANG)
+        except OSError:
+            pass
+        if done_pid > 0:
+            logger.warn("Child %d exited: %d %d", i, done_pid, exit_status)
+            new_pid = ShotProcessWorker(id=str(i)).run()
+            child_processes[i]=pid
+            return
 
 if __name__ == '__main__':
     description = '''Screenshot service with QtPt.'''
@@ -273,15 +375,29 @@ if __name__ == '__main__':
     logger.info("Dest queue: %s", cfg.queues.shotted)
     logger.info("Timeout: %d", cfg.shot_service.timeout)
 
-    app = QApplication([])
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    ta = []
+    child_processes = []
 
     for i in range(cfg.shot_service.workers):
-        t = ScreenshotWorker()
-        t.start()
-        t.postSetup(str(i))
-        ta.append(t)
+        pid = ShotProcessWorker(id=str(i)).run()
+        child_processes.append(pid)
 
-    sys.exit(app.exec_())
+    signal.signal(signal.SIGINT, killChildProcesses)
+    signal.signal(signal.SIGCHLD, restartChildProcess)
+
+    try:
+        os.wait()
+    except OSError:
+        pass
+
+    # app = QApplication([])
+    # signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    # ta = []
+
+    # for i in range(cfg.shot_service.workers):
+    #     t = ScreenshotWorker()
+    #     t.start()
+    #     t.postSetup(str(i))
+    #     ta.append(t)
+
+    # sys.exit(app.exec_())

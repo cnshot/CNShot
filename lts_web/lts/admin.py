@@ -3,7 +3,8 @@ from django.contrib import admin
 # Site patterns
 from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
     SizedCanvasSitePattern, \
-    Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser, TwitterUserExt    
+    Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser, TwitterUserExt, \
+    TwitterAccount, TwitterApiSite
 
 class SiteAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'pattern')
@@ -38,7 +39,7 @@ class TweetAdmin(admin.ModelAdmin):
 admin.site.register(Tweet, TweetAdmin)
 
 class LinkShotAdmin(admin.ModelAdmin):
-    list_display = ('id', 'url', 'link', 'tweet', 'rate', 'shot_time',)
+    list_display = ('id', 'url', 'link', 'tweet', 'rate', 'shot_time', 'title')
     search_fields = ['url', 'link__url']
 
     def rate(self, obj):
@@ -105,9 +106,26 @@ admin.site.register(TwitterUser, TwitterUserAdmin)
 
 class TwitterUserExtAdmin(admin.ModelAdmin):
     list_display = ('twitteruser',
-                    'following_me', 'followed_by_me',
+                    'following_account', 'followed_by_account',
                     'link_rate', 'chinese_rate',
                     'allowing_shot', 'last_update')
     search_fields = ['twitteruser__name', 'twitteruser__screen_name']
 
 admin.site.register(TwitterUserExt, TwitterUserExtAdmin)
+
+class TwitterAccountAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'screen_name', 'active',
+                    'followers_count','friends_count',
+                    'statuses_count','favourites_count',
+                    'last_update', 'password', 'last_update')
+    search_fields = ['name', 'screen_name']
+
+admin.site.register(TwitterAccount, TwitterAccountAdmin)
+
+class TwitterApiSiteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'active', 'api_protocol', 'api_host', 'api_root',
+                    'search_protocol', 'search_host', 'search_root')
+    search_fields = ['api_host', 'api_root', 'search_host', 'search_root']
+
+admin.site.register(TwitterApiSite, TwitterApiSiteAdmin)
+                    
