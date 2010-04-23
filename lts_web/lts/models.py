@@ -46,6 +46,9 @@ class Tweet(models.Model):
     def __unicode__(self):
         return u"%s [%s] %s" % (self.user_screenname, self.created_at, self.text)
 
+    class Meta:
+        ordering = ['-created_at']
+
 class LinkShot(models.Model):
 #    id = models.IntegerField(primary_key=True)
     id = models.AutoField(primary_key=True)

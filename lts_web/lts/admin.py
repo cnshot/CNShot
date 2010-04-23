@@ -22,6 +22,7 @@ admin.site.register(SizedCanvasSitePattern, SizedCanvasSitePatternAdmin)
 class LinkAdmin(admin.ModelAdmin):
     list_display = ('id', 'url', 'alias_of', 'rate')
     search_fields = ['url', 'alias_of__url']
+    raw_id_fields = ["alias_of"]
 
     def rate(self, obj):
         try:
@@ -35,12 +36,14 @@ admin.site.register(Link, LinkAdmin)
 class TweetAdmin(admin.ModelAdmin):
     list_display = ('id', 'text', 'created_at', 'user_screenname')
     search_fields = ['text', 'user_screenname']
+    raw_id_fields = ["links"]
 
 admin.site.register(Tweet, TweetAdmin)
 
 class LinkShotAdmin(admin.ModelAdmin):
     list_display = ('id', 'url', 'link', 'tweet', 'rate', 'shot_time', 'title')
     search_fields = ['url', 'link__url']
+    raw_id_fields = ("link", "in_reply_to")
 
     def rate(self, obj):
         try:
@@ -62,6 +65,7 @@ class LinkRateAdmin(admin.ModelAdmin):
     list_display = ('id', 'link_url', 'tweet', 'rate', 'rating_time',)
 #    list_filter = ('rate', )
     search_fields = ['link__url']
+    raw_id_fields = ['link']
 
     def link_url(self, obj):
       return ("%s" % (obj.link.url))
@@ -78,6 +82,7 @@ admin.site.register(LinkRate, LinkRateAdmin)
 class ShotPublishAdmin(admin.ModelAdmin):
     list_display = ('id', 'tweet', 'rate', 'url', 'link', 'publish_time',)
     search_fields = ['url', 'link__url']
+    raw_id_fields = ['link', 'shot']
 
     def rate(self, obj):
         try:
