@@ -46,14 +46,10 @@ class BlogPost:
                      "tweet": t,
                      "link_shot": ls})
 
-        # wp = wordpresslib.WordPressClient(cfg.blog_post.xmlrpc_url,
-        #                                   cfg.blog_post.username,
-        #                                   cfg.blog_post.password)
-        wp = wordpresslib.WordPressClient('https://chnshot.appspot.com/xmlrpc.php',
-                                          'shotbot',
-                                          'darkmoon1328')
-        # wp.selectBlog(cfg.blog_post.blog_id)
-        wp.selectBlog(0)
+        wp = wordpresslib.WordPressClient(cfg.blog_post.xmlrpc_url,
+                                          cfg.blog_post.username,
+                                          cfg.blog_post.password)
+        wp.selectBlog(cfg.blog_post.blog_id)
         post = wordpresslib.WordPressPost()
         post.title = str(title_tmp.render(c).encode('utf-8'))
         post.description = str(description_tmp.render(c).encode('utf-8'))
