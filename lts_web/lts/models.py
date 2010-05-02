@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 
 # Create your models here.
@@ -73,8 +75,19 @@ class LinkShot(models.Model):
             r += lr.rate
         return r
 
+    def thumbnailUrl(self):
+        return re.sub(r'^http://twitpic.com/(.+)$', r'http://twitpic.com/show/thumb/\1', self.url)
+
 class ShotPublish(models.Model):
 #    id = models.AutoField(primary_key=True)
+    id = models.AutoField(primary_key=True)
+    link = models.ForeignKey('Link', null=True)
+    shot = models.ForeignKey('LinkShot', null=True)
+    publish_time = models.DateTimeField(null=True, db_index=True)
+    url = models.URLField(max_length=2048)
+    site = models.CharField(max_length=128, null=True, db_index=True)
+
+class ShotBlogPost(models.Model):
     id = models.AutoField(primary_key=True)
     link = models.ForeignKey('Link', null=True)
     shot = models.ForeignKey('LinkShot', null=True)
@@ -110,6 +123,8 @@ class TwitterAccount(models.Model):
     password = models.CharField(max_length=128)
     active = models.BooleanField(default=False)
     last_update = models.DateTimeField(null=False,auto_now=True)
+    consumer_key = models.CharField(max_length=64)
+    consumer_secret = models.CharField(max_length=64)
 
     def __unicode__(self):
         return self.screen_name
@@ -164,6 +179,32 @@ class TwitterUserExt(models.Model):
 
     def __unicode__(self):
         return self.twitteruser.screen_name
+
+class PendingTwitterUser(models.Model):
+    screen_name = models.CharField(max_length=128, primary_key=True)
+    twitteruser = models.ForeignKey('TwitterUser', null=True)
+    enqueue_time = models.DateTimeField(null=False,auto_now=True, db_index=True)
+
+    def __unicode__(self):
+        return self.screen_name
+
+    @classmethod
+    def addPending(cls, scrn_name):
+        try:
+            puser = cls.objects.get(screen_name = scrn_name)
+        except cls.DoesNotExist:
+            puser = cls(screen_name = scrn_name)
+            puser.save()
+
+        if puser.twitteruser is None:
+            try:
+                user = TwitterUser.objects.get(screen_name = scrn_name)
+                puser.twitteruser = user
+                puser.save()
+            except Twitteruser.DoesNotExist:
+                pass
+
+        return puser
 
 class ImageSitePattern(models.Model):
     id = models.AutoField(primary_key=True)

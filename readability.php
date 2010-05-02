@@ -31,6 +31,19 @@ echo grabArticleHtml($html);
 function grabArticleHtml($html, $with_title=true) {
 	$contentNode = grabArticle($html, $with_title);
 	return $contentNode->ownerDocument->saveXML($contentNode);
+	// $xml = $contentNode->ownerDocument->saveXML($contentNode);
+	// $dom = new DOMDocument;
+	// $dom->loadXML($xml);
+	// return replaceTags($dom)->saveHTML();
+}
+
+// Converts a DOMNodeList to an Array that can be easily foreached
+function dnl2array($domnodelist) {
+    $return = array();
+    for ($i = 0; $i < $domnodelist->length; ++$i) {
+        $return[] = $domnodelist->item($i);
+    }
+    return $return;
 }
 
 // returns DOMElement object
@@ -42,6 +55,7 @@ function grabArticle($html, $with_title=true) {
 //	$html = mb_convert_encoding($html, 'UTF-8', 'GB2312');
 	$html = mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'); 
 	@$document->loadHTML($html);
+	$document = clean($document, 'script');
 	$allParagraphs = $document->getElementsByTagName('p');
 	$topDivCount = 0;
 	$topDiv = null;
@@ -70,8 +84,17 @@ function grabArticle($html, $with_title=true) {
 	
 	// Study all the paragraphs and find the chunk that has the best score.
 	// A score is determined by things like: Number of <p>'s, commas, special classes, etc.
+	// echo $allParagraphs->length."\n";
+
 	for ($j=0; $j < $allParagraphs->length; $j++) {
 		$parentNode = $allParagraphs->item($j)->parentNode;
+
+		// if($parentNode->hasAttribute('class')){
+		//   echo "Class: ".$parentNode->getAttributeNode('class')->value."\n";
+		// }
+		// if($parentNode->hasAttribute('id')){
+		//   echo "ID: ".$parentNode->getAttributeNode('id')->value."\n";
+		// }
 
 		// Initialize readability data
 		if (!$parentNode->hasAttribute('readability'))
@@ -81,7 +104,7 @@ function grabArticle($html, $with_title=true) {
 			$parentNode->appendChild($readability);		
 
 			// Look for a special classname
-			if (classNameMatch($parentNode, '/(comment|meta|footer|footnote)/')) {
+			if (classNameMatch($parentNode, '/(comment|meta|footer|footnote|articleReview|sideBars)/')) {
 				$readability->value -= 50;
 			} else if(classNameMatch($parentNode, '/((^|\s)(post|hentry|entry[-]?(content|text|body)?|blkContainerSblkCon|blkContainerPblk|article[-]?(content|text|body)?)(\s|$))/')) {
 				$readability->value += 25;
@@ -90,7 +113,7 @@ function grabArticle($html, $with_title=true) {
 			// Look for a special ID
 			if (preg_match('/(comment|meta|footer|footnote)/', $parentNode->getAttribute('id'))) {
 				$readability->value -= 50;
-			} else if (preg_match('/^(post|hentry|entry[-]?(content|text|body)?|artibody|article[-]?(content|text|body)?)$/', $parentNode->getAttribute('id'))) {
+			} else if (preg_match('/^(C-Main-Article-QQ|main|content|post|hentry|entry[-]?(content|text|body)?|artibody|article[-]?(content|text|body)?)$/', $parentNode->getAttribute('id'))) {
 				$readability->value += 25;
 			}
 		} else {
@@ -104,6 +127,11 @@ function grabArticle($html, $with_title=true) {
 
 		// Add points for any commas within this paragraph
 		$readability->value += substr_count($allParagraphs->item($j)->textContent, ',');
+		$readability->value += substr_count($allParagraphs->item($j)->textContent, '，');
+		$readability->value += substr_count($allParagraphs->item($j)->textContent, '。');
+
+		// echo "Readability: ".$readability->value."\n";
+
 	}
 
 	// Assignment from index for performance. See http://www.peachpit.com/articles/article.aspx?p=31567&seqNum=5 
@@ -118,6 +146,7 @@ function grabArticle($html, $with_title=true) {
 	if($topDiv == null) {
 		// $topDiv = $document->createElement('div', 'Sorry, readability was unable to parse this page for content.');
 	} else {
+	  // $topDiv = replaceTags($topDiv);
 		cleanStyles($topDiv);					// Removes all style attributes
 		$topDiv = killDivs($topDiv);				// Goes in and removes DIV's that have more non <p> stuff than <p> stuff
 		$topDiv = killBreaks($topDiv);            // Removes any consecutive <br />'s into just one <br /> 
@@ -134,6 +163,8 @@ function grabArticle($html, $with_title=true) {
 	
 	$articleBody = $document->createElement('body');
 	if($topDiv != null){
+	  // $d = replaceTags($topDiv);
+	  // echo $d->saveHTML();
 	  $articleBody->appendChild($topDiv);
 	}
 	$articleContent->appendChild($articleBody);
@@ -213,4 +244,35 @@ function clean($node, $tag, $minWords=1000000) {
 	}
 	return $node;
 }
+
+function replaceTags($node) {
+  $stylesheet = '<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+<xsl:output method="xml" indent="yes"/>
+<!-- the identity template -->
+
+<xsl:template match="@*|node()">
+<xsl:copy>
+<xsl:apply-templates select="@*|node()"/>
+</xsl:copy>
+</xsl:template>
+ 
+<xsl:template match="//span">
+<xsl:apply-templates/>
+</xsl:template>
+ 
+</xsl:stylesheet>
+';
+
+  $xsl = new DOMDocument;
+  $xsl->loadXML($stylesheet);
+  $xp = new XSLTProcessor;
+  $xp->importStylesheet($xsl);
+
+  return $xp->transformToDoc($node);
+  // return $node;
+
+  // return $xsl;
+}
+
 ?>

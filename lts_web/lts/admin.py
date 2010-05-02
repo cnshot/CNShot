@@ -4,7 +4,7 @@ from django.contrib import admin
 from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
     SizedCanvasSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser, TwitterUserExt, \
-    TwitterAccount, TwitterApiSite
+    TwitterAccount, TwitterApiSite, ShotBlogPost, PendingTwitterUser
 
 class SiteAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'pattern')
@@ -55,7 +55,7 @@ class LinkShotAdmin(admin.ModelAdmin):
     def tweet(self, obj):
         try:
             return obj.in_reply_to.text
-        except AttributeError, DoesNotExist:
+        except (AttributeError, DoesNotExist):
             return ''
     tweet.short_description = 'Tweet'
 
@@ -74,7 +74,7 @@ class LinkRateAdmin(admin.ModelAdmin):
     def tweet(self, obj):
         try:
             return Tweet.objects.filter(links=obj.link).all()[0]
-        except IndexError, DoesNotExist:
+        except (IndexError, DoesNotExist):
             return ''
     tweet.short_description = 'Tweet'
 admin.site.register(LinkRate, LinkRateAdmin)
@@ -94,11 +94,32 @@ class ShotPublishAdmin(admin.ModelAdmin):
     def tweet(self, obj):
         try:
             return obj.shot.in_reply_to.text
-        except AttributeError, DoesNotExist:
+        except (AttributeError, DoesNotExist):
             return ''
     tweet.short_description = 'Tweet'
 
 admin.site.register(ShotPublish, ShotPublishAdmin)
+
+class ShotBlogPostAdmin(admin.ModelAdmin):
+    list_display = ('id', 'tweet', 'rate', 'url', 'link', 'publish_time',)
+    search_fields = ['url', 'link__url']
+    raw_id_fields = ['link', 'shot']
+
+    def rate(self, obj):
+        try:
+            return obj.link.getRoot().getRateSum()
+        except LinkRate.DoesNotExist:
+            return 0
+    rate.short_description = 'Rate'
+
+    def tweet(self, obj):
+        try:
+            return obj.shot.in_reply_to.text
+        except (AttributeError, DoesNotExist):
+            return ''
+    tweet.short_description = 'Tweet'
+
+admin.site.register(ShotBlogPost, ShotBlogPostAdmin)
 
 class TwitterUserAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'screen_name', 
@@ -118,11 +139,42 @@ class TwitterUserExtAdmin(admin.ModelAdmin):
 
 admin.site.register(TwitterUserExt, TwitterUserExtAdmin)
 
+class PendingTwitterUserAdmin(admin.ModelAdmin):
+    list_display = ("screen_name", "enqueue_time", "followers", "link_rate", "chinese_rate", "last_update")
+    search_fields = ["screen_name", "twitteruser__name"]
+
+    def followers(self, obj):
+        try:
+            return obj.twitteruser.followers
+        except(AttributeError, DoesNotExist):
+            return None
+
+    def link_rate(self, obj):
+        try:
+            return obj.twitteruser.twitteruserext.link_rate
+        except(AttributeError, DoesNotExist):
+            return None
+
+    def chinese_rate(self, obj):
+        try:
+            return obj.twitteruser.twitteruserext.chinese_rate
+        except(AttributeError, DoesNotExist):
+            return None
+
+    def last_update(self, obj):
+        try:
+            return obj.twitteruser.twitteruserext.last_update
+        except(AttributeError, DoesNotExist):
+            return None
+
+admin.site.register(PendingTwitterUser, PendingTwitterUserAdmin)
+    
 class TwitterAccountAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'screen_name', 'active',
                     'followers_count','friends_count',
                     'statuses_count','favourites_count',
-                    'last_update', 'password', 'last_update')
+                    'last_update', 'password', 'last_update',
+                    'consumer_key', 'consumer_secret')
     search_fields = ['name', 'screen_name']
 
 admin.site.register(TwitterAccount, TwitterAccountAdmin)

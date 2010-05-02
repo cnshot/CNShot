@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import stompy, sys, traceback, logging, logging.config, os, time, rfc822, \
-    twitter, ConfigParser
+    tweepy, ConfigParser
 
 from Queue import Queue
 from threading import Thread
@@ -58,17 +58,25 @@ class LinkRatingThread(Thread):
                 rate_sum += r
 
     def rate_link(self, url, now):
-        api = twitter.Api(username=cfg.common.username,
-                          password=cfg.common.password)
-#        api = twitter.Api()
+        # api = twitter.Api(username=cfg.common.username,
+        #                   password=cfg.common.password)
+        # api = twitter.Api()
+#        auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
+        api = tweepy.API(auth_handler=None,
+                         host=cfg.common.api_host,
+                         search_host=cfg.common.search_host,
+                         api_root=cfg.common.api_root,
+                         search_root=cfg.common.search_root)
         try:
-            s = api.GetSearch(url, lang='', per_page=cfg.link_rating.max_ranking_tweets)
+            # s = api.GetSearch(url, lang='', per_page=cfg.link_rating.max_ranking_tweets)
+            s = api.search(q=url, lang='',rpp=cfg.link_rating.max_ranking_tweets)
         except HTTPError:
             logger.warn("Failed to call search API: %s", url)
             return 0
         
         tt = now - timedelta(seconds = cfg.link_rating.ranking_time)
-        filted_s = filter(lambda x: True if (datetime.fromtimestamp(time.mktime(rfc822.parsedate(x.created_at))) > tt) else False, s)
+        # filted_s = filter(lambda x: True if (datetime.fromtimestamp(time.mktime(rfc822.parsedate(x.created_at))) > tt) else False, s)
+        filted_s = filter(lambda x: True if (x.created_at > tt) else False, s)
 
 #        for i in range(len(s)):
 #            logger.debug("%s", s[i].created_at)
