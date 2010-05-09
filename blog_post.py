@@ -53,10 +53,10 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
         title_tmp = Template(cfg.blog_post.title_template)
         description_tmp = Template(cfg.blog_post.description_template)
 
-        if not link_shot.title:
+        if not ls.title:
             # just a fake for blog title
             # don't save it
-            link_shot.title = t.text
+            ls.title = t.text
 
         c = Context({"link": link, 
                      "tweet": t,
