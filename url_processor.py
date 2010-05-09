@@ -45,7 +45,8 @@ class TaskProcessingThread(threading.Thread):
                 org_link.save()
                 LinkShot.objects.filter(link=org_link).update(link=new_link)
             except:
-                continue
+                logger.warn("Failed to get/update org_link: %s", self.task['url'])
+                return
 
             # set alias
             if not self.task.has_key('url_alias'):
