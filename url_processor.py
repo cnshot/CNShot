@@ -6,10 +6,6 @@ import pycurl, StringIO, re, threading, time, logging, logging.config, \
 from optparse import OptionParser
 from config import Config, ConfigMerger
 
-# hacks for loading Django models
-#d=os.path.dirname(__file__)
-#sys.path.append('lts_web' if d == '' else (d+"/lts_web"))
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import ImageSitePattern, IgnoredSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, SizedCanvasSitePattern
 
@@ -17,20 +13,25 @@ class TaskProcessingThread(threading.Thread):
     def __init__(self, task):
         threading.Thread.__init__(self)
         self.task = task
-#        self.options = options
-#        self.logger = logger
 
     def run(self):
         # processing shorten_url
         logger.info("Start to process task: %s", self.task['url'])
+        known_urls = []
 
         while True:
+            known_urls.append(self.task['url'])
             (c,h) = http_header(self.task['url'])
             if not h:
                 break
             new_url = extend_url(h)
             if not new_url:
                 break
+
+            if new_url in known_urls:
+                logger.warn("Loop in URL extending: %s %s",
+                            self.task['url'], new_url)
+                return
 
             # update link alias
             try:
@@ -208,42 +209,6 @@ if __name__ == '__main__':
                           version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
                           description=description)
 
-    # parser.add_option("-s", "--source-queue",
-    #                   dest="source_queue", default="/queue/url_processor",
-    #                   type="string",
-    #                   help="Source message queue path [default: %default].",
-    #                   metavar="SOURCE_QUEUE")
-
-    # parser.add_option("-t", "--shot-queue",
-    #                   dest="shot_queue", default="/queue/shot_service",
-    #                   type="string",
-    #                   help="Message queue path for shot [default: %default].",
-    #                   metavar="SHOT_QUEUE")
-
-    # parser.add_option("-d", "--dest-queue", 
-    #                   dest="dest_queue", default="/queue/shot_dest",
-    #                   type="string",
-    #                   help="Dest message queue path [default: %default].",
-    #                   metavar="DEST_QUEUE")
-
-    # parser.add_option("-c", "--cancel-queue",
-    #                   dest="cancel_queue", default="/queue/cancel",
-    #                   type="string",
-    #                   help="Message queue of tasks to cancel [default: %default].",
-    #                   metavar="CANCEL_QUEUE")
-
-    # parser.add_option("--timeout", 
-    #                   dest="timeout", default=20, type="int",
-    #                   help="Timeout of HTTP request in second [default: %default].",
-    #                   metavar="TIMEOUT")
-
-    # parser.add_option("-l", "--log-config",
-    #                   dest="log_config", 
-    #                   default="/etc/link_shot_tweet_log.conf",
-    #                   type="string",
-    #                   help="Logging config file [default: %default].",
-    #                   metavar="LOG_CONFIG")
-
     parser.add_option("-c", "--config",
                       dest="config",
                       default="lts.cfg",
@@ -259,7 +224,6 @@ if __name__ == '__main__':
                            [options.config,
                             os.path.expanduser('~/.lts.cfg'),
                             '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
 
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("url_processor")

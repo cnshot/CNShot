@@ -104,6 +104,14 @@ class LinkRate(models.Model):
     def __unicode__(self):
         return self.link.url
 
+# class LinkRateSum(models.Model):
+#     link = models.ForeignKey('Link', primary_key=True)
+#     rate = models.IntegerField(null=True, db_index=True)
+#     tweet = models.ForeignKey('Tweet')
+
+#     def __unicode__(self):
+#         return self.link.url
+
 class TwitterAccount(models.Model):
     id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=128)

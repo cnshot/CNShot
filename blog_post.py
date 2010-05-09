@@ -16,14 +16,25 @@ class BlogPost:
     @classmethod
     def getLinks(cls, rank_time, count):
         tt = datetime.utcnow() - timedelta(seconds = rank_time);
-        lrs = LinkRate.objects.extra(select={'blog_posted':"SELECT COUNT(*) FROM lts_shotblogpost WHERE lts_shotblogpost.link_id=lts_linkrate.link_id",
-                          'shot':"SELECT COUNT(*) FROM lts_linkshot WHERE lts_linkshot.link_id=lts_linkrate.link_id"}).filter(rating_time__gte=tt)
+        lrs = LinkRate.objects.extra(select={'blog_posted':"""
+SELECT COUNT(*)
+FROM lts_shotblogpost
+WHERE lts_shotblogpost.link_id=lts_linkrate.link_id
+"""
+                                             ,
+                          'shot':"""
+SELECT COUNT(*)
+FROM lts_linkshot
+WHERE lts_linkshot.link_id=lts_linkrate.link_id
+"""
+                                             }).filter(rating_time__gte=tt)
 
         logger.debug("Query for links to post: %s", lrs.query.as_sql())
             
         lrs = filter(lambda x: x.blog_posted==0 and x.shot>0, lrs)
         
-        sorted_lrs = sorted(lrs, lambda x,y: y.link.getRateSum()-x.link.getRateSum())
+        sorted_lrs = sorted(lrs,
+                            lambda x,y: y.link.getRateSum()-x.link.getRateSum())
         return map(lambda x: x.link.getRoot(), sorted_lrs[:count])
 
     @classmethod
@@ -42,6 +53,11 @@ class BlogPost:
         title_tmp = Template(cfg.blog_post.title_template)
         description_tmp = Template(cfg.blog_post.description_template)
 
+        if not link_shot.title:
+            # just a fake for blog title
+            # don't save it
+            link_shot.title = t.text
+
         c = Context({"link": link, 
                      "tweet": t,
                      "link_shot": ls})
@@ -53,10 +69,6 @@ class BlogPost:
         post = wordpresslib.WordPressPost()
         post.title = str(title_tmp.render(c).encode('utf-8'))
         post.description = str(description_tmp.render(c).encode('utf-8'))
-        # logger.debug("Title: %s", post.title)
-        # logger.debug("Description: %s", post.description)
-        # import pickle
-        # logger.debug("Post: %s", pickle.dumps(post))
 
         idPost = wp.newPost(post, True)
 
@@ -107,7 +119,6 @@ if __name__ == '__main__':
                            [options.config,
                             os.path.expanduser('~/.lts.cfg'),
                             '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
 
     # walk around encoding issue
     reload(sys)
