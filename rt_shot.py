@@ -97,10 +97,6 @@ def readability_parse(task):
         logger.warn("No HTML file: %s", task['url'])
         return
 
-    # content = subprocess.Popen([cfg.rt_shot.readability,
-    #                             "url=file://"+task['html_filename']],
-    #                            stdout=subprocess.PIPE).communicate()[0]
-
     task['title'], task['text'] = readability_parse_file(task['html_filename'],
                                                          task['url'])
 
@@ -108,20 +104,6 @@ def readability_parse(task):
         filename = task['html_filename'] + str(i)
         title, text = readability_parse_file(filename, task['url'])
         task['text'] += text
-
-    # try:
-    #     dom = minidom.parseString(content)
-    #     try:
-    #         task['title'] = dom.getElementsByTagName("title")[0].firstChild.data
-    #     except (AttributeError, IndexError):
-    #         logger.warn("No title: %s %s", task['url'], task['html_filename'])
-    #     try:
-    #         task['text'] = dom.getElementsByTagName("body")[0].firstChild.toxml()
-    #     except (AttributeError, IndexError):
-    #         logger.warn("No text: %s %s", task['url'], task['html_filename'])
-    # except xml.parsers.expat.ExpatError:
-    #     logger.warn("Failed to parse XML file: %s %s",
-    #              task['url'], task['html_filename'])
 
 def tweet_image(task, s, url):
     if not url:
@@ -174,81 +156,10 @@ def onReceiveTask(m):
 
         twitpic_url = post_image(task, s)
 
-        # if cfg.rt_shot.dummy:
-        #     logger.info("No post with dummy mode: %d %s %s",
-        #                 s.id, str(s.user.screen_name), s.text.encode('utf-8'))
-        #     return
-        
-        # twitpic_url = None
-
-        # try:
-        #     twit = twitpic.TwitPicAPI(cfg.common.username,
-        #                               cfg.common.password)
-
-        #     rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
-        #     logger.debug("%s", rt_text.encode('utf-8'))
-
-        #     twitpic_url = twit.upload(task['filename'], 
-        #                               message = rt_text.encode('utf-8')[0:140],
-        #                               post_to_twitter=False)
-
-        #     if isinstance(twitpic_url, int):
-        #         logger.info("Failed to update image to Twitpic: %d", twitpic_url)
-        #         twitpic_url = None
-        #     else:
-        #         logger.info("Uploaded %s to %s", task['id'], twitpic_url)
-        # except:
-        #     logger.error("Failed to tweet image: %s", sys.exc_info()[0])
-        #     logger.error('-'*60)
-        #     logger.error("%s", traceback.format_exc())
-        #     logger.error('-'*60)
-
-        # update LinkShot
-        # try:
-        #     l = Link.objects.get(url = task['url'])
-        # except Link.DoesNotExist:
-        #     logger.warn("No link object for url: %s", task['url'])
-        #     l = None
-
-        # try:
-        #     t = Tweet.objects.get(id=str(s.id))
-        #     ls = LinkShot(link=l, url=twitpic_url,
-        #                   shot_time=task['shot_time'],
-        #                   in_reply_to = t)
-        # except Tweet.DoesNotExist:
-        #     ls = LinkShot(link=l, url=twitpic_url,
-        #                   shot_time=task['shot_time'])
-        # ls.save()
-
         readability_parse(task)
 
         update_linkshot(task, s, twitpic_url)
 
-        tweet_image(task, s, twitpic_url)
-
-        # if not twitpic_url:
-        #     return
-
-        # try:
-        #     if not cfg.rt_shot.tweet:
-        #         logger.info("Tweet disabled.")
-        #         return
-            
-        #     logger.info("Tweet enalbed.")
-
-        #     t = unicode(twitpic_url) + u" " + rt_text
-        #     api = twitter.Api(username=cfg.common.username,
-        #                       password=cfg.common.password)
-        #     rts = api.PostUpdate(t[0:140], in_reply_to_status_id=s.id)
-
-        #     logger.info("New tweet: %d %s %s", 
-        #                 rts.id, str(rts.created_at),
-        #                 rts.text.encode('utf-8'))
-        # except:
-        #     logger.error("Failed to tweet image: %s", sys.exc_info()[0])
-        #     logger.error('-'*60)
-        #     logger.error("%s", traceback.format_exc())
-        #     logger.error('-'*60)
     finally:
         if not cfg.rt_shot.keep_file:
             try:
@@ -267,44 +178,12 @@ if __name__ == '__main__':
                           version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
                           description=description)
 
-    # parser.add_option("-s", "--source-queue",
-    #                   dest="source_queue", default="/queue/shot_dest",
-    #                   type="string",
-    #                   help="Source message queue path [default: %default].",
-    #                   metavar="SOURCE_QUEUE")
-
-    # parser.add_option("-u", "--username", dest="username", type="string",
-    #                   default="username",
-    #                   help="Twitter username [default: %default].",
-    #                   metavar="USERNAME")
-
-    # parser.add_option("-p", "--password", dest="password", type="string",
-    #                   default="password",
-    #                   help="Twitter password [default: %default].",
-    #                   metavar="PASSWORD")
-
-    # parser.add_option("-l", "--log-config",
-    #                   dest="log_config", 
-    #                   default="/etc/link_shot_tweet_log.conf",
-    #                   type="string",
-    #                   help="Logging config file [default: %default].",
-    #                   metavar="LOG_CONFIG")
-
     parser.add_option("-c", "--config",
                       dest="config",
                       default="lts.cfg",
                       type="string",
                       help="Config file [default %default].",
                       metavar="CONFIG")
-
-    # parser.add_option("-d", "--dummy", action="store_true", dest="dummy", 
-    #                   default=False)
-
-    # parser.add_option("-t", "--tweet", action="store_true", dest="tweet",
-    #                   default=False)
-
-    # parser.add_option("-k", "--keep-file", action="store_true", dest="keep_file", 
-    #                   default=False)
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
@@ -314,7 +193,6 @@ if __name__ == '__main__':
                            [options.config,
                             os.path.expanduser('~/.lts.cfg'),
                             '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
 
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("rt_shot")
