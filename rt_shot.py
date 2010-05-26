@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
-    twitpic, twitter, subprocess, xml
+    twitpic, twitter, subprocess, xml, readability
 
 from optparse import OptionParser
 from config import Config, ConfigMerger
@@ -65,45 +65,51 @@ def update_linkshot(task, s, url):
                       text=task['text'])
     ls.save()
 
-def readability_parse_file(filename,url):
-    title = ''
-    text = ''
-
-    content = subprocess.Popen([cfg.rt_shot.readability,
-                                "url=file://"+filename],
-                               stdout=subprocess.PIPE).communicate()[0]
-    
+def readability_parse_file(filename, frame_url=None, task_url=None):
+    logger.debug("Readability parse file: %s %s %s", filename, frame_url, task_url)
     try:
-        dom = minidom.parseString(content)
-        try:
-            title = dom.getElementsByTagName("title")[0].firstChild.data
-        except (AttributeError, IndexError):
-            logger.warn("No title: %s %s", url, filename)
-        try:
-            text = dom.getElementsByTagName("body")[0].firstChild.toxml()
-        except (AttributeError, IndexError):
-            logger.warn("No text: %s %s", url, filename)
-    except xml.parsers.expat.ExpatError:
-        logger.warn("Failed to parse XML file: %s %s",
-                 url, filename)
-                  
-    return title,text
+        f = file(filename)
+        html_text = f.read()
+        f.close()
+    except IOError:
+        logger.warn("Failed to open/read file: %s", filename)
+        return '',''
+
+    readability.logger = logger
+    p = readability.ReadabilityProcessor(cfg)
+    r = p.process(html_text, url=str(frame_url), input_charset='utf-8',
+                  linkprocessor = readability.LinkProcessorUpdateURL)
+    if r:
+        return r['title'], r['text']
+    else:
+        return '',''
 
 def readability_parse(task):
     task['title'] = ''
     task['text'] = ''
 
-    if not task['html_filename']:
-        logger.warn("No HTML file: %s", task['url'])
-        return
+    try:
+        if not task['html_filename']:
+            logger.warn("No HTML file: %s", task['url'])
+            return
 
-    task['title'], task['text'] = readability_parse_file(task['html_filename'],
-                                                         task['url'])
 
-    for i in range(task['sub_frame_count']):
-        filename = task['html_filename'] + str(i)
-        title, text = readability_parse_file(filename, task['url'])
-        task['text'] += text
+        task['title'] = task['html_title']
+        parsed_title, task['text'] = readability_parse_file(task['html_filename'],
+                                                             frame_url = task['html_url'],
+                                                             task_url = task['url'])
+
+        for i in range(task['sub_frame_count']):
+            filename = task['html_filename'] + str(i)
+            title, text = readability_parse_file(filename,
+                                                 frame_url = task['html_url' + str(i)],
+                                                 task_url = task['url'])
+            task['text'] += text
+    except:
+        logger.error("Failed to parse readability: %s", sys.exc_info()[0])
+        logger.error('-'*60)
+        logger.error("%s", traceback.format_exc())
+        logger.error('-'*60)
 
 def tweet_image(task, s, url):
     if not url:

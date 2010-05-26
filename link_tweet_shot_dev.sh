@@ -18,7 +18,7 @@ export PYTHONPATH=${LTS_DIR}/lts_web
 #nohup tsocks ${LTS_DIR}/failover.sh ${LTS_DIR}/url_processor.py \
 #    -l ${LTS_DIR}/link_shot_tweet_log.conf &
 
-nohup tsocks ${LTS_DIR}/failover.sh ${LTS_DIR}/shot_service.py -c${CONF} &
+nohup ${LTS_DIR}/failover.sh ${LTS_DIR}/shot_service.py -c${CONF} &
 nohup tsocks ${LTS_DIR}/failover.sh ${LTS_DIR}/rt_shot.py -c${CONF} &
 nohup ${LTS_DIR}/failover.sh ./task_gc.py -c${CONF} &
 nohup tsocks ${LTS_DIR}/failover.sh ${LTS_DIR}/url_processor.py -c${CONF} &

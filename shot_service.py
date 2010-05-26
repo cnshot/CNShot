@@ -100,16 +100,23 @@ class ScreenshotWorker(QThread):
                 # logger.debug("HTML: \n%s\n", self.webpage.mainFrame().toHtml())
 
                 f = open(self.task['html_filename'],'wb')
-                f.write(fixXml(self.webpage.mainFrame().toHtml().toUtf8()))
+                # f.write(fixXml(self.webpage.mainFrame().toHtml().toUtf8()))
+                f.write(self.webpage.mainFrame().toHtml().toUtf8())
                 f.close()
+
+                self.task['html_title'] = self.webpage.mainFrame().title().toUtf8()
+                self.task['html_url'] = self.webpage.mainFrame().url().toString().toUtf8()
                 html_save_result = True
 
                 child_frames = self.webpage.mainFrame().childFrames()
                 self.task['sub_frame_count'] = len(child_frames)
                 for i in range(len(child_frames)):
                     f = open(self.task['html_filename']+str(i),'wb')
-                    f.write(fixXml(child_frames[i].toHtml().toUtf8()))
+                    # f.write(fixXml(child_frames[i].toHtml().toUtf8()))
+                    f.write(child_frames[i].toHtml().toUtf8())
                     f.close()
+                    
+                    self.task['html_url'+str(i)] = child_frames[i].url().toString().toUtf8()
 
             if image_save_result or html_save_result:
                 logger.info("%s File saved: %s %s",

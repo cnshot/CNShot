@@ -117,7 +117,7 @@ def fetchTweetLink():
 
             for m in matches:
                 task_id = str(uuid.uuid1())
-                mc.set(task_id, s, time=600)
+                mc.set(task_id, s, time=cfg.fetch_tweet_link.status_timeout)
 
                 # update Tweet and Link
                 try:
