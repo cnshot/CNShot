@@ -56,6 +56,7 @@ class LinkShot(models.Model):
     id = models.AutoField(primary_key=True)
     link = models.ForeignKey('Link', null=True)
     url = models.URLField(max_length=2048, null=True)
+    thumbnail_url = models.URLField(max_length=2048, null=True)
     shot_time = models.DateTimeField(null=True, db_index=True)
     in_reply_to = models.ForeignKey(Tweet, null=True)
     title = models.TextField(max_length=2048)
@@ -76,7 +77,11 @@ class LinkShot(models.Model):
         return r
 
     def thumbnailUrl(self):
-        return re.sub(r'^http://twitpic.com/(.+)$', r'http://twitpic.com/show/thumb/\1', self.url)
+        if self.thumbnail_url:
+            return self.thumbnail_url
+        if re.match(r'^http://twitpic.com/', self.url):
+            return re.sub(r'^http://twitpic.com/(.+)$', r'http://twitpic.com/show/thumb/\1', self.url)
+        return None
 
 class ShotPublish(models.Model):
 #    id = models.AutoField(primary_key=True)

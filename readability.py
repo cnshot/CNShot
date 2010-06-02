@@ -290,7 +290,10 @@ class ReadabilityProcessor:
 
         # logger.debug("Removing font tags...")
 
-        remove_tags(doc,'font') 
+        # remove_tags(doc,'font') 
+        for tag in doc.xpath(self.cfg.readability.decorative_tags):
+            tag.drop_tag()
+
         # doc.find('//font').drop_tag()
         logger.debug("Font's tag left: %d", len(doc.xpath('//font')))
 
@@ -353,7 +356,7 @@ class ReadabilityProcessor:
         #                     namespaces={'xhtml':'http://www.w3.org/1999/xhtml'})
         # defunct_divs = top_div.xpath('//form | //object | //h1 | //iframe | //script | //style',
         #                              namespaces={'xhtml':'http://www.w3.org/1999/xhtml'})
-        defunct_divs = top_div.xpath('descendant-or-self::node()/form | descendant-or-self::node()/object | descendant-or-self::node()/h1 | descendant-or-self::node()/iframe | descendant-or-self::node()/script | descendant-or-self::node()/style',
+        defunct_divs = top_div.xpath(self.cfg.readability.defunct_tags,
                                      namespaces={'xhtml':'http://www.w3.org/1999/xhtml'})
         # print defunct_divs
         # logger.debug("Defunct divs count: %d", len(defunct_divs))
@@ -469,4 +472,4 @@ if __name__ == '__main__':
         r['body'].tag = '{http://www.w3.org/1999/xhtml}body'
         html.append(r['body'])
         
-        print etree.tostring(html, encoding='utf-8')
+        print etree.tostring(html, encoding='utf-8', pretty_print=True)
