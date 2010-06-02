@@ -17,6 +17,9 @@ from config import Config, ConfigMerger
 
 from html5lib import treebuilders
 
+global child_processes
+child_processes = []
+
 def fixXml(s):
     parser = html5lib.HTMLParser(tree=treebuilders.getTreeBuilder("dom"))
     dom = parser.parse(StringIO.StringIO(s), 'utf-8')
@@ -276,14 +279,19 @@ class ShotProcessWorker:
 
 def killChildProcesses(signum, frame):
     signal.signal(signal.SIGCHLD, signal.SIG_IGN)
+
+    global child_processes
+    logger.info("Exiting with %d child processes ...", len(child_processes))
+
     try:
         for pid in child_processes:
+            logger.info("Killing child process: %d", pid)
             os.kill(pid, signal.SIGINT)
     except UnboundLocalError:
-        return 0
+        exit(0)
 
     child_processes=[]
-    return 0
+    exit(0)
 
 def restartChildProcess(signum, frame):
     logger.warn("Child exited ...")
@@ -295,7 +303,9 @@ def restartChildProcess(signum, frame):
             done_pid = 0
             exit_status = 0
             done_pid, exit_status = os.waitpid(child_processes[i], os.WNOHANG)
-        except OSError:
+        except OSError,e:
+            logger.warn("Failed to waitpid: %d %s", child_processes[i], str(e))
+            done_pid = child_processes[i]
             pass
         if done_pid > 0:
             logger.warn("Child %d exited: %d %d", i, done_pid, exit_status)
@@ -382,19 +392,24 @@ if __name__ == '__main__':
     logger.info("Dest queue: %s", cfg.queues.shotted)
     logger.info("Timeout: %d", cfg.shot_service.timeout)
 
-    child_processes = []
+    global child_processes
+    # child_processes = []
 
     for i in range(cfg.shot_service.workers):
         pid = ShotProcessWorker(id=str(i)).run()
         child_processes.append(pid)
 
     signal.signal(signal.SIGINT, killChildProcesses)
+    signal.signal(signal.SIGTERM, killChildProcesses)
     signal.signal(signal.SIGCHLD, restartChildProcess)
 
-    try:
-        os.wait()
-    except OSError:
-        pass
+    while True:
+        signal.pause()
+
+    # try:
+    #     os.wait()
+    # except OSError:
+    #     pass
 
     # app = QApplication([])
     # signal.signal(signal.SIGINT, signal.SIG_DFL)
