@@ -1,15 +1,182 @@
 #!/usr/bin/python
 
 import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
-    twitpic, twitter
+    twitpic, urllib2, re, tweepy
 
 from optparse import OptionParser
 from datetime import datetime, timedelta
 from django.core.exceptions import ObjectDoesNotExist
 from config import Config, ConfigMerger
+from poster.encode import multipart_encode
+from poster.streaminghttp import register_openers
+from pyTweetPhoto import pyTweetPhoto
+from lxml import etree
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate
+from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate, ShotCache
+
+def post_image_twitpic(image_path, s):
+    twitpic_url = None
+    thumbnail_url = None
+
+    try:
+        logger.debug("Post image to twitpic: %s %s", image_path, s)
+
+        twit = twitpic.TwitPicAPI(cfg.common.username,
+                                  cfg.common.password)
+
+        twitpic_url = twit.upload(image_path, 
+                                  message = s[0:140],
+                                  post_to_twitter=False)
+
+        if isinstance(twitpic_url, int):
+            logger.info("Failed to update image to Twitpic: %d", twitpic_url)
+            twitpic_url = None
+        else:
+            logger.info("Uploaded %s to %s", image_path, twitpic_url)
+            thumbnail_url = re.sub(r'^http://twitpic.com/(.+)$',
+                                   r'http://twitpic.com/show/thumb/\1',
+                                   twitpic_url)
+
+        logger.debug("Twitpic posted: %s %s", image_path, s)
+    except:
+        logger.error("Failed to tweet image: %s", sys.exc_info()[0])
+        logger.error('-'*60)
+        logger.error("%s", traceback.format_exc())
+        logger.error('-'*60)
+    finally:
+        return twitpic_url, thumbnail_url
+
+def post_image_moby(image_path, s):
+    image_url = None
+    thumbnail_url = None
+
+    try:
+        logger.debug("Post image to moby: %s %s", image_path, s)
+
+        datagen, headers = multipart_encode({'u':cfg.common.username,
+                                             'p':cfg.common.password,
+                                             'k':cfg.common.moby_key,
+                                             'i':open(image_path, 'rb'),
+                                             'action':'postMediaUrl',
+                                             's': 'none',
+                                             'd':s[0:140]})
+        request = urllib2.Request("http://api.mobypicture.com/", datagen, headers)
+        response = urllib2.urlopen(request)
+        
+        if response.getcode() != 200:
+            return None, None
+
+        image_url = response.read()
+
+        m = re.match(r'^http://moby\.to/(.+)', image_url)
+        if not m:
+            return None, None
+
+        datagen, headers = multipart_encode({'t':m.group(1),
+                                             's':'small',
+                                             'k':cfg.common.moby_key,
+                                             'action':'getThumbUrl'})
+        request = urllib2.Request("http://api.mobypicture.com/", datagen, headers)
+        response = urllib2.urlopen(request)
+        if response.getcode() != 200:
+            return None, None
+
+        thumbnail_url = response.read()
+
+        logger.debug("Moby posted: %s %s", image_path, s)
+    except:
+        logger.error("Failed to tweet image: %s", sys.exc_info()[0])
+        logger.error('-'*60)
+        logger.error("%s", traceback.format_exc())
+        logger.error('-'*60)
+    finally:
+        return image_url, thumbnail_url
+
+def post_image_twitgoo(image_path, s):
+    image_url = None
+    thumbnail_url = None
+
+    try:
+        logger.debug("Post image to twitgoo: %s %s", image_path, s)
+
+        datagen, headers = multipart_encode({'username':cfg.common.username,
+                                             'password':cfg.common.password,
+                                             'message':s[0:140],
+                                             'media':open(image_path, "rb")})
+        request = urllib2.Request("http://twitgoo.com/api/upload", datagen, headers)
+        response = urllib2.urlopen(request)
+        
+        if response.getcode() != 200:
+            return None, None
+
+        root = etree.fromstring(response.read())
+        image_url = root.xpath('/rsp/mediaurl')[0].text
+        thumbnail_url = root.xpath('/rsp/thumburl')[0].text
+
+        logger.debug("Twitgoo posted: %s %s", image_path, s)
+    except:
+        logger.error("Failed to tweet image: %s", sys.exc_info()[0])
+        logger.error('-'*60)
+        logger.error("%s", traceback.format_exc())
+        logger.error('-'*60)
+    finally:
+        return image_url, thumbnail_url
+
+def post_image_tweetphoto(image_path, s):
+    image_url = None
+    thumbnail_url = None
+
+    try:
+        logger.debug("Post image to tweetphoto: %s %s", image_path, s)
+
+        api = pyTweetPhoto.TweetPhotoApi(username=cfg.common.username,
+                                         password=cfg.common.password,
+                                         apikey=cfg.common.tweetphoto_key)
+        r=api.Upload(image_path,
+                     message=s[0:140],
+                     post_to_twitter=False)
+
+        image_url = r['MediaUrl']
+        thumbnail_url = r['Thumbnail']
+
+        logger.debug("Tweetphoto posted: %s %s", image_path, s)
+    except:
+        logger.error("Failed to tweet image: %s", sys.exc_info()[0])
+        logger.error('-'*60)
+        logger.error("%s", traceback.format_exc())
+        logger.error('-'*60)
+    finally:
+        return image_url, thumbnail_url
+
+def post_image_imjtw(image_path, s):
+    image_url = None
+    thumbnail_url = None
+
+    try:
+        logger.debug("Post image to imj.tw: %s %s", image_path, s)
+
+        datagen, headers = multipart_encode({'username':cfg.common.username,
+                                             'password':cfg.common.password,
+                                             'media':open(image_path, "rb")})
+        request = urllib2.Request("http://api.imj.tw/upload", datagen, headers)
+        response = urllib2.urlopen(request)
+        
+        if response.getcode() != 200:
+            return None, None
+
+        root = etree.fromstring(response.read())
+        image_url = root.xpath('/res/media_url')[0].text
+        thumbnail_url = root.xpath('/res/thumbnail_url')[0].text
+
+        logger.debug("imj.tw posted: %s %s", image_path, s)
+    except:
+        logger.error("Failed to tweet image: %s", sys.exc_info()[0])
+        logger.error('-'*60)
+        logger.error("%s", traceback.format_exc())
+        logger.error('-'*60)
+    finally:
+        return image_url, thumbnail_url
 
 class TweetShot:
     @classmethod
@@ -26,7 +193,7 @@ class TweetShot:
         return map(lambda x: x.link.getRoot(), sorted_lrs[:count])
 
     @classmethod
-    def tweetLink(cls, link):
+    def tweetLink(cls, link, post_image_func):
         t = cls.getFirstTweet(link)
         if t is None:
             logger.warn("Failed to get tweet of link: %s", link.url)
@@ -38,13 +205,48 @@ class TweetShot:
             logger.warn("Failed to get shot of link: %s", link.url)
             return
 
+        try:
+            rt_text = u'RT @' + t.user_screenname + u': ' + t.text
+            cs = ShotCache.objects.get(linkshot=ls)
+            url, thumbnail_url = post_image_func(cs.image.path,
+                                                rt_text.encode('utf-8'))
+            if url is None:
+                logger.warn("Failed to post image: %s", link.url)
+            else:
+                ls.url = url
+                ls.thumbnail_url = thumbnail_url
+                ls.save()
+        except ShotCache.DoesNotExist:
+            logger.warn("Failed to get shot cache of link: %s", link.url)
+
         rt_text = unicode(ls.url) + ' RT @' + t.user_screenname + u': ' + t.text
-        api = twitter.Api(username=cfg.common.username,
-                          password=cfg.common.password)
-        rts = api.PostUpdate(rt_text[0:140], in_reply_to_status_id=t.id)
+        # api = twitter.Api(username=cfg.common.username,
+        #                   password=cfg.common.password)
+        # rts = api.PostUpdate(rt_text[0:140], in_reply_to_status_id=t.id)
+
+        # logger.info("New tweet: %d %s %s", 
+        #             rts.id, str(rts.created_at),
+        #             rts.text.encode('utf-8'))
+
+        auth = None
+        if 'consumer_key' in cfg.common.keys() and \
+                'consumer_secret' in cfg.common.keys():
+            auth = tweepy.OAuthHandler(cfg.common.consumer_key, cfg.common.consumer_secret)
+        elif 'username' in cfg.common.keys() and \
+                'password' in cfg.common.keys():
+            auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
+        api = tweepy.API(auth_handler=auth,
+                         host=cfg.common.api_host,
+                         search_host=cfg.common.search_host,
+                         api_root=cfg.common.api_root,
+                         search_root=cfg.common.search_root)
+
+        rts = api.update_status(status = rt_text[0:140],
+                                in_reply_to_status_id = t.id)
+
         logger.info("New tweet: %d %s %s", 
-                    rts.id, str(rts.created_at),
-                    rts.text.encode('utf-8'))
+                    rts.id, rts.created_at,
+                    rts.text)
 
         # update ShotPublish
         ShotPublish.objects.filter(link=link).delete()
@@ -128,11 +330,26 @@ if __name__ == '__main__':
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("tweet_shot")
 
+    register_openers()
+
+    if cfg.tweet_shot.image_service == 'twitpic':
+        f = post_image_twitpic
+    elif cfg.tweet_shot.image_service == 'moby':
+        f = post_image_moby
+    elif cfg.tweet_shot.image_service == 'tweetphoto':
+        f = post_image_tweetphoto
+    elif cfg.tweet_shot.image_service == 'twitgoo':
+        f = post_image_twitgoo
+    elif cfg.tweet_shot.image_service == 'imj.tw':
+        f = post_image_imjtw
+    else:
+        f = post_image_twitpic
+
     # get links; if options.tweet, tweet them
-    links = TweetShot.getLinks(cfg.tweet_shot.rank_time, cfg.tweet_shot.number)
+    links = TweetShot.getLinks(cfg.tweet_shot.rank_time, cfg.tweet_shot.number)   
     for l in links:
         if cfg.tweet_shot.tweet:
             logger.info("Tweet: [%d] %s", l.id, l.url)
-            TweetShot.tweetLink(l)
+            TweetShot.tweetLink(l, f)
         else:
             logger.info("Skip tweet: [%d] %s", l.id, l.url)

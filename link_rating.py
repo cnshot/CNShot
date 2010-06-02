@@ -104,7 +104,7 @@ class TaskProcessor:
     @classmethod
     def loadTasks(cls, queue):
         # get links shotted in last 2 hours
-        lss = LinkShot.objects.filter(shot_time__gte=datetime.utcnow()-timedelta(hours=2))
+        lss = LinkShot.objects.filter(shot_time__gte=datetime.utcnow()-timedelta(seconds=cfg.link_rating.ranking_time))
 
         for ls in lss:
             # if it's published, not more rate

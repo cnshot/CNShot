@@ -83,6 +83,10 @@ class LinkShot(models.Model):
             return re.sub(r'^http://twitpic.com/(.+)$', r'http://twitpic.com/show/thumb/\1', self.url)
         return None
 
+class ShotCache(models.Model):
+    linkshot = models.ForeignKey('LinkShot', null=True, primary_key=True)
+    image = models.ImageField(upload_to='shot_cache', null=True)
+
 class ShotPublish(models.Model):
 #    id = models.AutoField(primary_key=True)
     id = models.AutoField(primary_key=True)

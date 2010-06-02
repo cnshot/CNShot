@@ -10,9 +10,10 @@ from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
 from pyTweetPhoto import pyTweetPhoto
 from lxml import etree
+from django.core.files.base import ContentFile
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import Link, LinkShot, Tweet
+from lts.models import Link, LinkShot, Tweet, ShotCache
 
 mc = None
 
@@ -217,6 +218,16 @@ def update_linkshot(task, s, url, thumbnail_url):
                       text=task['text'])
     ls.save()
 
+    try:
+        sc = ShotCache.objects.get(linkshot = ls)
+    except ShotCache.DoesNotExist:
+        sc = ShotCache(linkshot = ls)
+
+    f=open(task['filename'])
+    sc.image.save(os.path.basename(task['filename']),
+                  ContentFile(f.read()))
+    f.close()
+
 def readability_parse_file(filename, frame_url=None, task_url=None):
     logger.debug("Readability parse file: %s %s %s", filename, frame_url, task_url)
     try:
@@ -289,7 +300,7 @@ def tweet_image(task, s, url):
         logger.error("%s", traceback.format_exc())
         logger.error('-'*60)
 
-def onReceiveTask(m, post_image_func):
+def onReceiveTask(m):
     stomp.ack(m)
     task = pickle.loads(m.body)
 
@@ -312,11 +323,13 @@ def onReceiveTask(m, post_image_func):
                     s.id, str(s.user.screen_name),
                     str(s.created_at), s.text.encode('utf-8'))
 
-        image_url, thumbnail_url = post_image_func(task, s)
+        # image_url, thumbnail_url = post_image_func(task, s)
 
         readability_parse(task)
 
-        update_linkshot(task, s, image_url, thumbnail_url)
+        # update_linkshot(task, s, image_url, thumbnail_url)
+
+        update_linkshot(task, s, None, None)
 
     finally:
         if not cfg.rt_shot.keep_file:
@@ -367,17 +380,17 @@ if __name__ == '__main__':
 
     register_openers()
 
-    if cfg.rt_shot.image_service == 'twitpic':
-        f = lambda x: onReceiveTask(x, post_image_func=post_image_twitpic)
-    elif cfg.rt_shot.image_service == 'moby':
-        f = lambda x: onReceiveTask(x, post_image_func=post_image_moby)
-    elif cfg.rt_shot.image_service == 'tweetphoto':
-        f = lambda x: onReceiveTask(x, post_image_func=post_image_tweetphoto)
-    elif cfg.rt_shot.image_service == 'twitgoo':
-        f = lambda x: onReceiveTask(x, post_image_func=post_image_twitgoo)
-    else:
-        f = lambda x: onReceiveTask(x, post_image_func=post_image_twitpic)
+    # if cfg.rt_shot.image_service == 'twitpic':
+    #     f = lambda x: onReceiveTask(x, post_image_func=post_image_twitpic)
+    # elif cfg.rt_shot.image_service == 'moby':
+    #     f = lambda x: onReceiveTask(x, post_image_func=post_image_moby)
+    # elif cfg.rt_shot.image_service == 'tweetphoto':
+    #     f = lambda x: onReceiveTask(x, post_image_func=post_image_tweetphoto)
+    # elif cfg.rt_shot.image_service == 'twitgoo':
+    #     f = lambda x: onReceiveTask(x, post_image_func=post_image_twitgoo)
+    # else:
+    #     f = lambda x: onReceiveTask(x, post_image_func=post_image_twitpic)
 
     while True:
-        m=stomp.get(callback=f)
-
+        # m=stomp.get(callback=f)
+        m = stomp.get(callback=onReceiveTask)

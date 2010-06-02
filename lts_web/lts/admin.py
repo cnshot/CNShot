@@ -4,7 +4,8 @@ from django.contrib import admin
 from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
     SizedCanvasSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser, TwitterUserExt, \
-    TwitterAccount, TwitterApiSite, ShotBlogPost, PendingTwitterUser
+    TwitterAccount, TwitterApiSite, ShotBlogPost, PendingTwitterUser, \
+    ShotCache
 
 class SiteAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'pattern')
@@ -41,7 +42,8 @@ class TweetAdmin(admin.ModelAdmin):
 admin.site.register(Tweet, TweetAdmin)
 
 class LinkShotAdmin(admin.ModelAdmin):
-    list_display = ('id', 'url', 'link', 'tweet', 'rate', 'shot_time', 'title')
+    list_display = ('id', 'url', 'thumbnail_url', 'link', 'tweet', 'rate',
+                    'shot_time', 'title')
     search_fields = ['url', 'link__url']
     raw_id_fields = ("link", "in_reply_to")
 
@@ -60,6 +62,11 @@ class LinkShotAdmin(admin.ModelAdmin):
     tweet.short_description = 'Tweet'
 
 admin.site.register(LinkShot, LinkShotAdmin)
+
+class ShotCacheAdmin(admin.ModelAdmin):
+    list_display = ('linkshot', 'image')
+
+admin.site.register(ShotCache, ShotCacheAdmin)
 
 class LinkRateAdmin(admin.ModelAdmin):
     list_display = ('id', 'link_url', 'tweet', 'rate', 'rating_time',)

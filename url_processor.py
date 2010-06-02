@@ -5,6 +5,7 @@ import pycurl, StringIO, re, threading, time, logging, logging.config, \
 
 from optparse import OptionParser
 from config import Config, ConfigMerger
+from urlparse import urljoin
 
 from lts.models import ImageSitePattern, IgnoredSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, SizedCanvasSitePattern
@@ -27,6 +28,7 @@ class TaskProcessingThread(threading.Thread):
             new_url = extend_url(h)
             if not new_url:
                 break
+            new_url = urljoin(self.task['url'], new_url)
 
             if new_url in known_urls:
                 logger.warn("Loop in URL extending: %s %s",
