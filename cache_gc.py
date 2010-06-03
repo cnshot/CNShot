@@ -14,7 +14,7 @@ def clear_shot_cache(lifetime):
     for ls in lss:
         scs = ShotCache.objects.filter(linkshot = ls)
         for sc in scs:
-            logger.info('Delete expired shot cache: %s', sc.linkshot.url)
+            logger.info('Delete expired shot cache: %s', sc.linkshot.link.url)
             sc.delete()
 
 if __name__ == '__main__':
