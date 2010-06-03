@@ -79,7 +79,7 @@ def post_image_moby(image_path, s):
                                              'action':'getThumbUrl'})
         request = urllib2.Request("http://api.mobypicture.com/", datagen, headers)
         response = urllib2.urlopen(request)
-        if response.getcode() != 200:
+        if response.code != 200:
             return None, None
 
         thumbnail_url = response.read()
@@ -107,7 +107,7 @@ def post_image_twitgoo(image_path, s):
         request = urllib2.Request("http://twitgoo.com/api/upload", datagen, headers)
         response = urllib2.urlopen(request)
         
-        if response.getcode() != 200:
+        if response.code != 200:
             return None, None
 
         root = etree.fromstring(response.read())
@@ -162,7 +162,7 @@ def post_image_imjtw(image_path, s):
         request = urllib2.Request("http://api.imj.tw/upload", datagen, headers)
         response = urllib2.urlopen(request)
         
-        if response.getcode() != 200:
+        if response.code != 200:
             return None, None
 
         root = etree.fromstring(response.read())
