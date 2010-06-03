@@ -9,7 +9,9 @@ from datetime import timedelta, datetime
 from lts.models import LinkShot, ShotCache
 
 def clear_shot_cache(lifetime):
-    lss = LinkShot.objects.filter(shot_time__lt=datetime.utcnow()-timedelta(seconds=lifetime))
+    lss = LinkShot.objects.extra(select={'cached':'SELECT COUNT(*) FROM lts_shotcache where lts_shotcache.linkshot_id = lts_linkshot.id'}).filter(shot_time__lt=datetime.utcnow()-timedelta(seconds=lifetime))
+
+    lss = filter(lambda x: x.cached > 0, lss)
 
     for ls in lss:
         scs = ShotCache.objects.filter(linkshot = ls)
