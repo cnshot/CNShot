@@ -25,7 +25,7 @@ WHERE lts_shotblogpost.link_id=lts_linkrate.link_id
                           'shot':"""
 SELECT COUNT(*)
 FROM lts_linkshot
-WHERE lts_linkshot.link_id=lts_linkrate.link_id
+WHERE lts_linkshot.link_id=lts_linkrate.link_id AND lts_linkshot.thumbnail_url IS NOT NULL
 """
                                              }).filter(rating_time__gte=tt)
 
