@@ -64,7 +64,7 @@ def post_image_moby(image_path, s):
         request = urllib2.Request("http://api.mobypicture.com/", datagen, headers)
         response = urllib2.urlopen(request)
         
-        if response.getcode() != 200:
+        if response.code != 200:
             return None, None
 
         image_url = response.read()
