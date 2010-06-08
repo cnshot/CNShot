@@ -197,6 +197,8 @@ class ScreenshotWorker(QThread):
 
             # wait for task done
             while self.task != None:
+                logger.debug("%s Waiting for a running task: %s",
+                             self.objectName(), self.task['url'])
                 self.processing.wait(self.mutex)
 
             try:

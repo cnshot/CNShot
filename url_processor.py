@@ -1,11 +1,13 @@
 #!/usr/bin/python
 
 import pycurl, StringIO, re, threading, time, logging, logging.config, \
-    stompy, pickle, os, sys, socket, itertools
+    stompy, pickle, os, sys, socket, itertools, socket
 
 from optparse import OptionParser
 from config import Config, ConfigMerger
 from urlparse import urljoin
+from IPy import IP
+from urlparse import urlparse
 
 from lts.models import ImageSitePattern, IgnoredSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, SizedCanvasSitePattern
@@ -77,7 +79,7 @@ class TaskProcessingThread(threading.Thread):
 
         if patterns.ignore(self.task['url']):
             # enqueue cancel
-            logger.info("Ingore URL: %s",
+            logger.info("Ignore URL: %s",
                         self.task['url'])            
             self.writeMQ(cfg.queues.cancel, self.task)
             return
@@ -137,6 +139,10 @@ class URLPatterns:
         self.sized_canvas_patterns = SizedCanvasSitePattern.objects.all()
         map(lambda x: setattr(x,'p',re.compile(x.pattern, re.M)), self.sized_canvas_patterns)
 
+        self.denied_networks = []
+        for n in cfg.url_processor.denied_networks:
+            self.denied_networks.append(IP(n))
+
         # shorten url sites
 #        c.execute('select * from shorten_url_patterns')
 #        self.shorten_url_patterns = map(lambda x: re.compile(x,re.M),
@@ -145,7 +151,18 @@ class URLPatterns:
 #        conn.close()
 
     def ignore(self, url):
-        return any(map(lambda x: x.search(url), self.ignore_patterns))
+        if any(map(lambda x: x.search(url), self.ignore_patterns)):
+            return True
+
+        pr = urlparse(url)
+        ip = IP(socket.gethostbyname(pr.hostname))
+        for n in self.denied_networks:
+            if ip in n:
+                logger.info("Found IP %s in denined network %s: %s",
+                            ip, n, url)
+                return True
+
+        return False
 
     def image(self, url):
         return any(map(lambda x: x.search(url), self.img_patterns))

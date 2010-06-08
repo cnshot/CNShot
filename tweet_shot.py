@@ -180,17 +180,24 @@ def post_image_imjtw(image_path, s):
 
 class TweetShot:
     @classmethod
-    def getLinks(cls, rank_time, count):
+    def getLinkRatings(cls, rank_time):
         tt = datetime.utcnow() - timedelta(seconds = rank_time);
-        lrs = LinkRate.objects.extra(select={'published':"SELECT COUNT(*) FROM lts_shotpublish WHERE lts_shotpublish.link_id=lts_linkrate.link_id",
-                          'shot':"SELECT COUNT(*) FROM lts_linkshot WHERE lts_linkshot.link_id=lts_linkrate.link_id"}).filter(rating_time__gte=tt)
+        lrs = LinkRate.objects.extra(select={'published':"""
+SELECT COUNT(*) FROM lts_shotpublish 
+WHERE lts_shotpublish.link_id=lts_linkrate.link_id
+""",
+                                             'shot':"""
+SELECT COUNT(*) FROM lts_linkshot 
+WHERE lts_linkshot.link_id=lts_linkrate.link_id
+  AND lts_linkshot.url IS NOT NULL
+"""}).filter(rating_time__gte=tt)
 
         logger.debug("Query for links to tweet: %s", lrs.query.as_sql())
             
         lrs = filter(lambda x: x.published==0 and x.shot>0, lrs)
         
         sorted_lrs = sorted(lrs, lambda x,y: y.link.getRateSum()-x.link.getRateSum())
-        return map(lambda x: x.link.getRoot(), sorted_lrs[:count])
+        return sorted_lrs
 
     @classmethod
     def tweetLink(cls, link, post_image_func):
@@ -205,28 +212,21 @@ class TweetShot:
             logger.warn("Failed to get shot of link: %s", link.url)
             return
 
-        try:
-            rt_text = u'RT @' + t.user_screenname + u': ' + t.text
-            cs = ShotCache.objects.get(linkshot=ls)
-            url, thumbnail_url = post_image_func(cs.image.path,
-                                                rt_text.encode('utf-8'))
-            if url is None:
-                logger.warn("Failed to post image: %s", link.url)
-            else:
-                ls.url = url
-                ls.thumbnail_url = thumbnail_url
-                ls.save()
-        except ShotCache.DoesNotExist:
-            logger.warn("Failed to get shot cache of link: %s", link.url)
+        # try:
+        #     rt_text = u'RT @' + t.user_screenname + u': ' + t.text
+        #     cs = ShotCache.objects.get(linkshot=ls)
+        #     url, thumbnail_url = post_image_func(cs.image.path,
+        #                                         rt_text.encode('utf-8'))
+        #     if url is None:
+        #         logger.warn("Failed to post image: %s", link.url)
+        #     else:
+        #         ls.url = url
+        #         ls.thumbnail_url = thumbnail_url
+        #         ls.save()
+        # except ShotCache.DoesNotExist:
+        #     logger.warn("Failed to get shot cache of link: %s", link.url)
 
         rt_text = unicode(ls.url) + ' RT @' + t.user_screenname + u': ' + t.text
-        # api = twitter.Api(username=cfg.common.username,
-        #                   password=cfg.common.password)
-        # rts = api.PostUpdate(rt_text[0:140], in_reply_to_status_id=t.id)
-
-        # logger.info("New tweet: %d %s %s", 
-        #             rts.id, str(rts.created_at),
-        #             rts.text.encode('utf-8'))
 
         auth = None
         if 'consumer_key' in cfg.common.keys() and \
@@ -277,41 +277,12 @@ if __name__ == '__main__':
                           version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
                           description=description)
 
-    # parser.add_option("-u", "--username", dest="username", type="string",
-    #                   default="username",
-    #                   help="Twitter username [default: %default].",
-    #                   metavar="USERNAME")
-
-    # parser.add_option("-p", "--password", dest="password", type="string",
-    #                   default="password",
-    #                   help="Twitter password [default: %default].",
-    #                   metavar="PASSWORD")
-
-    # parser.add_option("-l", "--log-config",
-    #                   dest="log_config", 
-    #                   default="/etc/link_shot_tweet_log.conf",
-    #                   type="string",
-    #                   help="Logging config file [default: %default].",
-    #                   metavar="LOG_CONFIG")
-
     parser.add_option("-c", "--config",
                       dest="config",
                       default="lts.cfg",
                       type="string",
                       help="Config file [default %default].",
                       metavar="CONFIG")
-
-    # parser.add_option("-t", "--tweet", action="store_true", dest="tweet",
-    #                   default=False)
-
-    # parser.add_option("-r", "--rank_time",
-    #                   dest="rank_time", default="7200", type="int",
-    #                   help="Time perioud of link ranks to sort in second [default: %default].",
-    #                   metavar="RANK_TIME")
-
-    # parser.add_option("-n", "--number", dest="number", default=1, type="int",
-    #                   help="Number of links to tweet [default:%default].",
-    #                   metavar="NUMBER")
 
     (options,args) = parser.parse_args()
     if len(args) != 0:
@@ -346,10 +317,20 @@ if __name__ == '__main__':
         f = post_image_twitpic
 
     # get links; if options.tweet, tweet them
-    links = TweetShot.getLinks(cfg.tweet_shot.rank_time, cfg.tweet_shot.number)   
-    for l in links:
+    lrs = TweetShot.getLinkRatings(cfg.tweet_shot.rank_time)
+    tweeted = 0
+    for lr in lrs:
+        if tweeted >= cfg.tweet_shot.number:
+            break
+
+        l = lr.link.getRoot()
+    
         if cfg.tweet_shot.tweet:
             logger.info("Tweet: [%d] %s", l.id, l.url)
             TweetShot.tweetLink(l, f)
         else:
             logger.info("Skip tweet: [%d] %s", l.id, l.url)
+
+        tweeted += 1
+    
+    logger.info("Tweeted %d shots.", tweeted)

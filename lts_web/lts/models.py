@@ -38,6 +38,22 @@ class Link(models.Model):
                 pass
         return int(r)
 
+    def getFirstTweet(self):
+        ls = self.getRoot().getAliases()
+        first_tweet = None
+        first_t = None
+        for l in ls:
+            try:
+                tweet = Tweet.objects.filter(links=l).order_by('created_at')[0]
+                if first_t is None or tweet.created_at < first_t:
+                    first_tweet = tweet
+                    first_t = tweet.created_at
+            except IndexError:
+                pass
+        if first_tweet is None:
+            raise Tweet.DoesNotExist(u"Failed to get the first tweet of link: %s" % self.url)
+        return first_tweet        
+
 class Tweet(models.Model):
     id = models.CharField(primary_key=True, max_length=64)
     text = models.CharField(max_length=500)

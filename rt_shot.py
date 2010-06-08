@@ -1,201 +1,25 @@
 #!/usr/bin/python
 
+# Actually, this script is for text saving and image caching now, but no
+# longer for retweeting. All codes about retweeting and image uploading
+# are moved to other scripts.
+
 import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
-    twitpic, twitter, subprocess, xml, readability, re, urllib2
+    xml, readability, re
 
 from optparse import OptionParser
 from config import Config, ConfigMerger
 #from xml.dom import minidom
-from poster.encode import multipart_encode
-from poster.streaminghttp import register_openers
-from pyTweetPhoto import pyTweetPhoto
-from lxml import etree
+# from poster.encode import multipart_encode
+# from poster.streaminghttp import register_openers
+# from pyTweetPhoto import pyTweetPhoto
+# from lxml import etree
 from django.core.files.base import ContentFile
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, LinkShot, Tweet, ShotCache
 
 mc = None
-
-def post_image_twitpic(task, s):
-    twitpic_url = None
-    thumbnail_url = None
-
-    if cfg.rt_shot.dummy:
-        logger.info("No post with dummy mode: %d %s %s",
-                    s.id, str(s.user.screen_name), s.text.encode('utf-8'))
-        return None, None
-
-    try:
-        twit = twitpic.TwitPicAPI(cfg.common.username,
-                                  cfg.common.password)
-
-        rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
-        logger.debug("%s", rt_text.encode('utf-8'))
-
-        twitpic_url = twit.upload(task['filename'], 
-                                  message = rt_text.encode('utf-8')[0:140],
-                                  post_to_twitter=False)
-
-        if isinstance(twitpic_url, int):
-            logger.info("Failed to update image to Twitpic: %d", twitpic_url)
-            twitpic_url = None
-        else:
-            logger.info("Uploaded %s to %s", task['id'], twitpic_url)
-            thumbnail_url = re.sub(r'^http://twitpic.com/(.+)$',
-                                   r'http://twitpic.com/show/thumb/\1',
-                                   twitpic_url)
-    except:
-        logger.error("Failed to tweet image: %s", sys.exc_info()[0])
-        logger.error('-'*60)
-        logger.error("%s", traceback.format_exc())
-        logger.error('-'*60)
-    finally:
-        return twitpic_url, thumbnail_url
-
-def post_image_moby(task, s):
-    image_url = None
-    thumbnail_url = None
-
-    if cfg.rt_shot.dummy:
-        logger.info("No post with dummy mode: %d %s %s",
-                    s.id, str(s.user.screen_name), s.text.encode('utf-8'))
-        return None, None
-
-    try:
-        rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
-        logger.debug("%s", rt_text.encode('utf-8'))
-
-        datagen, headers = multipart_encode({'u':cfg.common.username,
-                                             'p':cfg.common.password,
-                                             'k':cfg.common.moby_key,
-                                             'i':open(task['filename'], "rb"),
-                                             'action':'postMediaUrl',
-                                             's': 'none',
-                                             'd':rt_text.encode('utf-8')[0:140]})
-        request = urllib2.Request("http://api.mobypicture.com/", datagen, headers)
-        response = urllib2.urlopen(request)
-        
-        if response.getcode() != 200:
-            return None, None
-
-        image_url = response.read()
-
-        m = re.match(r'^http://moby\.to/(.+)', image_url)
-        if not m:
-            return None, None
-
-        datagen, headers = multipart_encode({'t':m.group(1),
-                                             's':'small',
-                                             'k':cfg.common.moby_key,
-                                             'action':'getThumbUrl'})
-        request = urllib2.Request("http://api.mobypicture.com/", datagen, headers)
-        response = urllib2.urlopen(request)
-        if response.getcode() != 200:
-            return None, None
-
-        thumbnail_url = response.read()
-    except:
-        logger.error("Failed to tweet image: %s", sys.exc_info()[0])
-        logger.error('-'*60)
-        logger.error("%s", traceback.format_exc())
-        logger.error('-'*60)
-    finally:
-        return image_url, thumbnail_url
-
-def post_image_twitgoo(task, s):
-    image_url = None
-    thumbnail_url = None
-
-    if cfg.rt_shot.dummy:
-        logger.info("No post with dummy mode: %d %s %s",
-                    s.id, str(s.user.screen_name), s.text.encode('utf-8'))
-        return None, None
-
-    try:
-        rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
-        logger.debug("%s", rt_text.encode('utf-8'))
-
-        datagen, headers = multipart_encode({'username':cfg.common.username,
-                                             'password':cfg.common.password,
-                                             'message':rt_text.encode('utf-8')[0:140],
-                                             'media':open(task['filename'], "rb")})
-        request = urllib2.Request("http://twitgoo.com/api/upload", datagen, headers)
-        response = urllib2.urlopen(request)
-        
-        if response.getcode() != 200:
-            return None, None
-
-        root = etree.fromstring(response.read())
-        image_url = root.xpath('/rsp/mediaurl')[0].text
-        thumbnail_url = root.xpath('/rsp/thumburl')[0].text
-    except:
-        logger.error("Failed to tweet image: %s", sys.exc_info()[0])
-        logger.error('-'*60)
-        logger.error("%s", traceback.format_exc())
-        logger.error('-'*60)
-    finally:
-        return image_url, thumbnail_url
-
-# def post_image_img_ly(task, s):
-#     image_url = None
-#     thumbnail_url = None
-
-#     if cfg.rt_shot.dummy:
-#         logger.info("No post with dummy mode: %d %s %s",
-#                     s.id, str(s.user.screen_name), s.text.encode('utf-8'))
-#         return None, None
-
-#     try:
-#         rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
-#         logger.debug("%s", rt_text.encode('utf-8'))
-
-#         datagen, headers = multipart_encode({'username':cfg.common.username,
-#                                              'password':cfg.common.password,
-#                                              'media':open(task['filename'], "rb")})
-#         request = urllib2.Request("http://img.ly/api/upload", datagen, headers)
-#         response = urllib2.urlopen(request)
-        
-#         if response.getcode() != 200:
-#             return None, None
-
-#     except:
-#         logger.error("Failed to tweet image: %s", sys.exc_info()[0])
-#         logger.error('-'*60)
-#         logger.error("%s", traceback.format_exc())
-#         logger.error('-'*60)
-#     finally:
-#         return image_url, thumbnail_url
-
-def post_image_tweetphoto(task, s):
-    image_url = None
-    thumbnail_url = None
-
-    if cfg.rt_shot.dummy:
-        logger.info("No post with dummy mode: %d %s %s",
-                    s.id, str(s.user.screen_name), s.text.encode('utf-8'))
-        return None, None
-
-    try:
-        rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
-        logger.debug("%s", rt_text.encode('utf-8'))
-
-        api = pyTweetPhoto.TweetPhotoApi(username=cfg.common.username,
-                                         password=cfg.common.password,
-                                         apikey=cfg.common.tweetphoto_key)
-        r=api.Upload(task['filename'],
-                     message=rt_text.encode('utf-8')[0:140],
-                     post_to_twitter=False)
-
-        image_url = r['MediaUrl']
-        thumbnail_url = r['Thumbnail']
-    except:
-        logger.error("Failed to tweet image: %s", sys.exc_info()[0])
-        logger.error('-'*60)
-        logger.error("%s", traceback.format_exc())
-        logger.error('-'*60)
-    finally:
-        return image_url, thumbnail_url
 
 def update_linkshot(task, s, url, thumbnail_url):
     try:
@@ -274,31 +98,31 @@ def readability_parse(task):
         logger.error("%s", traceback.format_exc())
         logger.error('-'*60)
 
-def tweet_image(task, s, url):
-    if not url:
-        return
+# def tweet_image(task, s, url):
+#     if not url:
+#         return
 
-    try:
-        if not cfg.rt_shot.tweet:
-            logger.info("Tweet disabled.")
-            return
+#     try:
+#         if not cfg.rt_shot.tweet:
+#             logger.info("Tweet disabled.")
+#             return
 
-        logger.info("Tweet enalbed.")
+#         logger.info("Tweet enalbed.")
 
-        rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
-        t = unicode(url) + u" " + rt_text
-        api = twitter.Api(username=cfg.common.username,
-                          password=cfg.common.password)
-        rts = api.PostUpdate(t[0:140], in_reply_to_status_id=s.id)
+#         rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
+#         t = unicode(url) + u" " + rt_text
+#         api = twitter.Api(username=cfg.common.username,
+#                           password=cfg.common.password)
+#         rts = api.PostUpdate(t[0:140], in_reply_to_status_id=s.id)
 
-        logger.info("New tweet: %d %s %s", 
-                    rts.id, str(rts.created_at),
-                    rts.text.encode('utf-8'))
-    except:
-        logger.error("Failed to tweet image: %s", sys.exc_info()[0])
-        logger.error('-'*60)
-        logger.error("%s", traceback.format_exc())
-        logger.error('-'*60)
+#         logger.info("New tweet: %d %s %s", 
+#                     rts.id, str(rts.created_at),
+#                     rts.text.encode('utf-8'))
+#     except:
+#         logger.error("Failed to tweet image: %s", sys.exc_info()[0])
+#         logger.error('-'*60)
+#         logger.error("%s", traceback.format_exc())
+#         logger.error('-'*60)
 
 def onReceiveTask(m):
     stomp.ack(m)
@@ -378,19 +202,7 @@ if __name__ == '__main__':
     if cfg.rt_shot.dummy:
         logger.info("Dummy mode enabled.")
 
-    register_openers()
-
-    # if cfg.rt_shot.image_service == 'twitpic':
-    #     f = lambda x: onReceiveTask(x, post_image_func=post_image_twitpic)
-    # elif cfg.rt_shot.image_service == 'moby':
-    #     f = lambda x: onReceiveTask(x, post_image_func=post_image_moby)
-    # elif cfg.rt_shot.image_service == 'tweetphoto':
-    #     f = lambda x: onReceiveTask(x, post_image_func=post_image_tweetphoto)
-    # elif cfg.rt_shot.image_service == 'twitgoo':
-    #     f = lambda x: onReceiveTask(x, post_image_func=post_image_twitgoo)
-    # else:
-    #     f = lambda x: onReceiveTask(x, post_image_func=post_image_twitpic)
+    # register_openers()
 
     while True:
-        # m=stomp.get(callback=f)
         m = stomp.get(callback=onReceiveTask)
