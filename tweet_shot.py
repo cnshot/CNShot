@@ -228,32 +228,49 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
 
         rt_text = unicode(ls.url) + ' RT @' + t.user_screenname + u': ' + t.text
 
+        logger.debug("Status text: %s", rt_text)
+
         auth = None
         if 'consumer_key' in cfg.common.keys() and \
                 'consumer_secret' in cfg.common.keys():
-            auth = tweepy.OAuthHandler(cfg.common.consumer_key, cfg.common.consumer_secret)
+            auth = tweepy.OAuthHandler(cfg.common.consumer_key,
+                                       cfg.common.consumer_secret)
+        elif 'username' in cfg.common.keys() and \
+                'proxy_password' in cfg.common.keys():
+            auth = tweepy.BasicAuthHandler(cfg.common.username,
+                                           cfg.common.proxy_password)
         elif 'username' in cfg.common.keys() and \
                 'password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
+            auth = tweepy.BasicAuthHandler(cfg.common.username,
+                                           cfg.common.password)
+
         api = tweepy.API(auth_handler=auth,
                          host=cfg.common.api_host,
                          search_host=cfg.common.search_host,
                          api_root=cfg.common.api_root,
-                         search_root=cfg.common.search_root)
+                         search_root=cfg.common.search_root,
+                         secure=cfg.common.secure_api)
 
         rts = api.update_status(status = rt_text[0:140],
                                 in_reply_to_status_id = t.id)
 
-        logger.info("New tweet: %d %s %s", 
-                    rts.id, rts.created_at,
-                    rts.text)
+        if hasattr(rts, 'error'):
+            logger.warn("Failed to update status: %s", rts.error)
+            return
 
-        # update ShotPublish
-        ShotPublish.objects.filter(link=link).delete()
-        url = "http://twitter.com/" + rts.user.screen_name + "/status/" + str(rts.id)
-        sp = ShotPublish(link=link, shot=ls, publish_time=datetime.utcnow(),
-                         url=url, site="Twitter")
-        sp.save()
+        try:
+            logger.info("New tweet: %d %s %s", 
+                        rts.id, rts.created_at,
+                        rts.text)
+
+            # update ShotPublish
+            ShotPublish.objects.filter(link=link).delete()
+            url = "http://twitter.com/" + rts.user.screen_name + "/status/" + str(rts.id)
+            sp = ShotPublish(link=link, shot=ls, publish_time=datetime.utcnow(),
+                             url=url, site="Twitter")
+            sp.save()
+        except AttributeError:
+            logger.info("AttributeError of status: %s %s", rts.error, dir(rts))
 
     @classmethod
     def getFirstTweet(cls, link):
@@ -327,7 +344,11 @@ if __name__ == '__main__':
     
         if cfg.tweet_shot.tweet:
             logger.info("Tweet: [%d] %s", l.id, l.url)
-            TweetShot.tweetLink(l, f)
+            try:
+                TweetShot.tweetLink(l, f)
+            except tweepy.error.TweepError, e:
+                logger.warn("Failed to tweet: %s", e)
+                continue
         else:
             logger.info("Skip tweet: [%d] %s", l.id, l.url)
 

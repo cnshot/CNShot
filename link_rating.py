@@ -66,7 +66,8 @@ class LinkRatingThread(Thread):
                          host=cfg.common.api_host,
                          search_host=cfg.common.search_host,
                          api_root=cfg.common.api_root,
-                         search_root=cfg.common.search_root)
+                         search_root=cfg.common.search_root,
+                         secure=cfg.common.secure_api)
         try:
             # s = api.GetSearch(url, lang='', per_page=cfg.link_rating.max_ranking_tweets)
             s = api.search(q=url, lang='',rpp=cfg.link_rating.max_ranking_tweets)

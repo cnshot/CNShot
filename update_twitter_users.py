@@ -77,15 +77,22 @@ def updateTwitterUsers():
     auth = None
     if 'consumer_key' in cfg.common.keys() and \
             'consumer_secret' in cfg.common.keys():
-        auth = tweepy.OAuthHandler(cfg.common.consumer_key, cfg.common.consumer_secret)
+        auth = tweepy.OAuthHandler(cfg.common.consumer_key,
+                                   cfg.common.consumer_secret)
+    elif 'username' in cfg.common.keys() and \
+            'proxy_password' in cfg.common.keys():
+        auth = tweepy.BasicAuthHandler(cfg.common.username,
+                                       cfg.common.proxy_password)
     elif 'username' in cfg.common.keys() and \
             'password' in cfg.common.keys():
         auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
+
     api = tweepy.API(auth_handler=auth,
                      host=cfg.common.api_host,
                      search_host=cfg.common.search_host,
                      api_root=cfg.common.api_root,
-                     search_root=cfg.common.search_root)
+                     search_root=cfg.common.search_root,
+                     secure=cfg.common.secure_api)
 
     logger.info("Update followers...")
     fetchUsers(api.followers, updateFollower)
