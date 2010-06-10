@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
-    twitpic, urllib2, re, tweepy
+    twitpic, urllib2, urllib, re, tweepy
 
 from optparse import OptionParser
 from datetime import datetime, timedelta
@@ -13,7 +13,16 @@ from pyTweetPhoto import pyTweetPhoto
 from lxml import etree
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate, ShotCache
+from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate, ShotCache, \
+    ShotBlogPost
+
+def shortenURL(url_to_shorten,
+               shortener = "http://is.gd/api.php", query = "longurl"):
+    try:
+        return urllib2.urlopen(shortener + "?" + urllib.urlencode({query: url_to_shorten})).read()
+    except urllib2.HTTPError, e:
+        logger.warn("Failed to shorten url: %s", url_to_shorten)
+        return None
 
 def post_image_twitpic(image_path, s):
     twitpic_url = None
@@ -190,11 +199,16 @@ WHERE lts_shotpublish.link_id=lts_linkrate.link_id
 SELECT COUNT(*) FROM lts_linkshot 
 WHERE lts_linkshot.link_id=lts_linkrate.link_id
   AND lts_linkshot.url IS NOT NULL
-"""}).filter(rating_time__gte=tt)
+""",
+                                             'blogpost':"""
+SELECT COUNT(*) FROM lts_shotblogpost
+WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
+"""
+}).filter(rating_time__gte=tt)
 
         logger.debug("Query for links to tweet: %s", lrs.query.as_sql())
             
-        lrs = filter(lambda x: x.published==0 and x.shot>0, lrs)
+        lrs = filter(lambda x: x.published==0 and x.shot>0 and x.blogpost>0, lrs)
         
         sorted_lrs = sorted(lrs, lambda x,y: y.link.getRateSum()-x.link.getRateSum())
         return sorted_lrs
@@ -208,6 +222,7 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
 
         try:
             ls = LinkShot.objects.filter(link=link)[0]
+            sbp = ShotBlogPost.objects.filter(link=link)[0]
         except IndexError:
             logger.warn("Failed to get shot of link: %s", link.url)
             return
@@ -226,7 +241,11 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
         # except ShotCache.DoesNotExist:
         #     logger.warn("Failed to get shot cache of link: %s", link.url)
 
-        rt_text = unicode(ls.url) + ' RT @' + t.user_screenname + u': ' + t.text
+        url = shortenURL(sbp.url)
+        if url is None:
+            url = ls.url
+
+        rt_text = unicode(url) + ' RT @' + t.user_screenname + u': ' + t.text
 
         logger.debug("Status text: %s", rt_text)
 
