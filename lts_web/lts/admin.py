@@ -187,8 +187,8 @@ class TwitterAccountAdmin(admin.ModelAdmin):
 admin.site.register(TwitterAccount, TwitterAccountAdmin)
 
 class TwitterApiSiteAdmin(admin.ModelAdmin):
-    list_display = ('id', 'active', 'api_protocol', 'api_host', 'api_root',
-                    'search_protocol', 'search_host', 'search_root')
+    list_display = ('id', 'active', 'secure_api', 'api_host', 'api_root',
+                    'search_host', 'search_root')
     search_fields = ['api_host', 'api_root', 'search_host', 'search_root']
 
 admin.site.register(TwitterApiSite, TwitterApiSiteAdmin)

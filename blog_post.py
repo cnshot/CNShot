@@ -14,7 +14,7 @@ from lts.models import Link, LinkShot, ShotBlogPost, Tweet, LinkRate
 
 class BlogPost:
     @classmethod
-    def getLinks(cls, rank_time, count):
+    def getLinks(cls, rank_time):
         tt = datetime.utcnow() - timedelta(seconds = rank_time);
         lrs = LinkRate.objects.extra(select={'blog_posted':"""
 SELECT COUNT(*)
@@ -36,20 +36,20 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
         
         sorted_lrs = sorted(lrs,
                             lambda x,y: y.link.getRateSum()-x.link.getRateSum())
-        return map(lambda x: x.link.getRoot(), sorted_lrs[:count])
+        return map(lambda x: x.link.getRoot(), sorted_lrs)
 
     @classmethod
     def postLink(cls, link):
         t = cls.getFirstTweet(link)
         if t is None:
             logger.warn("Failed to get tweet of link: %s", link.url)
-            return
+            return None
 
         try:
             ls = LinkShot.objects.filter(link=link)[0]
         except IndexError:
             logger.warn("Failed to get shot of link: %s", link.url)
-            return
+            return None
 
         title_tmp = Template(cfg.blog_post.title_template)
         description_tmp = Template(cfg.blog_post.description_template)
@@ -72,6 +72,7 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
         post.description = str(description_tmp.render(c).encode('utf-8'))
 
         idPost = wp.newPost(post, True)
+        post = wp.getPost(idPost)
 
         logger.info("Posted: [%d] %s %s",
                     idPost, ls.title, t.text.encode('utf-8'))
@@ -82,6 +83,8 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
         sbp = ShotBlogPost(link=link, shot=ls, publish_time=datetime.utcnow(),
                            url=post.link, site=cfg.blog_post.xmlrpc_url)
         sbp.save()
+
+        return sbp
 
     @classmethod
     def getFirstTweet(cls, link):
@@ -129,10 +132,20 @@ if __name__ == '__main__':
     logger = logging.getLogger("blog_post")
 
     # get links; if options.post, post them
-    links = BlogPost.getLinks(cfg.blog_post.rank_time, cfg.blog_post.number)
+    links = BlogPost.getLinks(cfg.blog_post.rank_time)
+    posted = 0
     for l in links:
+        if posted >= cfg.blog_post.number:
+            break
+
         if cfg.blog_post.post:
             logger.info("Post: [%d] %s", l.id, l.url)
-            BlogPost.postLink(l)
+            sbp = BlogPost.postLink(l)
+            if sbp is not None:
+                posted += 1
+            else:
+                logger.warn("Failed to post: [%d] %s", l.id, l.url)
         else:
             logger.info("Skip post: [%d] %s", l.id, l.url)
+
+    logger.info("Posted %d shots.", posted)

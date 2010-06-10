@@ -1,4 +1,4 @@
-import re
+import re, random
 
 from django.db import models
 
@@ -164,18 +164,27 @@ class TwitterAccount(models.Model):
 
 class TwitterApiSite(models.Model):
     id = models.AutoField(primary_key=True)
-    api_protocol = models.CharField(max_length=128, default="http")
+    # api_protocol = models.CharField(max_length=128, default="http")
     api_host = models.CharField(max_length=128)
     api_root = models.CharField(max_length=128)
-    search_protocol = models.CharField(max_length=128, default="http")
+    # search_protocol = models.CharField(max_length=128, default="http")
     search_host = models.CharField(max_length=128)
     search_root = models.CharField(max_length=128)
-    active = models.BooleanField(default=False)
+    secure_api = models.BooleanField(default=False, db_index=True)
+    active = models.BooleanField(default=False, db_index=True)
 
     def __unicode__(self):
-        return "%s://%s%s %s://%s%s" % \
-            (self.api_protocol, self.api_host, self.api_root,
-             self.search_protocol, self.search_host, self.search_root)
+        return "%s%s %s%s" % \
+            (self.api_host, self.api_root,
+             self.search_host, self.search_root)
+
+    @classmethod
+    def random(cls):
+        sites = cls.objects.filter(active__exact=True)
+        try:
+            return sites[random.randint(0, sites.count()-1)]
+        except IndexError:
+            return None
 
 class TwitterUser(models.Model):
     id = models.IntegerField(primary_key=True)

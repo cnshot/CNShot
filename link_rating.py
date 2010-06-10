@@ -14,7 +14,8 @@ from config import Config, ConfigMerger
 #d=os.path.dirname(__file__)
 #sys.path.append('lts_web' if d == '' else (d+"/lts_web"))
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import Link, Tweet, LinkShot, LinkRate, ShotPublish
+from lts.models import Link, Tweet, LinkShot, LinkRate, ShotPublish, \
+    TwitterApiSite
 
 class LinkRatingThread(Thread):
     def __init__(self, id, input_queue):
@@ -61,13 +62,25 @@ class LinkRatingThread(Thread):
         # api = twitter.Api(username=cfg.common.username,
         #                   password=cfg.common.password)
         # api = twitter.Api()
-#        auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
-        api = tweepy.API(auth_handler=None,
-                         host=cfg.common.api_host,
-                         search_host=cfg.common.search_host,
-                         api_root=cfg.common.api_root,
-                         search_root=cfg.common.search_root,
-                         secure=cfg.common.secure_api)
+        # auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
+        auth = None
+
+        api_site = TwitterApiSite.random()
+        if api_site is not None:
+            api = tweepy.API(auth_handler=auth,
+                             host=api_site.api_host,
+                             search_host=api_site.search_host,
+                             api_root=api_site.api_root,
+                             search_root=api_site.search_root,
+                             secure=api_site.secure_api)
+        else:
+            api = tweepy.API(auth_handler=auth,
+                             host=cfg.common.api_host,
+                             search_host=cfg.common.search_host,
+                             api_root=cfg.common.api_root,
+                             search_root=cfg.common.search_root,
+                             secure=cfg.common.secure_api)
+
         try:
             # s = api.GetSearch(url, lang='', per_page=cfg.link_rating.max_ranking_tweets)
             s = api.search(q=url, lang='',rpp=cfg.link_rating.max_ranking_tweets)
