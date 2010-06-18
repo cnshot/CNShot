@@ -43,8 +43,8 @@ admin.site.register(Tweet, TweetAdmin)
 
 class LinkShotAdmin(admin.ModelAdmin):
     list_display = ('id', 'url', 'thumbnail_url', 'link', 'tweet', 'rate',
-                    'shot_time', 'title')
-    search_fields = ['url', 'link__url']
+                    'shot_time', 'title', 'keywords')
+    search_fields = ['url', 'link__url', 'keywords']
     raw_id_fields = ("link", "in_reply_to")
 
     def rate(self, obj):

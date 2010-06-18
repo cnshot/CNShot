@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
-    twitpic, twitter, wordpresslib
+    twitpic, twitter, wordpresslib, xmlrpclib
 
 from optparse import OptionParser
 from datetime import datetime, timedelta
@@ -63,26 +63,48 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
                      "tweet": t,
                      "link_shot": ls})
 
-        wp = wordpresslib.WordPressClient(cfg.blog_post.xmlrpc_url,
-                                          cfg.blog_post.username,
-                                          cfg.blog_post.password)
-        wp.selectBlog(cfg.blog_post.blog_id)
-        post = wordpresslib.WordPressPost()
-        post.title = str(title_tmp.render(c).encode('utf-8'))
-        post.description = str(description_tmp.render(c).encode('utf-8'))
-
-        idPost = wp.newPost(post, True)
-        post = wp.getPost(idPost)
-
-        logger.info("Posted: [%d] %s %s",
-                    idPost, ls.title, t.text.encode('utf-8'))
-
+        wp_server = xmlrpclib.Server(cfg.blog_post.xmlrpc_url)
+        content = {'title':str(title_tmp.render(c).encode('utf-8')),
+                   'description':str(description_tmp.render(c).encode('utf-8')),
+                   'mt_keywords':ls.keywords}
+        post_id = wp_server.metaWeblog.newPost(cfg.blog_post.blog_id,
+                                               cfg.blog_post.username,
+                                               cfg.blog_post.password,
+                                               content,
+                                               1)
+        post = wp_server.metaWeblog.getPost(post_id,
+                                            cfg.blog_post.username,
+                                            cfg.blog_post.password)
+        logger.info("Posted: [%s] %s %s",
+                    post_id, ls.title, t.text.encode('utf-8'))
+        
         # update ShotBlogPost
         ShotBlogPost.objects.filter(link=link).delete()
         # url = "http://twitter.com/" + rts.user.screen_name + "/status/" + str(rts.id)
         sbp = ShotBlogPost(link=link, shot=ls, publish_time=datetime.utcnow(),
-                           url=post.link, site=cfg.blog_post.xmlrpc_url)
+                           url=post['link'], site=cfg.blog_post.xmlrpc_url)
         sbp.save()
+
+        # wp = wordpresslib.WordPressClient(cfg.blog_post.xmlrpc_url,
+        #                                   cfg.blog_post.username,
+        #                                   cfg.blog_post.password)
+        # wp.selectBlog(cfg.blog_post.blog_id)
+        # post = wordpresslib.WordPressPost()
+        # post.title = str(title_tmp.render(c).encode('utf-8'))
+        # post.description = str(description_tmp.render(c).encode('utf-8'))
+
+        # idPost = wp.newPost(post, True)
+        # post = wp.getPost(idPost)
+
+        # logger.info("Posted: [%d] %s %s",
+        #             idPost, ls.title, t.text.encode('utf-8'))
+
+        # # update ShotBlogPost
+        # ShotBlogPost.objects.filter(link=link).delete()
+        # # url = "http://twitter.com/" + rts.user.screen_name + "/status/" + str(rts.id)
+        # sbp = ShotBlogPost(link=link, shot=ls, publish_time=datetime.utcnow(),
+        #                    url=post.link, site=cfg.blog_post.xmlrpc_url)
+        # sbp.save()
 
         return sbp
 

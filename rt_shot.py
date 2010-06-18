@@ -9,6 +9,9 @@ import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
 
 from optparse import OptionParser
 from config import Config, ConfigMerger
+from SOAPpy import WSDL
+from lxml import etree
+
 #from xml.dom import minidom
 # from poster.encode import multipart_encode
 # from poster.streaminghttp import register_openers
@@ -34,12 +37,16 @@ def update_linkshot(task, s, url, thumbnail_url):
                       shot_time=task['shot_time'],
                       in_reply_to = t,
                       title=task['title'],
-                      text=task['text'])
+                      text=task['text'],
+                      abstract=task['abstract'],
+                      keywords=','.join(task['keywords']))
     except Tweet.DoesNotExist:
         ls = LinkShot(link=l, url=url, thumbnail_url=thumbnail_url,
                       shot_time=task['shot_time'],
                       title=task['title'],
-                      text=task['text'])
+                      text=task['text'],
+                      abstract=task['abstract'],
+                      keywords=','.join(task['keywords']))
     ls.save()
 
     try:
@@ -66,32 +73,55 @@ def readability_parse_file(filename, frame_url=None, task_url=None):
     p = readability.ReadabilityProcessor(cfg)
     r = p.process(html_text, url=str(frame_url), input_charset='utf-8',
                   linkprocessor = readability.LinkProcessorUpdateURL)
+
     if r:
-        return r['title'], r['text']
+        return r['title'], r['text'], \
+            etree.tostring(r['body'], method="text", encoding='utf-8')
     else:
-        return '',''
+        return '','',''
+
+def get_abstract(s):
+    server = WSDL.Proxy(cfg.rt_shot.textdm_wsdl,
+                        methodattrs={'xmlns':cfg.rt_shot.textdm_ns},
+                        http_proxy=cfg.common.http_proxy)
+    return server.GetAbstract(str=unicode(s),
+                              percent=cfg.rt_shot.abstract_percent)
 
 def readability_parse(task):
     task['title'] = ''
     task['text'] = ''
+    task['abstract'] = ''
+    task['keywords'] = ''
 
     try:
         if not task['html_filename']:
             logger.warn("No HTML file: %s", task['url'])
             return
 
-
         task['title'] = task['html_title']
-        parsed_title, task['text'] = readability_parse_file(task['html_filename'],
-                                                             frame_url = task['html_url'],
-                                                             task_url = task['url'])
+        parsed_title, task['text'], plain_text = readability_parse_file(task['html_filename'],
+                                                                        frame_url = task['html_url'],
+                                                                        task_url = task['url'])
 
         for i in range(task['sub_frame_count']):
             filename = task['html_filename'] + str(i)
-            title, text = readability_parse_file(filename,
+            title, text, p_t = readability_parse_file(filename,
                                                  frame_url = task['html_url' + str(i)],
                                                  task_url = task['url'])
             task['text'] += text
+            plain_text += p_t
+
+        try:
+            r = get_abstract(plain_text)
+            task['abstract'] = r['Abstract'].encode('utf-8')
+            task['keywords'] = map(lambda x: x.encode('utf-8'),
+                                   r['MainWord']['string'])
+
+            logger.debug('Abstract: %s', task['abstract'])
+            logger.debug('Keywords: %s', ' '.join(task['keywords']))
+        except:
+            logger.warn("Failed to get abstraction: %s", task['url'])
+
     except:
         logger.error("Failed to parse readability: %s", sys.exc_info()[0])
         logger.error('-'*60)
@@ -188,6 +218,10 @@ if __name__ == '__main__':
                            [options.config,
                             os.path.expanduser('~/.lts.cfg'),
                             '/etc/lts.cfg'])[0]))
+
+    # walk around encoding issue
+    reload(sys)
+    sys.setdefaultencoding('utf-8') 
 
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("rt_shot")

@@ -77,6 +77,8 @@ class LinkShot(models.Model):
     in_reply_to = models.ForeignKey(Tweet, null=True)
     title = models.TextField(max_length=2048)
     text = models.TextField()
+    abstract = models.TextField()
+    keywords = models.CharField(max_length=128)
 
     def __unicode__(self):
         return self.link.url
