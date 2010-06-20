@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
 import sys, signal, xmlrpclib, pickle, stompy, tempfile, os, re, \
-    logging, logging.config, codecs, time, threading, html5lib, StringIO
+    logging, logging.config, codecs, time, threading, html5lib, StringIO, \
+    urllib
 
 from datetime import datetime
 from Queue import Queue
@@ -189,7 +190,7 @@ class ScreenshotWorker(QThread):
 
         QObject.connect(self.webpage, SIGNAL("loadFinished(bool)"), 
                         self.onLoadFinished, Qt.QueuedConnection)
-        self.webpage.mainFrame().load(QUrl(url))
+        self.webpage.mainFrame().load(QUrl(unicode(urllib.unquote(url))))
 
     def run(self):
         while True:
@@ -383,6 +384,10 @@ if __name__ == '__main__':
                             os.path.expanduser('~/.lts.cfg'),
                             '/etc/lts.cfg'])[0]))
     # cfg.addNamespace(options,'common')
+
+    # walk around encoding issue
+    reload(sys)
+    sys.setdefaultencoding('utf-8') 
 
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("shot_service")
