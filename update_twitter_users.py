@@ -7,7 +7,7 @@
 from __future__ import with_statement
 
 import os, md5, re, uuid, sys, pickle, memcache, time, rfc822, \
-    logging, logging.config
+    logging, logging.config, twitter_utils
 import tweepy
 import user_evaluating
 
@@ -88,54 +88,12 @@ def updateFriend(f, account):
     except AttributeError:
         logger.warn("User without status: %s", f.screen_name)
     ue.save()
-
-def createApi(account=None):
-    auth = None
-
-    if account is None:
-        account = TwitterAccount.random()
-
-    if account is None:
-        if 'consumer_key' in cfg.common.keys() and \
-                'consumer_secret' in cfg.common.keys():
-            auth = tweepy.OAuthHandler(cfg.common.consumer_key,
-                                       cfg.common.consumer_secret)
-        elif 'username' in cfg.common.keys() and \
-                'proxy_password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username,
-                                           cfg.common.proxy_password)
-        elif 'username' in cfg.common.keys() and \
-                'password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
-    else:
-        if account.consumer_key and account.consumer_secret:
-            auto = tweepy.OAuthHandler(account.consumer_key,
-                                       account.consumer_secret)
-        elif account.screen_name and account.password:
-            auth = tweepy.BasicAuthHandler(account.screen_name,
-                                           account.password)
-
-    api_site = TwitterApiSite.random()
-    if api_site is not None:
-        api = tweepy.API(auth_handler=auth,
-                         host=api_site.api_host,
-                         search_host=api_site.search_host,
-                         api_root=api_site.api_root,
-                         search_root=api_site.search_root,
-                         secure=api_site.secure_api)
-    else:
-        api = tweepy.API(auth_handler=auth,
-                         host=cfg.common.api_host,
-                         search_host=cfg.common.search_host,
-                         api_root=cfg.common.api_root,
-                         search_root=cfg.common.search_root,
-                         secure=cfg.common.secure_api)
-
-    return api
     
 def updateTwitterUsers(api=None):
     if api is None:
-        api = createApi()
+        # twitter_utils.cfg = cfg
+        # twitter_utils.logger = logger
+        api = twitter_utils.createApi()
 
     ues = TwitterUserExt.objects.extra(select={'followed_count':"""
 SELECT COUNT(*)
@@ -156,9 +114,12 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
 
 
 def updateTwitterAccounts():
+    # twitter_utils.cfg = cfg
+    # twitter_utils.logger = logger
+
     active_accounts = TwitterAccount.objects.filter(active=True)
     for account in active_accounts:
-        api = createApi(account=account)
+        api = twitter_utils.createApi(account=account)
 
         me = api.me()
         if not me:
@@ -231,8 +192,11 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
                         lambda x,y: 1 if x.score < y.score else -1)[:follow_cfg.limit]
 
     logger.debug("Got %d users to follow.", len(sorted_ues))
+
+    # twitter_utils.cfg = cfg
+    # twitter_utils.logger = logger
     
-    api = createApi(account=account)
+    api = twitter_utils.createApi(account=account)
     for ue in sorted_ues:
         logger.debug("User %d with score: %f",
                      ue.twitteruser.id,
@@ -243,6 +207,8 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
                          ue.twitteruser.id,
                          ue.twitteruser.screen_name)
             api.create_friendship(user_id=ue.twitteruser.id)
+            ue.followed_by_account.add(account)
+            ue.save()
         except tweepy.error.TweepError:
             logger.warn("Failed to add friend for %s: %d %s",
                         account.screen_name,
