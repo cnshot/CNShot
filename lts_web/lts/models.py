@@ -1,6 +1,7 @@
 import re, random
 
 from django.db import models
+from datetime import timedelta, datetime
 
 # Create your models here.
 
@@ -141,25 +142,25 @@ class LinkRate(models.Model):
 
 class TwitterAccount(models.Model):
     id = models.IntegerField(primary_key=True)
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=128, null=True, blank=True)
     screen_name = models.CharField(max_length=128, db_index=True)
-    location = models.CharField(max_length=256, null=True)
-    description = models.CharField(max_length=256, null=True)
-    profile_image_url = models.CharField(max_length=2048, null=True)
+    location = models.CharField(max_length=256, null=True, blank=True)
+    description = models.CharField(max_length=256, null=True, blank=True)
+    profile_image_url = models.CharField(max_length=2048, null=True, blank=True)
     protected = models.BooleanField()
-    utc_offset = models.IntegerField(null=True)
-    time_zone = models.CharField(max_length=32, null=True)
-    followers_count = models.IntegerField(null=True)
-    friends_count = models.IntegerField(null=True)
-    statuses_count = models.IntegerField(null=True)
-    favourites_count = models.IntegerField(null=True)
-    url = models.CharField(max_length=2048, null=True)
+    utc_offset = models.IntegerField(null=True, blank=True)
+    time_zone = models.CharField(max_length=32, null=True, blank=True)
+    followers_count = models.IntegerField(default=0)
+    friends_count = models.IntegerField(default=0)
+    statuses_count = models.IntegerField(default=0)
+    favourites_count = models.IntegerField(default=0)
+    url = models.CharField(max_length=2048, null=True, blank=True)
     # app info
-    password = models.CharField(max_length=128)
+    password = models.CharField(max_length=128, null=True, blank=True)
     active = models.BooleanField(default=False)
     last_update = models.DateTimeField(null=False,auto_now=True)
-    consumer_key = models.CharField(max_length=64)
-    consumer_secret = models.CharField(max_length=64)
+    consumer_key = models.CharField(max_length=64, null=True, blank=True)
+    consumer_secret = models.CharField(max_length=64, null=True, blank=True)
 
     def __unicode__(self):
         return self.screen_name
@@ -203,52 +204,55 @@ class TwitterUser(models.Model):
     statuses_count = models.IntegerField(null=True)
     favourites_count = models.IntegerField(null=True)
     url = models.CharField(max_length=2048, null=True)
-    last_update = models.DateTimeField(null=False,auto_now=True, db_index=True)
+    last_update = models.DateTimeField(null=False, auto_now=True, db_index=True)
 
     def __unicode__(self):
         return self.screen_name
 
 class TwitterUserExt(models.Model):
-    twitteruser = models.OneToOneField('TwitterUser', primary_key=True)
-    following_account = models.ForeignKey('TwitterAccount', 
-                                          related_name='twitteruserext_follower_set',
-                                          null=True)
-    followed_by_account = models.ForeignKey('TwitterAccount',
-                                            related_name='twitteruserext_friend_set',
-                                            null=True)
-    link_rate = models.FloatField(null=True, db_index=True)
-    chinese_rate = models.FloatField(null=True, db_index=True)
+    twitteruser = models.OneToOneField(TwitterUser, primary_key=True)
+    following_account = models.ManyToManyField(TwitterAccount,
+                                               related_name='twitteruserext_follower_set',
+                                               null=True, blank=True)
+    followed_by_account = models.ManyToManyField(TwitterAccount,
+                                                 related_name='twitteruserext_friend_set',
+                                                 null=True, blank=True)
+    link_rate = models.FloatField(null=True, db_index=True, blank=True)
+    chinese_rate = models.FloatField(null=True, db_index=True, blank=True)
     allowing_shot = models.BooleanField(default=True, db_index=True)
-    last_update = models.DateTimeField(null=False,auto_now=True, db_index=True)
+    last_status_created_at = models.DateTimeField(null=True, db_index=True,
+                                                  blank=True)
+    last_update = models.DateTimeField(null=False, auto_now=False, db_index=True,
+                                       default=datetime.fromtimestamp(0))
 
     def __unicode__(self):
         return self.twitteruser.screen_name
 
-class PendingTwitterUser(models.Model):
-    screen_name = models.CharField(max_length=128, primary_key=True)
-    twitteruser = models.ForeignKey('TwitterUser', null=True)
-    enqueue_time = models.DateTimeField(null=False,auto_now=True, db_index=True)
+# class PendingTwitterUser(models.Model):
+#     screen_name = models.CharField(max_length=128, primary_key=True)
+#     twitteruser = models.ForeignKey('TwitterUser', null=True)
+#     enqueue_time = models.DateTimeField(null=False,auto_now=True, db_index=True)
 
-    def __unicode__(self):
-        return self.screen_name
+#     def __unicode__(self):
+#         return self.screen_name
 
-    @classmethod
-    def addPending(cls, scrn_name):
-        try:
-            puser = cls.objects.get(screen_name = scrn_name)
-        except cls.DoesNotExist:
-            puser = cls(screen_name = scrn_name)
-            puser.save()
+#     @classmethod
+#     def addPending(cls, scrn_name):
+#         try:
+#             puser = cls.objects.get(screen_name = scrn_name)
+#         except cls.DoesNotExist:
+#             puser = cls(screen_name = scrn_name)
+#             puser.save()
 
-        if puser.twitteruser is None:
-            try:
-                user = TwitterUser.objects.get(screen_name = scrn_name)
-                puser.twitteruser = user
-                puser.save()
-            except Twitteruser.DoesNotExist:
-                pass
+#         if puser.twitteruser is None:
+#             try:
+#                 user = TwitterUser.objects.get(screen_name = scrn_name)
+#                 puser.twitteruser = user
+#                 puser.save()
+#             except Twitteruser.DoesNotExist:
+#                 pass
 
-        return puser
+#         return puser
 
 class ImageSitePattern(models.Model):
     id = models.AutoField(primary_key=True)

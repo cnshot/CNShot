@@ -203,10 +203,10 @@ class ImageUploader:
         finally:
             return image_url, thumbnail_url
 
-class TweetShot:
+class ImageUpload:
     @classmethod
     def getLinkRatings(cls, rank_time):
-        tt = datetime.utcnow() - timedelta(seconds = rank_time);
+        tt = datetime.utcnow() - timedelta(seconds = rank_time)
         lrs = LinkRate.objects.extra(select={'published':"""
 SELECT COUNT(*) FROM lts_shotpublish 
 WHERE lts_shotpublish.link_id=lts_linkrate.link_id
@@ -223,77 +223,42 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
         sorted_lrs = sorted(lrs, lambda x,y: y.link.getRateSum()-x.link.getRateSum())
         return sorted_lrs
 
-    # @classmethod
-    # def tweetLink(cls, link, post_image_func):
-    #     t = cls.getFirstTweet(link)
-    #     if t is None:
-    #         logger.warn("Failed to get tweet of link: %s", link.url)
-    #         return
+    @classmethod
+    def uploadImages(cls):
+        register_openers()
+        iu = ImageUploader(cfg.image_upload.uploaders)
 
-    #     try:
-    #         ls = LinkShot.objects.filter(link=link)[0]
-    #     except IndexError:
-    #         logger.warn("Failed to get shot of link: %s", link.url)
-    #         return
+        # get links; if options.tweet, tweet them
+        lrs = cls.getLinkRatings(cfg.image_upload.rank_time)
+        uploaded = 0
+        for lr in lrs:
+            if uploaded >= cfg.image_upload.number:
+                break
 
-    #     try:
-    #         rt_text = u'RT @' + t.user_screenname + u': ' + t.text
-    #         cs = ShotCache.objects.get(linkshot=ls)
-    #         url, thumbnail_url = post_image_func(cs.image.path,
-    #                                             rt_text.encode('utf-8'))
-    #         if url is None:
-    #             logger.warn("Failed to post image: %s", link.url)
-    #         else:
-    #             ls.url = url
-    #             ls.thumbnail_url = thumbnail_url
-    #             ls.save()
-    #     except ShotCache.DoesNotExist:
-    #         logger.warn("Failed to get shot cache of link: %s", link.url)
+            try:
+                l = lr.link.getRoot()
+                t = l.getFirstTweet()
+                ls = LinkShot.objects.filter(link=l)[0]
+                if ls.url is not None:
+                    continue
 
-    #     rt_text = unicode(ls.url) + ' RT @' + t.user_screenname + u': ' + t.text
+                cs = ShotCache.objects.get(linkshot=ls)
 
-    #     auth = None
-    #     if 'consumer_key' in cfg.common.keys() and \
-    #             'consumer_secret' in cfg.common.keys():
-    #         auth = tweepy.OAuthHandler(cfg.common.consumer_key, cfg.common.consumer_secret)
-    #     elif 'username' in cfg.common.keys() and \
-    #             'password' in cfg.common.keys():
-    #         auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
-    #     api = tweepy.API(auth_handler=auth,
-    #                      host=cfg.common.api_host,
-    #                      search_host=cfg.common.search_host,
-    #                      api_root=cfg.common.api_root,
-    #                      search_root=cfg.common.search_root)
+                rt_text = u'RT @' + t.user_screenname + u': ' + t.text
 
-    #     rts = api.update_status(status = rt_text[0:140],
-    #                             in_reply_to_status_id = t.id)
+                url, thumbnail_url = iu.upload(cs.image.path, rt_text.encode('utf-8'))
+                if url is None:
+                    logger.warn("Failed to post image: %s", l.url)
+                    uploaded += 1
+                    continue
 
-    #     logger.info("New tweet: %d %s %s", 
-    #                 rts.id, rts.created_at,
-    #                 rts.text)
+                ls.url = url
+                ls.thumbnail_url = thumbnail_url
+                ls.save()
 
-    #     # update ShotPublish
-    #     ShotPublish.objects.filter(link=link).delete()
-    #     url = "http://twitter.com/" + rts.user.screen_name + "/status/" + str(rts.id)
-    #     sp = ShotPublish(link=link, shot=ls, publish_time=datetime.utcnow(),
-    #                      url=url, site="Twitter")
-    #     sp.save()
-
-    # @classmethod
-    # def getFirstTweet(cls, link):
-    #     ls = link.getRoot().getAliases()
-    #     first_tweet = None
-    #     first_t = datetime.utcnow() + timedelta(days = 1)
-    #     for l in ls:
-    #         try:
-    #             tweet = Tweet.objects.filter(links=l).order_by('created_at')[0]
-    #             if tweet.created_at < first_t:
-    #                 first_tweet = tweet
-    #                 first_t = tweet.created_at
-    #         except IndexError:
-    #             logger.debug("Failed to get the first tweet of link: [%d] %s", l.id, l)
-    #             pass
-    #     return first_tweet
+                uploaded += 1
+            except (Tweet.DoesNotExist, IndexError, ShotCache.DoesNotExist):
+                logger.warn("Failed to get tweet info of link: %s", lr.link.url)
 
 if __name__ == '__main__':
     description = '''Upload images.'''
@@ -325,37 +290,4 @@ if __name__ == '__main__':
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("image_upload")
 
-    register_openers()
-    iu = ImageUploader(cfg.image_upload.uploaders)
-
-    # get links; if options.tweet, tweet them
-    lrs = TweetShot.getLinkRatings(cfg.image_upload.rank_time)
-    uploaded = 0
-    for lr in lrs:
-        if uploaded >= cfg.image_upload.number:
-            break
-
-        try:
-            l = lr.link.getRoot()
-            t = l.getFirstTweet()
-            ls = LinkShot.objects.filter(link=l)[0]
-            if ls.url is not None:
-                continue
-
-            cs = ShotCache.objects.get(linkshot=ls)
-
-            rt_text = u'RT @' + t.user_screenname + u': ' + t.text
-
-            url, thumbnail_url = iu.upload(cs.image.path, rt_text.encode('utf-8'))
-            if url is None:
-                logger.warn("Failed to post image: %s", l.url)
-                uploaded += 1
-                continue
-
-            ls.url = url
-            ls.thumbnail_url = thumbnail_url
-            ls.save()
-
-            uploaded += 1
-        except (Tweet.DoesNotExist, IndexError, ShotCache.DoesNotExist):
-            logger.warn("Failed to get tweet info of link: %s", lr.link.url)
+    ImageUpload.uploadImages()

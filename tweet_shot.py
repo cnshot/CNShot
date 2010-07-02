@@ -227,6 +227,13 @@ WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
             logger.warn("Failed to get shot of link: %s", link.url)
             return
 
+        # # update pending user info
+        # p=re.compile('(^|\W)@(\w+)')
+        # m=p.findall(t.text)
+        # for user in map(lambda x:x[1], m):
+        #     # check user info, and add twitter user if necessary
+        #     user_evaluating.evaluate_screen_name(user)
+
         # try:
         #     rt_text = u'RT @' + t.user_screenname + u': ' + t.text
         #     cs = ShotCache.objects.get(linkshot=ls)
@@ -307,6 +314,48 @@ WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
                 pass
         return first_tweet
 
+    @classmethod
+    def tweetShot(cls):
+        # user_evaluating.logger = logger
+
+        register_openers()
+
+        if cfg.tweet_shot.image_service == 'twitpic':
+            f = post_image_twitpic
+        elif cfg.tweet_shot.image_service == 'moby':
+            f = post_image_moby
+        elif cfg.tweet_shot.image_service == 'tweetphoto':
+            f = post_image_tweetphoto
+        elif cfg.tweet_shot.image_service == 'twitgoo':
+            f = post_image_twitgoo
+        elif cfg.tweet_shot.image_service == 'imj.tw':
+            f = post_image_imjtw
+        else:
+            f = post_image_twitpic
+
+        # get links; if options.tweet, tweet them
+        lrs = cls.getLinkRatings(cfg.tweet_shot.rank_time)
+        tweeted = 0
+        for lr in lrs:
+            if tweeted >= cfg.tweet_shot.number:
+                break
+
+            l = lr.link.getRoot()
+
+            if cfg.tweet_shot.tweet:
+                logger.info("Tweet: [%d] %s", l.id, l.url)
+                try:
+                    TweetShot.tweetLink(l, f)
+                except tweepy.error.TweepError, e:
+                    logger.warn("Failed to tweet: %s", e)
+                    continue
+            else:
+                logger.info("Skip tweet: [%d] %s", l.id, l.url)
+
+            tweeted += 1
+
+        logger.info("Tweeted %d shots.", tweeted)
+        
 if __name__ == '__main__':
     description = '''Tweet screenshots.'''
     parser = OptionParser(usage="usage: %prog [options]",
@@ -330,6 +379,8 @@ if __name__ == '__main__':
                             '/etc/lts.cfg'])[0]))
     # cfg.addNamespace(options,'common')
 
+    # user_evaluating.cfg = cfg
+
     # walk around encoding issue
     reload(sys)
     sys.setdefaultencoding('utf-8') 
@@ -337,40 +388,4 @@ if __name__ == '__main__':
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("tweet_shot")
 
-    register_openers()
-
-    if cfg.tweet_shot.image_service == 'twitpic':
-        f = post_image_twitpic
-    elif cfg.tweet_shot.image_service == 'moby':
-        f = post_image_moby
-    elif cfg.tweet_shot.image_service == 'tweetphoto':
-        f = post_image_tweetphoto
-    elif cfg.tweet_shot.image_service == 'twitgoo':
-        f = post_image_twitgoo
-    elif cfg.tweet_shot.image_service == 'imj.tw':
-        f = post_image_imjtw
-    else:
-        f = post_image_twitpic
-
-    # get links; if options.tweet, tweet them
-    lrs = TweetShot.getLinkRatings(cfg.tweet_shot.rank_time)
-    tweeted = 0
-    for lr in lrs:
-        if tweeted >= cfg.tweet_shot.number:
-            break
-
-        l = lr.link.getRoot()
-    
-        if cfg.tweet_shot.tweet:
-            logger.info("Tweet: [%d] %s", l.id, l.url)
-            try:
-                TweetShot.tweetLink(l, f)
-            except tweepy.error.TweepError, e:
-                logger.warn("Failed to tweet: %s", e)
-                continue
-        else:
-            logger.info("Skip tweet: [%d] %s", l.id, l.url)
-
-        tweeted += 1
-    
-    logger.info("Tweeted %d shots.", tweeted)
+    TweetShot.tweetShot()

@@ -85,27 +85,6 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
                            url=post['link'], site=cfg.blog_post.xmlrpc_url)
         sbp.save()
 
-        # wp = wordpresslib.WordPressClient(cfg.blog_post.xmlrpc_url,
-        #                                   cfg.blog_post.username,
-        #                                   cfg.blog_post.password)
-        # wp.selectBlog(cfg.blog_post.blog_id)
-        # post = wordpresslib.WordPressPost()
-        # post.title = str(title_tmp.render(c).encode('utf-8'))
-        # post.description = str(description_tmp.render(c).encode('utf-8'))
-
-        # idPost = wp.newPost(post, True)
-        # post = wp.getPost(idPost)
-
-        # logger.info("Posted: [%d] %s %s",
-        #             idPost, ls.title, t.text.encode('utf-8'))
-
-        # # update ShotBlogPost
-        # ShotBlogPost.objects.filter(link=link).delete()
-        # # url = "http://twitter.com/" + rts.user.screen_name + "/status/" + str(rts.id)
-        # sbp = ShotBlogPost(link=link, shot=ls, publish_time=datetime.utcnow(),
-        #                    url=post.link, site=cfg.blog_post.xmlrpc_url)
-        # sbp.save()
-
         return sbp
 
     @classmethod
@@ -123,6 +102,27 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
                 logger.debug("Failed to get the first tweet of link: [%d] %s", l.id, l)
                 pass
         return first_tweet
+
+    @classmethod
+    def blogPost(cls):
+        # get links; if options.post, post them
+        links = cls.getLinks(cfg.blog_post.rank_time)
+        posted = 0
+        for l in links:
+            if posted >= cfg.blog_post.number:
+                break
+
+            if cfg.blog_post.post:
+                logger.info("Post: [%d] %s", l.id, l.url)
+                sbp = cls.postLink(l)
+                if sbp is not None:
+                    posted += 1
+                else:
+                    logger.warn("Failed to post: [%d] %s", l.id, l.url)
+            else:
+                logger.info("Skip post: [%d] %s", l.id, l.url)
+
+        logger.info("Posted %d shots.", posted)
 
 if __name__ == '__main__':
     description = '''Blog post screenshots.'''
@@ -153,21 +153,4 @@ if __name__ == '__main__':
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("blog_post")
 
-    # get links; if options.post, post them
-    links = BlogPost.getLinks(cfg.blog_post.rank_time)
-    posted = 0
-    for l in links:
-        if posted >= cfg.blog_post.number:
-            break
-
-        if cfg.blog_post.post:
-            logger.info("Post: [%d] %s", l.id, l.url)
-            sbp = BlogPost.postLink(l)
-            if sbp is not None:
-                posted += 1
-            else:
-                logger.warn("Failed to post: [%d] %s", l.id, l.url)
-        else:
-            logger.info("Skip post: [%d] %s", l.id, l.url)
-
-    logger.info("Posted %d shots.", posted)
+    BlogPost.blogPost()
