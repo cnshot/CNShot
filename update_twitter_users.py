@@ -66,8 +66,10 @@ def updateFollower(f, account):
         ue = TwitterUserExt(twitteruser = u)
         ue.save()
         ue.following_account=[account]
-    if f.status:
+    try:
         ue.last_status_created_at = f.status.created_at
+    except AttributeError:
+        logger.warn("User without status: %s", f.screen_name)
     ue.save()
 
 def updateFriend(f, account):
@@ -80,8 +82,10 @@ def updateFriend(f, account):
         ue = TwitterUserExt(twitteruser = u)
         ue.save()
         ue.followed_by_account=[account]
-    if f.status:
+    try:
         ue.last_status_created_at = f.status.created_at
+    except AttributeError:
+        logger.warn("User without status: %s", f.screen_name)
     ue.save()
 
 def updateTwitterUsers(api=None):
