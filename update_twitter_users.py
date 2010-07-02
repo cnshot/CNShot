@@ -151,7 +151,8 @@ def updateTwitterAccounts():
         fetchUsers(me.friends, updateFriend, account)
 
 def followUsers():
-    active_accounts = TwitterAccount.objects.filter(active=True).order_by("followers_count")
+    active_accounts = TwitterAccount.objects.filter(active=True).\
+        order_by("followers_count")
     active_accounts = filter(lambda x: x.friends_count < x.followers_count * cfg.update_twitter_users.follow.following_rate_limit, active_accounts) 
 
     if len(active_accounts)<=0:
@@ -166,6 +167,7 @@ def followUsers():
         filter(chinese_rate__lte=follow_cfg.chinese_rate_max).\
         filter(link_rate__gte=follow_cfg.link_rate_min).\
         filter(link_rate__lte=follow_cfg.link_rate_max).\
+        filter(twitteruser__protected=False).\
         filter(twitteruser__statuses_count__gte=follow_cfg.statuses_count_min).\
         filter(twitteruser__followers_count__gte=follow_cfg.followers_count_min).\
         filter(twitteruser__friends_count__gte=follow_cfg.friends_count_min).\
@@ -212,6 +214,19 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
         except tweepy.error.TweepError:
             logger.warn("Failed to add friend for %s: %d %s",
                         account.screen_name,
+                        ue.twitteruser.id,
+                        ue.twitteruser.screen_name)
+
+            try:
+                u = api.get_user(user_id = ue.twitteruser.id)
+                if u.following:
+                    logger.debug("Update following status: %d %s",
+                                 ue.twitteruser.id,
+                                 ue.twitteruser.screen_name)
+                    ue.followed_by_account.add(account)
+                    ue.save()
+            except tweepy.error.TweepError:
+                logger.warn("Failed to get user: %d %s",
                         ue.twitteruser.id,
                         ue.twitteruser.screen_name)
 
