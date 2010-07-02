@@ -165,6 +165,14 @@ class TwitterAccount(models.Model):
     def __unicode__(self):
         return self.screen_name
 
+    @classmethod
+    def random(cls):
+        accounts = cls.objects.filter(active__exact=True)
+        try:
+            return accounts[random.randint(0, accounts.count()-1)]
+        except IndexError:
+            return None
+
 class TwitterApiSite(models.Model):
     id = models.AutoField(primary_key=True)
     # api_protocol = models.CharField(max_length=128, default="http")

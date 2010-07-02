@@ -15,7 +15,8 @@ from optparse import OptionParser
 from datetime import timedelta, datetime
 from config import Config
 
-from lts.models import TwitterUser, TwitterUserExt, TwitterAccount, LinkRate
+from lts.models import TwitterUser, TwitterUserExt, TwitterAccount, LinkRate, \
+    TwitterApiSite
 
 def fetchUsers(func, updateFunc, account):
     next_cursor = -1
@@ -88,9 +89,13 @@ def updateFriend(f, account):
         logger.warn("User without status: %s", f.screen_name)
     ue.save()
 
-def updateTwitterUsers(api=None):
-    if api is None:
-        auth = None
+def createApi(account=None):
+    auth = None
+
+    if account is None:
+        account = TwitterAccount.random()
+
+    if account is None:
         if 'consumer_key' in cfg.common.keys() and \
                 'consumer_secret' in cfg.common.keys():
             auth = tweepy.OAuthHandler(cfg.common.consumer_key,
@@ -102,13 +107,35 @@ def updateTwitterUsers(api=None):
         elif 'username' in cfg.common.keys() and \
                 'password' in cfg.common.keys():
             auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
+    else:
+        if account.consumer_key and account.consumer_secret:
+            auto = tweepy.OAuthHandler(account.consumer_key,
+                                       account.consumer_secret)
+        elif account.screen_name and account.password:
+            auth = tweepy.BasicAuthHandler(account.screen_name,
+                                           account.password)
 
+    api_site = TwitterApiSite.random()
+    if api_site is not None:
+        api = tweepy.API(auth_handler=auth,
+                         host=api_site.api_host,
+                         search_host=api_site.search_host,
+                         api_root=api_site.api_root,
+                         search_root=api_site.search_root,
+                         secure=api_site.secure_api)
+    else:
         api = tweepy.API(auth_handler=auth,
                          host=cfg.common.api_host,
                          search_host=cfg.common.search_host,
                          api_root=cfg.common.api_root,
                          search_root=cfg.common.search_root,
                          secure=cfg.common.secure_api)
+
+    return api
+    
+def updateTwitterUsers(api=None):
+    if api is None:
+        api = createApi()
 
     ues = TwitterUserExt.objects.extra(select={'followed_count':"""
 SELECT COUNT(*)
@@ -127,24 +154,6 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
     for ue in ues:
         user_evaluating.evaluate_user(ue.twitteruser, api)
 
-def createApi(account=None):
-    auth = None
-    if account:
-        if account.consumer_key and \
-                account.consumer_secret:
-            auth = tweepy.OAuthHandler(account.consumer_key,
-                                       account.consumer_secret)
-        elif account.screen_name and \
-                account.password:
-            auth = tweepy.BasicAuthHandler(account.screen_name, account.password)        
-    api = tweepy.API(auth,
-                     host=cfg.common.api_host,
-                     search_host=cfg.common.search_host,
-                     api_root=cfg.common.api_root,
-                     search_root=cfg.common.search_root,
-                     secure=cfg.common.secure_api)
-    
-    return api
 
 def updateTwitterAccounts():
     active_accounts = TwitterAccount.objects.filter(active=True)
@@ -181,6 +190,15 @@ def updateTwitterAccounts():
         fetchUsers(me.friends, updateFriend, account)
 
 def followUsers():
+    active_accounts = TwitterAccount.objects.filter(active=True).order_by("followers_count")
+    active_accounts = filter(lambda x: x.friends_count < x.followers_count * cfg.update_twitter_users.follow.following_rate_limit, active_accounts) 
+
+    if len(active_accounts)<=0:
+        logger.warn("No account available.")
+        return
+
+    account=active_accounts[0]
+
     follow_cfg = cfg.update_twitter_users.follow
     ues = TwitterUserExt.objects.\
         filter(chinese_rate__gte=follow_cfg.chinese_rate_min).\
@@ -213,13 +231,6 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
                         lambda x,y: 1 if x.score < y.score else -1)[:follow_cfg.limit]
 
     logger.debug("Got %d users to follow.", len(sorted_ues))
-
-    active_accounts = TwitterAccount.objects.filter(active=True).order_by("followers_count")
-
-    if len(active_accounts)<=0:
-        logger.warn("No account available.")
-
-    account=active_accounts[0]
     
     api = createApi(account=account)
     for ue in sorted_ues:
