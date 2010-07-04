@@ -148,6 +148,9 @@ def evaluate_user(user, api=None):
             link_tweet_count += 1
     ue.chinese_rate = float(chinese_tweet_count) / len(ss)
     ue.link_rate = float(link_tweet_count) / len(ss)
+    logger.info("User %s: chinese rate = %f, link rate = %f",
+                user.screen_name, ue.chinese_rate, ue.link_rate)
+
     ue.last_status_created_at = ss[0].created_at
 
     ue.last_update = datetime.now()

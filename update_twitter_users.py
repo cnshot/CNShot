@@ -221,13 +221,16 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
             try:
                 u = api.get_user(user_id = ue.twitteruser.id)
                 if u.following:
-                    logger.debug("Update following status: %d %s",
-                                 ue.twitteruser.id,
-                                 ue.twitteruser.screen_name)
+                    logger.info("Update following status: %d %s",
+                                ue.twitteruser.id,
+                                ue.twitteruser.screen_name)
                     ue.followed_by_account.add(account)
                     ue.save()
                 else:
                     # unknown issue, ignore the user for the future
+                    logger.warn("Unknown issue of following user, ingore it: %d %s",
+                                ue.twitteruser.id,
+                                ue.twitteruser.screen_name)
                     ue.ignored = True
                     ue.save()
             except tweepy.error.TweepError:
