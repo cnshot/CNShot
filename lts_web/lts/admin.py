@@ -155,7 +155,7 @@ admin.site.register(TwitterUser, TwitterUserAdmin)
 class TwitterUserExtAdmin(admin.ModelAdmin):
     list_display = ('twitteruser',
                     'link_rate', 'chinese_rate',
-                    'allowing_shot', 'last_update',
+                    'allowing_shot', 'last_update','ignored',
                     'following', 'followed_by',
                     )
     search_fields = ['twitteruser__name', 'twitteruser__screen_name']

@@ -232,6 +232,7 @@ class TwitterUserExt(models.Model):
                                                   blank=True)
     last_update = models.DateTimeField(null=False, auto_now=False, db_index=True,
                                        default=datetime.fromtimestamp(0))
+    ignored = models.BooleanField(default=False, db_index=True)
 
     def __unicode__(self):
         return self.twitteruser.screen_name

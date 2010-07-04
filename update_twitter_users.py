@@ -163,6 +163,7 @@ def followUsers():
 
     follow_cfg = cfg.update_twitter_users.follow
     ues = TwitterUserExt.objects.\
+        filter(ignored=False).\
         filter(chinese_rate__gte=follow_cfg.chinese_rate_min).\
         filter(chinese_rate__lte=follow_cfg.chinese_rate_max).\
         filter(link_rate__gte=follow_cfg.link_rate_min).\
@@ -224,6 +225,10 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
                                  ue.twitteruser.id,
                                  ue.twitteruser.screen_name)
                     ue.followed_by_account.add(account)
+                    ue.save()
+                else:
+                    # unknown issue, ignore the user for the future
+                    ue.ignored = True
                     ue.save()
             except tweepy.error.TweepError:
                 logger.warn("Failed to get user: %d %s",
