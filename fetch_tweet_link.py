@@ -205,10 +205,11 @@ class TweetLinkFetcher:
             for s in statuses:
                 self.processStatus(s, account_screen_names)
 
-            account.since=str(statuses[0].id)
-            logger.debug("Update since of account %s: %s",
-                         account.screen_name, account.since)
-            account.save()
+            if statuses and len(statuses)>0:
+                account.since=str(statuses[0].id)
+                logger.debug("Update since of account %s: %s",
+                             account.screen_name, account.since)
+                account.save()
 
 if __name__ == '__main__':
     description = '''Fetch Twitter timeline and enqueue links.'''
