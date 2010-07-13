@@ -161,6 +161,7 @@ class TwitterAccount(models.Model):
     last_update = models.DateTimeField(null=False,auto_now=True)
     consumer_key = models.CharField(max_length=64, null=True, blank=True)
     consumer_secret = models.CharField(max_length=64, null=True, blank=True)
+    since = models.CharField(max_length=64, null=True, blank=True, db_index=True)
 
     def __unicode__(self):
         return self.screen_name

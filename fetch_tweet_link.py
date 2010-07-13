@@ -3,7 +3,7 @@
 from __future__ import with_statement
 
 import os, md5, re, uuid, sys, pickle, memcache, time, rfc822, \
-    logging, logging.config
+    logging, logging.config, twitter_utils
 # import twitter
 import tweepy
 
@@ -14,9 +14,9 @@ from chinese_detecting import isChinesePhase
 from config import Config, ConfigMerger, ConfigList
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import Link, Tweet
+from lts.models import Link, Tweet, TwitterAccount
 
-def fetchFriendsTimeline(api, count=20, since_id=None, page_size=20):
+def fetchFriendsTimeline(api, count=20, since_id=None, page_size=20, calls_count=1):
     if count<=0 or page_size<=0:
         return []
 
@@ -24,7 +24,9 @@ def fetchFriendsTimeline(api, count=20, since_id=None, page_size=20):
     left = count
     last_fetch_count = page_size
     max_id = None
-    while left > 0 and last_fetch_count > 0:
+    calls_left = calls_count
+    while left > 0 and last_fetch_count > 0 and calls_left > 0:
+        logger.debug("Calls left: %d", calls_left)
         n = page_size
         if n>left:
             n=left
@@ -46,6 +48,8 @@ def fetchFriendsTimeline(api, count=20, since_id=None, page_size=20):
                 ss = api.friends_timeline(count=page_size,
                                           max_id=max_id,
                                           since_id=since_id)
+        calls_left -= 1
+
         last_fetch_count = len(ss)
         left -= last_fetch_count
         if(last_fetch_count > 0):
@@ -55,11 +59,61 @@ def fetchFriendsTimeline(api, count=20, since_id=None, page_size=20):
 
     return statuses
 
-def fetchTweetLink():
-    url_pattern = re.compile('((http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?)')
+def processStatus(s, screen_names=[]):
+    mc = memcache.Client(['127.0.0.1:11211'], debug=0)
     stomp = Client()
     stomp.connect()
-    mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+
+    url_pattern = re.compile('((http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?)')
+    if s.user.screen_name in screen_names :
+        # don't RT myself
+        return
+    if not isChinesePhase(s.text.encode("utf-8", "ignore")):
+        # Chinese tweet only
+        # print "Skip none Chinese tweet: %s" % s.text
+        return
+    matches = re.findall(url_pattern,s.text)
+    if matches:
+        logger.debug("Tweet with link(s): %d %s %s %s",
+                     s.id, s.user.screen_name,
+                     str(s.created_at), s.text.encode('utf-8'))
+        
+        ls = []
+        
+        for m in matches:
+            task_id = str(uuid.uuid1())
+            mc.set(task_id, s, time=cfg.fetch_tweet_link.status_timeout)
+            
+            # update Tweet and Link
+            try:
+                l = Link.objects.get(url__exact=m[0])
+            except Link.DoesNotExist:
+                l = Link(url=m[0])
+                l.save()
+                
+            # NOTICE: l record may be updated by url_processor after stomp.put
+            ls.append(l)
+                
+            stomp.put(pickle.dumps({'id':task_id,
+                                    'url':m[0],
+                                    'filename':None}),
+                      destination=cfg.queues.fetched)
+
+        # update Tweet
+        t = Tweet(id = s.id,
+                  text = s.text,
+                  #                      created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
+                  created_at = s.created_at,
+                  user_screenname = s.user.screen_name)
+        t.save()
+        t.links = map(lambda x: x.id, ls)
+        t.save()
+
+def fetchTweetLink():
+    # url_pattern = re.compile('((http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?)')
+    # stomp = Client()
+    # stomp.connect()
+    # mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 
     try:
         cfg.fetch_tweet_link.since
@@ -100,72 +154,106 @@ def fetchTweetLink():
                      secure=cfg.common.secure_api)
 
     if cfg.fetch_tweet_link.since:
-        logger.info("Since: %d", cfg.fetch_tweet_link.since)
+        logger.debug("Since: %d", cfg.fetch_tweet_link.since)
         # statuses = api.GetFriendsTimeline(cfg.common.username,
         #                                   count=cfg.fetch_tweet_link.count,
         #                                   since_id=cfg.fetch_tweet_link.since)
         statuses = fetchFriendsTimeline(api,
                                         count=cfg.fetch_tweet_link.count,
                                         page_size=cfg.fetch_tweet_link.page_size,
-                                        since_id=cfg.fetch_tweet_link.since)
+                                        since_id=cfg.fetch_tweet_link.since,
+                                        calls_count=cfg.fetch_tweet_link.calls_count)
     else:
         statuses = fetchFriendsTimeline(api,
                                         count=cfg.fetch_tweet_link.count,
-                                        page_size=cfg.fetch_tweet_link.page_size)
+                                        page_size=cfg.fetch_tweet_link.page_size,
+                                        calls_count=cfg.fetch_tweet_link.calls_count)
 
     for s in statuses:
-        if s.user.screen_name == cfg.common.username :
-            # don't RT myself
-            continue
-        if not isChinesePhase(s.text.encode("utf-8", "ignore")):
-            # Chinese tweet only
-            # print "Skip none Chinese tweet: %s" % s.text
-            continue
-        matches = re.findall(url_pattern,s.text)
-        if matches:
-            logger.debug("Tweet with link(s): %d %s %s %s",
-                         s.id, s.user.screen_name,
-                         str(s.created_at), s.text.encode('utf-8'))
+        processStatus(s, [cfg.common.username])
 
-            ls = []
+#         if s.user.screen_name == cfg.common.username :
+#             # don't RT myself
+#             continue
+#         if not isChinesePhase(s.text.encode("utf-8", "ignore")):
+#             # Chinese tweet only
+#             # print "Skip none Chinese tweet: %s" % s.text
+#             continue
+#         matches = re.findall(url_pattern,s.text)
+#         if matches:
+#             logger.debug("Tweet with link(s): %d %s %s %s",
+#                          s.id, s.user.screen_name,
+#                          str(s.created_at), s.text.encode('utf-8'))
 
-            for m in matches:
-                task_id = str(uuid.uuid1())
-                mc.set(task_id, s, time=cfg.fetch_tweet_link.status_timeout)
+#             ls = []
 
-                # update Tweet and Link
-                try:
-                    l = Link.objects.get(url__exact=m[0])
-                except Link.DoesNotExist:
-                    l = Link(url=m[0])
-                    l.save()
+#             for m in matches:
+#                 task_id = str(uuid.uuid1())
+#                 mc.set(task_id, s, time=cfg.fetch_tweet_link.status_timeout)
 
-                # NOTICE: l record may be updated by url_processor after stomp.put
-                ls.append(l)
+#                 # update Tweet and Link
+#                 try:
+#                     l = Link.objects.get(url__exact=m[0])
+#                 except Link.DoesNotExist:
+#                     l = Link(url=m[0])
+#                     l.save()
+
+#                 # NOTICE: l record may be updated by url_processor after stomp.put
+#                 ls.append(l)
                 
-                stomp.put(pickle.dumps({'id':task_id,
-                                        'url':m[0],
-                                        'filename':None}),
-                          destination=cfg.queues.fetched)
+#                 stomp.put(pickle.dumps({'id':task_id,
+#                                         'url':m[0],
+#                                         'filename':None}),
+#                           destination=cfg.queues.fetched)
 
-            # update Tweet
-            t = Tweet(id = s.id,
-                      text = s.text,
-#                      created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
-                      created_at = s.created_at,
-                      user_screenname = s.user.screen_name)
-            t.save()
-            t.links = map(lambda x: x.id, ls)
-            t.save()
+#             # update Tweet
+#             t = Tweet(id = s.id,
+#                       text = s.text,
+# #                      created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
+#                       created_at = s.created_at,
+#                       user_screenname = s.user.screen_name)
+#             t.save()
+#             t.links = map(lambda x: x.id, ls)
+#             t.save()
                 
-    if statuses:
-        logger.info("Latest status ID: %d", statuses[0].id)
+    if statuses and len(statuses)>0:
+        logger.debug("Latest status ID: %d", statuses[0].id)
         if cfg.fetch_tweet_link.since_file:
             try:
                 with open(cfg.fetch_tweet_link.since_file, 'w') as f:
                     f.write(str(statuses[0].id))
             except:
                 pass    
+
+def fetchTweetLinkAll():
+    active_accounts = TwitterAccount.objects.filter(active=True)
+    account_screen_names = []
+    for account in active_accounts:
+        account_screen_names.append(account.screen_name)
+
+    for account in active_accounts:
+        logger.debug("Fetching tweet links of account: %s", account.screen_name)
+        api = twitter_utils.createApi(account=account)
+
+        if account.since is None or account.since == '':
+            statuses = fetchFriendsTimeline(api,
+                                            count=cfg.fetch_tweet_link.count,
+                                            page_size=cfg.fetch_tweet_link.page_size,
+                                            calls_count=cfg.fetch_tweet_link.calls_count)
+        else:
+            statuses = fetchFriendsTimeline(api,
+                                            count=cfg.fetch_tweet_link.count,
+                                            page_size=cfg.fetch_tweet_link.page_size,
+                                            since_id=int(account.since),
+                                            calls_count=cfg.fetch_tweet_link.calls_count)
+            
+        for s in statuses:
+            processStatus(s, account_screen_names)
+
+        account.since=str(statuses[0].id)
+        logger.debug("Update since of account %s: %s",
+                     account.screen_name, account.since)
+        account.save()
 
 if __name__ == '__main__':
     description = '''Fetch Twitter timeline and enqueue links.'''
@@ -240,4 +328,4 @@ if __name__ == '__main__':
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("fetch_tweet_link")
 
-    fetchTweetLink()
+    fetchTweetLinkAll()
