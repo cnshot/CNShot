@@ -153,7 +153,7 @@ def updateTwitterAccounts():
 def followUsers():
     active_accounts = TwitterAccount.objects.filter(active=True).\
         order_by("followers_count")
-    active_accounts = filter(lambda x: x.friends_count < x.followers_count * cfg.update_twitter_users.follow.following_rate_limit, active_accounts) 
+    active_accounts = filter(lambda x: x.friends_count < cfg.update_twitter_users.follow.free_following or x.friends_count < x.followers_count * cfg.update_twitter_users.follow.following_rate_limit, active_accounts) 
 
     if len(active_accounts)<=0:
         logger.warn("No account available.")
