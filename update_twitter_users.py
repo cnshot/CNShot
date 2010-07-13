@@ -197,7 +197,7 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
     for account in active_accounts:
         account_screen_names.append(account.screen_name)
 
-    sorted_ues = sorted(filter(lambda x: x.followed_count == 0 and x.screen_name not in account_screen_names, ues),
+    sorted_ues = sorted(filter(lambda x: x.followed_count == 0 and x.twitteruser.screen_name not in account_screen_names, ues),
                         lambda x,y: 1 if x.score < y.score else -1)[:follow_cfg.limit]
 
     logger.debug("Got %d users to follow.", len(sorted_ues))
