@@ -160,6 +160,7 @@ def followUsers():
         return
 
     account=active_accounts[0]
+    logger.info("Follow users with account: %s", account.screen_name)
 
     follow_cfg = cfg.update_twitter_users.follow
     ues = TwitterUserExt.objects.\
@@ -191,7 +192,12 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
 
     logger.debug("Query for users to follow: %s", ues.query.as_sql())
 
-    sorted_ues = sorted(filter(lambda x: x.followed_count == 0, ues),
+    active_accounts = TwitterAccount.objects.filter(active=True)
+    account_screen_names = []
+    for account in active_accounts:
+        account_screen_names.append(account.screen_name)
+
+    sorted_ues = sorted(filter(lambda x: x.followed_count == 0 and x.screen_name not in account_screen_names, ues),
                         lambda x,y: 1 if x.score < y.score else -1)[:follow_cfg.limit]
 
     logger.debug("Got %d users to follow.", len(sorted_ues))
