@@ -204,7 +204,7 @@ class TwitterAccountAdmin(admin.ModelAdmin):
                     'followers_count','friends_count',
                     'statuses_count','favourites_count',
                     'last_update', 'password', 'last_update',
-                    'consumer_key', 'consumer_secret')
+                    'consumer_key', 'consumer_secret', 'since')
     search_fields = ['name', 'screen_name']
 
 admin.site.register(TwitterAccount, TwitterAccountAdmin)
