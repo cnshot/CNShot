@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
-    twitpic, urllib2, urllib, re, tweepy
+    twitpic, urllib2, urllib, re, tweepy, twitter_utils
 
 from optparse import OptionParser
 from datetime import datetime, timedelta
@@ -256,26 +256,32 @@ WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
 
         logger.debug("Status text: %s", rt_text)
 
-        auth = None
-        if 'consumer_key' in cfg.common.keys() and \
-                'consumer_secret' in cfg.common.keys():
-            auth = tweepy.OAuthHandler(cfg.common.consumer_key,
-                                       cfg.common.consumer_secret)
-        elif 'username' in cfg.common.keys() and \
-                'proxy_password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username,
-                                           cfg.common.proxy_password)
-        elif 'username' in cfg.common.keys() and \
-                'password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username,
-                                           cfg.common.password)
+        # auth = None
+        # if 'consumer_key' in cfg.common.keys() and \
+        #         'consumer_secret' in cfg.common.keys() and \
+        #         'access_key' in cfg.common.keys() and \
+        #         'access_secret' in cfg.common.keys():
+        #     auth = twitter_utils.MyOAuthHandler(cfg.common.consumer_key,
+        #                                         cfg.common.consumer_secret)
+        #     auth.set_org_url(cfg.common.api_host, cfg.common.api_root)
+        #     auth.set_access_token(cfg.common.access_key, cfg.common.access_secret)
+        # elif 'username' in cfg.common.keys() and \
+        #         'proxy_password' in cfg.common.keys():
+        #     auth = tweepy.BasicAuthHandler(cfg.common.username,
+        #                                    cfg.common.proxy_password)
+        # elif 'username' in cfg.common.keys() and \
+        #         'password' in cfg.common.keys():
+        #     auth = tweepy.BasicAuthHandler(cfg.common.username,
+        #                                    cfg.common.password)
 
-        api = tweepy.API(auth_handler=auth,
-                         host=cfg.common.api_host,
-                         search_host=cfg.common.search_host,
-                         api_root=cfg.common.api_root,
-                         search_root=cfg.common.search_root,
-                         secure=cfg.common.secure_api)
+        # api = tweepy.API(auth_handler=auth,
+        #                  host=cfg.common.api_host,
+        #                  search_host=cfg.common.search_host,
+        #                  api_root=cfg.common.api_root,
+        #                  search_root=cfg.common.search_root,
+        #                  secure=cfg.common.secure_api)
+
+        api = twitter_utils.createCfgApi(cfg)
 
         rts = api.update_status(status = rt_text[0:140],
                                 in_reply_to_status_id = t.id)

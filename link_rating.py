@@ -66,6 +66,8 @@ class LinkRatingThread(Thread):
         auth = None
 
         api_site = TwitterApiSite.random()
+        logger.debug("Rate with API site: %s", api_site)
+
         if api_site is not None:
             api = tweepy.API(auth_handler=auth,
                              host=api_site.api_host,

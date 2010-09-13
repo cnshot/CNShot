@@ -3,7 +3,7 @@
 from __future__ import with_statement
 
 import os, md5, re, uuid, sys, pickle, memcache, time, rfc822, \
-    logging, logging.config, twitter_utils
+    logging, logging.config, twitter_utils, threading
 # import twitter
 import tweepy
 
@@ -116,72 +116,11 @@ class TweetLinkFetcher:
             t.links = map(lambda x: x.id, ls)
             t.save()
 
-    def fetchTweetLink(self):
-        try:
-            cfg.fetch_tweet_link.since
-        except AttributeError:
-            cfg.fetch_tweet_link.since = None
-
-        if cfg.fetch_tweet_link.since_file and ( not cfg.fetch_tweet_link.since ):
-            try:
-                with open(cfg.fetch_tweet_link.since_file, 'r') as f:
-                    try:
-                        cfg.fetch_tweet_link.since=int(f.read())
-                    except:
-                        cfg.fetch_tweet_link.since=None
-            except:
-                pass
-
-        auth = None
-        if 'consumer_key' in cfg.common.keys() and \
-                'consumer_secret' in cfg.common.keys():
-            auth = tweepy.OAuthHandler(cfg.common.consumer_key,
-                                       cfg.common.consumer_secret)
-        elif 'username' in cfg.common.keys() and \
-                'proxy_password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username,
-                                           cfg.common.proxy_password)
-        elif 'username' in cfg.common.keys() and \
-                'password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
-
-        api = tweepy.API(auth,
-                         host=cfg.common.api_host,
-                         search_host=cfg.common.search_host,
-                         api_root=cfg.common.api_root,
-                         search_root=cfg.common.search_root,
-                         secure=cfg.common.secure_api)
-
-        if cfg.fetch_tweet_link.since:
-            logger.debug("Since: %d", cfg.fetch_tweet_link.since)
-            # statuses = api.GetFriendsTimeline(cfg.common.username,
-            #                                   count=cfg.fetch_tweet_link.count,
-            #                                   since_id=cfg.fetch_tweet_link.since)
-            statuses = self.fetchFriendsTimeline(api,
-                                            count=cfg.fetch_tweet_link.count,
-                                            page_size=cfg.fetch_tweet_link.page_size,
-                                            since_id=cfg.fetch_tweet_link.since,
-                                            calls_count=cfg.fetch_tweet_link.calls_count)
-        else:
-            statuses = self.fetchFriendsTimeline(api,
-                                            count=cfg.fetch_tweet_link.count,
-                                            page_size=cfg.fetch_tweet_link.page_size,
-                                            calls_count=cfg.fetch_tweet_link.calls_count)
-
-        for s in statuses:
-            self.processStatus(s, [cfg.common.username])
-
-        if statuses and len(statuses)>0:
-            logger.debug("Latest status ID: %d", statuses[0].id)
-            if cfg.fetch_tweet_link.since_file:
-                try:
-                    with open(cfg.fetch_tweet_link.since_file, 'w') as f:
-                        f.write(str(statuses[0].id))
-                except:
-                    pass    
-
     def fetchTweetLinkAll(self):
-        active_accounts = TwitterAccount.objects.filter(active=True)
+        active_accounts = TwitterAccount.active_accounts()
+
+        logger.debug("Got %d active accounts", len(active_accounts))
+
         account_screen_names = []
         for account in active_accounts:
             account_screen_names.append(account.screen_name)
@@ -248,5 +187,9 @@ if __name__ == '__main__':
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("fetch_tweet_link")
 
+    if(cfg.fetch_tweet_link.lifetime):
+        threading.Timer(cfg.fetch_tweet_link.lifetime, os._exit, [1]).start()
+
     fetcher = TweetLinkFetcher()
     fetcher.fetchTweetLinkAll()
+    os._exit(0)

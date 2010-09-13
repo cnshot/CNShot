@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import re, tweepy
+import re, tweepy, twitter_utils
 
 from lts.models import TwitterUser, TwitterUserExt
 from chinese_detecting import isChinesePhase
@@ -10,27 +10,29 @@ def evaluate_screen_name(screen_name, api=None):
     logger.debug("Evaluating screen_name: %s", screen_name)
 
     if api is None:
-        auth = None
-        if 'consumer_key' in cfg.common.keys() and \
-                'consumer_secret' in cfg.common.keys():
-            auth = tweepy.OAuthHandler(cfg.common.consumer_key,
-                                       cfg.common.consumer_secret)
-        elif 'username' in cfg.common.keys() and \
-                'proxy_password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username,
-                                           cfg.common.proxy_password)
-        elif 'username' in cfg.common.keys() and \
-                'password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username,
-                                           cfg.common.password)
+        # auth = None
+        # if 'consumer_key' in cfg.common.keys() and \
+        #         'consumer_secret' in cfg.common.keys():
+        #     auth = tweepy.OAuthHandler(cfg.common.consumer_key,
+        #                                cfg.common.consumer_secret)
+        # elif 'username' in cfg.common.keys() and \
+        #         'proxy_password' in cfg.common.keys():
+        #     auth = tweepy.BasicAuthHandler(cfg.common.username,
+        #                                    cfg.common.proxy_password)
+        # elif 'username' in cfg.common.keys() and \
+        #         'password' in cfg.common.keys():
+        #     auth = tweepy.BasicAuthHandler(cfg.common.username,
+        #                                    cfg.common.password)
 
-        api = tweepy.API(auth_handler=auth,
-                         host=cfg.common.api_host,
-                         search_host=cfg.common.search_host,
-                         api_root=cfg.common.api_root,
-                         search_root=cfg.common.search_root,
-                         secure=cfg.common.secure_api)
-    
+        # api = tweepy.API(auth_handler=auth,
+        #                  host=cfg.common.api_host,
+        #                  search_host=cfg.common.search_host,
+        #                  api_root=cfg.common.api_root,
+        #                  search_root=cfg.common.search_root,
+        #                  secure=cfg.common.secure_api)
+
+        api = twitter_utils.createCfgApi(cfg)
+
     try:
         user = TwitterUser.objects.filter(screen_name__exact=screen_name)[0]
     except IndexError:
@@ -74,25 +76,27 @@ def evaluate_user(user, api=None):
     logger.debug("Evaluating user: %s", user.screen_name)
 
     if api is None:
-        auth = None
-        if 'consumer_key' in cfg.common.keys() and \
-                'consumer_secret' in cfg.common.keys():
-            auth = tweepy.OAuthHandler(cfg.common.consumer_key,
-                                       cfg.common.consumer_secret)
-        elif 'username' in cfg.common.keys() and \
-                'proxy_password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username,
-                                           cfg.common.proxy_password)
-        elif 'username' in cfg.common.keys() and \
-                'password' in cfg.common.keys():
-            auth = tweepy.BasicAuthHandler(cfg.common.username,
-                                           cfg.common.password)
-        api = tweepy.API(auth_handler=auth,
-                         host=cfg.common.api_host,
-                         search_host=cfg.common.search_host,
-                         api_root=cfg.common.api_root,
-                         search_root=cfg.common.search_root,
-                         secure=cfg.common.secure_api)
+        # auth = None
+        # if 'consumer_key' in cfg.common.keys() and \
+        #         'consumer_secret' in cfg.common.keys():
+        #     auth = tweepy.OAuthHandler(cfg.common.consumer_key,
+        #                                cfg.common.consumer_secret)
+        # elif 'username' in cfg.common.keys() and \
+        #         'proxy_password' in cfg.common.keys():
+        #     auth = tweepy.BasicAuthHandler(cfg.common.username,
+        #                                    cfg.common.proxy_password)
+        # elif 'username' in cfg.common.keys() and \
+        #         'password' in cfg.common.keys():
+        #     auth = tweepy.BasicAuthHandler(cfg.common.username,
+        #                                    cfg.common.password)
+        # api = tweepy.API(auth_handler=auth,
+        #                  host=cfg.common.api_host,
+        #                  search_host=cfg.common.search_host,
+        #                  api_root=cfg.common.api_root,
+        #                  search_root=cfg.common.search_root,
+        #                  secure=cfg.common.secure_api)
+
+        api = twitter_utils.createCfgApi(cfg)
     
     try:
         ue = TwitterUserExt.objects.get(twitteruser = user)
