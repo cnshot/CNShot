@@ -3,7 +3,7 @@
 from __future__ import with_statement
 
 import os, md5, re, uuid, sys, pickle, memcache, time, rfc822, \
-    logging, logging.config, twitter_utils, threading
+    logging, logging.config, twitter_utils, threading, traceback
 # import twitter
 import tweepy
 
@@ -142,7 +142,14 @@ class TweetLinkFetcher:
                                                 calls_count=cfg.fetch_tweet_link.calls_count)
 
             for s in statuses:
-                self.processStatus(s, account_screen_names)
+                try:
+                    self.processStatus(s, account_screen_names)
+                except:
+                    logger.error("Failed to process status: %s", sys.exc_info()[0])
+                    logger.error('-'*60)
+                    logger.error("%s", traceback.format_exc())
+                    logger.error('-'*60)
+                    continue
 
             if statuses and len(statuses)>0:
                 account.since=str(statuses[0].id)
