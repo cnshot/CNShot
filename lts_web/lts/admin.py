@@ -4,7 +4,7 @@ from django.contrib import admin
 from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
     SizedCanvasSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser, TwitterUserExt, \
-    TwitterAccount, TwitterApiSite, ShotBlogPost, \
+    TwitterAccount, TwitterApiSite, TwitterApiAuth, ShotBlogPost, \
     ShotCache
 
 class SiteAdmin(admin.ModelAdmin):
@@ -204,7 +204,9 @@ class TwitterAccountAdmin(admin.ModelAdmin):
                     'followers_count','friends_count',
                     'statuses_count','favourites_count',
                     'last_update', 'password', 'last_update',
-                    'consumer_key', 'consumer_secret', 'since')
+                    'consumer_key', 'consumer_secret',
+                    'access_key', 'access_secret',
+                    'since')
     search_fields = ['name', 'screen_name']
 
 admin.site.register(TwitterAccount, TwitterAccountAdmin)
@@ -216,3 +218,12 @@ class TwitterApiSiteAdmin(admin.ModelAdmin):
 
 admin.site.register(TwitterApiSite, TwitterApiSiteAdmin)
                     
+class TwitterApiAuthAdmin(admin.ModelAdmin):
+    list_display = ('account', 'api_site', 'active',
+                    'screen_name', 'password',
+                    'consumer_key', 'consumer_secret',
+                    'access_key', 'access_secret',
+                    'last_update')
+    search_fields = ['screen_name']
+
+admin.site.register(TwitterApiAuth, TwitterApiAuthAdmin)

@@ -75,7 +75,7 @@ class LinkShot(models.Model):
     url = models.URLField(max_length=2048, null=True)
     thumbnail_url = models.URLField(max_length=2048, null=True)
     shot_time = models.DateTimeField(null=True, db_index=True)
-    in_reply_to = models.ForeignKey(Tweet, null=True)
+    in_reply_to = models.ForeignKey('Tweet', null=True)
     title = models.TextField(max_length=2048)
     text = models.TextField()
     abstract = models.TextField()
@@ -125,7 +125,7 @@ class ShotBlogPost(models.Model):
 
 class LinkRate(models.Model):
     id = models.AutoField(primary_key=True)
-    link = models.ForeignKey('Link')
+    link = models.ForeignKey('Link', null=True)
     rate = models.IntegerField(null=True, db_index=True)
     rating_time = models.DateTimeField(null=True, db_index=True)
 
@@ -161,14 +161,33 @@ class TwitterAccount(models.Model):
     last_update = models.DateTimeField(null=False,auto_now=True)
     consumer_key = models.CharField(max_length=64, null=True, blank=True)
     consumer_secret = models.CharField(max_length=64, null=True, blank=True)
+    access_key = models.CharField(max_length=64, null=True, blank=True)
+    access_secret = models.CharField(max_length=64, null=True, blank=True)
     since = models.CharField(max_length=64, null=True, blank=True, db_index=True)
 
     def __unicode__(self):
         return self.screen_name
 
     @classmethod
+    def active_accounts(cls):
+        accounts = cls.objects.filter(active__exact=True).\
+            extra(select={'auths':"""
+SELECT COUNT(lts_twitterapiauth.screen_name)
+FROM lts_twitterapiauth, lts_twitterapisite
+WHERE lts_twitterapiauth.account_id = lts_twitteraccount.id AND
+      lts_twitterapiauth.active = 1 AND
+      lts_twitterapiauth.api_site_id = lts_twitterapisite.id AND
+      lts_twitterapisite.active = 1
+GROUP BY lts_twitterapiauth.account_id
+"""})
+
+        accounts = filter(lambda x: x.auths > 0, accounts)
+        return accounts
+
+    @classmethod
     def random(cls):
-        accounts = cls.objects.filter(active__exact=True)
+        accounts = cls.active_accounts()
+        
         try:
             return accounts[random.randint(0, accounts.count()-1)]
         except IndexError:
@@ -178,10 +197,10 @@ class TwitterApiSite(models.Model):
     id = models.AutoField(primary_key=True)
     # api_protocol = models.CharField(max_length=128, default="http")
     api_host = models.CharField(max_length=128)
-    api_root = models.CharField(max_length=128)
+    api_root = models.CharField(max_length=128, blank=True)
     # search_protocol = models.CharField(max_length=128, default="http")
     search_host = models.CharField(max_length=128)
-    search_root = models.CharField(max_length=128)
+    search_root = models.CharField(max_length=128, blank=True)
     secure_api = models.BooleanField(default=False, db_index=True)
     active = models.BooleanField(default=False, db_index=True)
 
@@ -195,6 +214,33 @@ class TwitterApiSite(models.Model):
         sites = cls.objects.filter(active__exact=True)
         try:
             return sites[random.randint(0, sites.count()-1)]
+        except IndexError:
+            return None
+
+class TwitterApiAuth(models.Model):
+    account = models.ForeignKey('TwitterAccount', null=False)
+    api_site = models.ForeignKey('TwitterApiSite', null=False)
+
+    screen_name = models.CharField(max_length=128, null=True, blank=True,
+                                   db_index=True)
+    password = models.CharField(max_length=128, null=True, blank=True)
+
+    consumer_key = models.CharField(max_length=64, null=True, blank=True)
+    consumer_secret = models.CharField(max_length=64, null=True, blank=True)
+    access_key = models.CharField(max_length=64, null=True, blank=True)
+    access_secret = models.CharField(max_length=64, null=True, blank=True)
+
+    active = models.BooleanField(default=False)
+    last_update = models.DateTimeField(null=False,auto_now=True)
+
+    def __unicode__(self):
+        return "%s %s" % (self.account, self.api_site)
+
+    @classmethod
+    def random(cls, account):
+        auths = cls.objects.filter(account=account).filter(active=True).filter(api_site__active=True)
+        try:
+            return auths[random.randint(0, auths.count()-1)]
         except IndexError:
             return None
 
