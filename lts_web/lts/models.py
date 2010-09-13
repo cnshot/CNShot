@@ -62,6 +62,9 @@ class Tweet(models.Model):
     user_screenname = models.CharField(max_length=100, db_index=True)
     links = models.ManyToManyField(Link, null=True)
 
+    class Meta:
+        ordering = ['-created_at']
+
     def __unicode__(self):
         return u"%s [%s] %s" % (self.user_screenname, self.created_at, self.text)
 
