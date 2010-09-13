@@ -1,10 +1,10 @@
 #!/usr/bin/python
  
 import tweepy
- 
-CONSUMER_KEY = 'a2h8YtyYthgB9i8iRwfnKw'
-CONSUMER_SECRET = 'IvE0z4QbJIM6fa3jhODNuM6bF81K4JCPpEHQkzI'
- 
+
+CONSUMER_KEY = raw_input('Please input consumer key: ').strip()
+CONSUMER_SECRET = raw_input('Please input consumer secret: ').strip()
+
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth_url = auth.get_authorization_url()
 print 'Please authorize: ' + auth_url
