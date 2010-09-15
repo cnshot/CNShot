@@ -1,11 +1,20 @@
 #!/usr/bin/python
 
-import sys, traceback, logging, logging.config, os
+import sys, traceback, logging, logging.config, os, traceback
 
 from optparse import OptionParser
 from config import Config, ConfigMerger, ConfigList
 from datetime import timedelta, datetime
 from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate, ShotCache
+
+def querySetChunk(qs, limit = 1000):
+    n = 0
+    while True:
+        chunk = qs[n:n+limit]
+        n += limit
+        if chunk.count() <= 0:
+            break    
+        yield chunk
 
 class DataArchiver:
     @classmethod
@@ -70,21 +79,29 @@ class DataArchiver:
 
         # delete linkshot with expired shot_time
         lss = LinkShot.objects.filter(shot_time__lt=threshold_timestamp)
-        if lss.count() > 0:
-            logger.debug('deleteExpiredLinkShots: deleting %d expired LinkShots', lss.count())
-        for ls in lss:
-            logger.debug('Deleting sets of LinkShot: %d %s %s',
-                         ls.id, ls.link, ls.url)
-            ls.shotcache_set.clear()
-            ls.shotpublish_set.clear()
-            ls.shotblogpost_set.clear()
+
+        for lss_chunk in querySetChunk(lss, cfg.data_archive.query_limit):
+            logger.debug('deleteExpiredLinkShots: deleting %d expired LinkShots', lss_chunk.count())
+            for ls in lss_chunk:
+                logger.debug('Deleting sets of LinkShot: %d %s %s',
+                             ls.id, ls.link, ls.url)
+                try:
+                    ls.shotcache_set.clear()
+                    ls.shotpublish_set.clear()
+                    ls.shotblogpost_set.clear()
+                except:
+                    logger.error("Failed to process status: %s", sys.exc_info()[0])
+                    logger.error('-'*60)
+                    logger.error("%s", traceback.format_exc())
+                    logger.error('-'*60)
+                    continue
 
         lss.delete()
 
     @classmethod
     def deleteExpiredTweets(cls, threshold_timestamp):
         # delete expired tweets
-        ts = Tweet.objects.filter(created_at=threshold_timestamp)
+        ts = Tweet.objects.filter(created_at__lt=threshold_timestamp)
         if ts.count() > 0:
             logger.debug('deleteExpiredTweets: deleting %d expired Tweets', ts.count())
         for t in ts:
