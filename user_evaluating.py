@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import re, tweepy, twitter_utils
+import re, tweepy, twitter_utils, traceback
 
 from lts.models import TwitterUser, TwitterUserExt
 from chinese_detecting import isChinesePhase
@@ -131,6 +131,10 @@ def evaluate_user(user, api=None):
             ss += status
     except tweepy.error.TweepError, e:
         logger.warn("Failed to evaluate user %s: %s", user.screen_name, e)
+        return
+    except AttributeError:
+        logger.warn("Failed to evaluate user %s: %s", user.screen_name,
+                    traceback.format_exc())
         return
 
     chinese_tweet_count = 0
