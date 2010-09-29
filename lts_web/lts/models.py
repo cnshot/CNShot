@@ -192,7 +192,7 @@ GROUP BY lts_twitterapiauth.account_id
         accounts = cls.active_accounts()
         
         try:
-            return accounts[random.randint(0, accounts.count()-1)]
+            return accounts[random.randint(0, len(accounts)-1)]
         except IndexError:
             return None
 
