@@ -102,8 +102,8 @@ class DataArchiver:
     def deleteExpiredTweets(cls, threshold_timestamp):
         # delete expired tweets
         ts = Tweet.objects.filter(created_at__lt=threshold_timestamp)
-        if ts.count() > 0:
-            logger.debug('deleteExpiredTweets: deleting %d expired Tweets', ts.count())
+        logger.debug("%s", ts.query.as_sql())
+        logger.debug('deleteExpiredTweets: deleting %d expired Tweets', ts.count())
         for t in ts:
             t.linkshot_set.clear()
 
@@ -138,6 +138,8 @@ if __name__ == '__main__':
     logger = logging.getLogger("data_archive")
 
     tt = datetime.utcnow() - timedelta(seconds = cfg.data_archive.expire_time)
+
+    logger.debug("Archiving data with time limit: %s", tt)
 
     DataArchiver.deleteExpiredShotCaches(tt)
     DataArchiver.deleteExpiredLinkRates(tt)
