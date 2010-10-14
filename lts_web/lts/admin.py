@@ -5,7 +5,7 @@ from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
     SizedCanvasSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser, TwitterUserExt, \
     TwitterAccount, TwitterApiSite, TwitterApiAuth, ShotBlogPost, \
-    ShotCache
+    ShotCache, TweetFreqHashCache, RTPublish
 
 class SiteAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'pattern')
@@ -227,3 +227,35 @@ class TwitterApiAuthAdmin(admin.ModelAdmin):
     search_fields = ['screen_name']
 
 admin.site.register(TwitterApiAuth, TwitterApiAuthAdmin)
+
+class TweetFreqHashCacheAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user_screenname', 'tweet_text', 'freq_hash')
+
+    def id(self, obj):
+        try:
+            return obj.tweet.id
+        except (AttributeError, TweetFreqHashCacheAdmin.DoesNotExist):
+            return ''
+    id.short_description = 'ID'
+
+    def user_screenname(self, obj):
+        try:
+            return obj.tweet.user_screenname
+        except (AttributeError, TweetFreqHashCacheAdmin.DoesNotExist):
+            return ''
+    user_screenname.short_description = 'Screen Name'
+
+    def tweet_text(self, obj):
+        try:
+            return obj.tweet.text
+        except (AttributeError, TweetFreqHashCacheAdmin.DoesNotExist):
+            return ''
+    tweet_text.short_description = 'Tweet'
+
+admin.site.register(TweetFreqHashCache, TweetFreqHashCacheAdmin)
+
+class RTPublishAdmin(admin.ModelAdmin):
+    list_display = ('id', 'status_id', 'text', 'created_at', 'in_reply_to_status_id')
+    search_fields = ['text']
+
+admin.site.register(RTPublish, RTPublishAdmin)

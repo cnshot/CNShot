@@ -126,6 +126,18 @@ class ShotBlogPost(models.Model):
     url = models.URLField(max_length=2048)
     site = models.CharField(max_length=128, null=True, db_index=True)
 
+class TweetFreqHashCache(models.Model):
+    tweet = models.ForeignKey('Tweet', null=True, primary_key=True)
+    freq_hash = models.CharField(max_length=1024, null=True)
+
+class RTPublish(models.Model):
+    id = models.AutoField(primary_key=True)
+    status_id = models.CharField(max_length=64, null=True, db_index=True)
+    text = models.CharField(max_length=500, null=True)
+    created_at = models.DateTimeField(db_index=True, null=True)
+    in_reply_to_status_id = models.CharField(max_length=64, db_index=True,
+                                             null=True)
+
 class LinkRate(models.Model):
     id = models.AutoField(primary_key=True)
     link = models.ForeignKey('Link', null=True)
