@@ -79,6 +79,15 @@ class TweetLinkFetcher:
             # Chinese tweet only
             # print "Skip none Chinese tweet: %s" % s.text
             return
+
+        # update Tweet
+        t = Tweet(id = s.id,
+                  text = s.text,
+                  #                      created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
+                  created_at = s.created_at,
+                  user_screenname = s.user.screen_name)
+        t.save()
+
         matches = re.findall(url_pattern,s.text)
         if matches:
             logger.debug("Tweet with link(s): %d %s %s %s",
@@ -106,13 +115,13 @@ class TweetLinkFetcher:
                                         'filename':None}),
                           destination=cfg.queues.fetched)
 
-            # update Tweet
-            t = Tweet(id = s.id,
-                      text = s.text,
-                      #                      created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
-                      created_at = s.created_at,
-                      user_screenname = s.user.screen_name)
-            t.save()
+            # # update Tweet
+            # t = Tweet(id = s.id,
+            #           text = s.text,
+            #           #                      created_at = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s.created_at))),
+            #           created_at = s.created_at,
+            #           user_screenname = s.user.screen_name)
+            # t.save()
             t.links = map(lambda x: x.id, ls)
             t.save()
 

@@ -104,31 +104,31 @@ def createActiveApis():
 
     return map(lambda x: createApi(x), accounts)
 
-def createCfgApi(cfg):
+def createCfgApi(user_cfg):
     auth = None
-    if 'consumer_key' in cfg.common.keys() and \
-            'consumer_secret' in cfg.common.keys() and \
-            'access_key' in cfg.common.keys() and \
-            'access_secret' in cfg.common.keys():
-        auth = MyOAuthHandler(cfg.common.consumer_key,
-                                            cfg.common.consumer_secret)
-        auth.set_org_url(cfg.common.api_host, cfg.common.api_root)
-        auth.set_access_token(cfg.common.access_key, cfg.common.access_secret)
-    elif 'username' in cfg.common.keys() and \
-            'proxy_password' in cfg.common.keys():
-        auth = tweepy.BasicAuthHandler(cfg.common.username,
-                                       cfg.common.proxy_password)
-    elif 'username' in cfg.common.keys() and \
-            'password' in cfg.common.keys():
-        auth = tweepy.BasicAuthHandler(cfg.common.username,
-                                       cfg.common.password)
+    if 'consumer_key' in user_cfg.keys() and \
+            'consumer_secret' in user_cfg.keys() and \
+            'access_key' in user_cfg.keys() and \
+            'access_secret' in user_cfg.keys():
+        auth = MyOAuthHandler(user_cfg.consumer_key,
+                                            user_cfg.consumer_secret)
+        auth.set_org_url(user_cfg.api_host, user_cfg.api_root)
+        auth.set_access_token(user_cfg.access_key, user_cfg.access_secret)
+    elif 'username' in user_cfg.keys() and \
+            'proxy_password' in user_cfg.keys():
+        auth = tweepy.BasicAuthHandler(user_cfg.username,
+                                       user_cfg.proxy_password)
+    elif 'username' in user_cfg.keys() and \
+            'password' in user_cfg.keys():
+        auth = tweepy.BasicAuthHandler(user_cfg.username,
+                                       user_cfg.password)
 
     api = tweepy.API(auth_handler=auth,
-                     host=cfg.common.api_host,
-                     search_host=cfg.common.search_host,
-                     api_root=cfg.common.api_root,
-                     search_root=cfg.common.search_root,
-                     secure=cfg.common.secure_api)
+                     host=user_cfg.api_host,
+                     search_host=user_cfg.search_host,
+                     api_root=user_cfg.api_root,
+                     search_root=user_cfg.search_root,
+                     secure=user_cfg.secure_api)
     return api
 
 cfg = None
