@@ -281,7 +281,7 @@ WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
         #                  search_root=cfg.common.search_root,
         #                  secure=cfg.common.secure_api)
 
-        api = twitter_utils.createCfgApi(cfg)
+        api = twitter_utils.createCfgApi(cfg.common)
 
         rts = api.update_status(status = rt_text[0:140],
                                 in_reply_to_status_id = t.id)
