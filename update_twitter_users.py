@@ -240,9 +240,10 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
                     ue.ignored = True
                     ue.save()
             except tweepy.error.TweepError:
-                logger.warn("Failed to get user: %d %s",
+                logger.warn("Failed to get user, delete it: %d %s",
                         ue.twitteruser.id,
                         ue.twitteruser.screen_name)
+                ue.delete()
 
 def updateTweetMentioned():
     user_evaluating.cfg = cfg
