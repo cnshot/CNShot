@@ -102,6 +102,8 @@ def evaluate_user(user, api=None):
     logger.debug("Evaluating with %d tweets ...", len(ss))
 
     if len(ss) == 0:
+        logger.debug("User with no tweet, delete it: %s", user.screen_name)
+        ue.delete()
         return
 
     for s in ss:
