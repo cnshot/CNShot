@@ -133,14 +133,11 @@ if __name__ == '__main__':
                      t.user_screenname,
                      str(t.created_at),
                      t.text)
-        rt_text = unicode('RT @' + t.user_screenname + u': ' + t.text)
-        logger.debug("Status text: %s", rt_text)
 
         try:
             api = twitter_utils.createCfgApi(cfg.cluster_tweets)
 
-            rts = api.update_status(status = rt_text[0:140],
-                                    in_reply_to_status_id = t.id)
+            rts = api.retweet(id = t.id)
             
             logger.info("New tweet: %d %s %s", 
                         rts.id, rts.created_at,
@@ -151,7 +148,7 @@ if __name__ == '__main__':
                 sys.exit(1)
 
             rt = RTPublish(status_id = rts.id,
-                           text = rt_text,
+                           text = rts.text,
                            in_reply_to_status_id=t.id,
                            created_at = datetime.utcnow())
             rt.save()
