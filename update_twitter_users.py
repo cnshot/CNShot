@@ -121,7 +121,12 @@ def updateTwitterAccounts():
     for account in active_accounts:
         api = twitter_utils.createApi(account=account)
 
-        me = api.me()
+        try:
+            me = api.me()
+        except tweepy.error.TweepError:
+            logger.warn("Failed to call api.me(), stop updating current account: %s", account.screen_name)
+            continue
+
         if not me:
             logger.warn("Failed to get account info: %s", account.screen_name)
             continue
