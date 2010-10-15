@@ -205,7 +205,7 @@ GROUP BY lts_twitterapiauth.account_id
         
         try:
             return accounts[random.randint(0, len(accounts)-1)]
-        except IndexError:
+        except (IndexError, ValueError):
             return None
 
 class TwitterApiSite(models.Model):
