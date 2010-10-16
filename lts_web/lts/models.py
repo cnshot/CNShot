@@ -229,7 +229,7 @@ class TwitterApiSite(models.Model):
         sites = cls.objects.filter(active__exact=True)
         try:
             return sites[random.randint(0, sites.count()-1)]
-        except IndexError:
+        except (IndexError, ValueError):
             return None
 
 class TwitterApiAuth(models.Model):
@@ -256,7 +256,7 @@ class TwitterApiAuth(models.Model):
         auths = cls.objects.filter(account=account).filter(active=True).filter(api_site__active=True)
         try:
             return auths[random.randint(0, auths.count()-1)]
-        except IndexError:
+        except (IndexError, ValueError):
             return None
 
 class TwitterUser(models.Model):
