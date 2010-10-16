@@ -41,20 +41,30 @@ class TweetLinkFetcher:
             if since_id is None:
                 if max_id is None:
                     logger.debug("Fetch status without max or since.")
-                    ss = api.friends_timeline(count=page_size)
+                    ss = api.friends_timeline(count=page_size,
+                                              include_rts=1,
+                                              include_entities=1)
                 else:
                     logger.debug("Fetch status: max=%d", max_id)
-                    ss = api.friends_timeline(count=page_size, max_id=max_id)
+                    ss = api.friends_timeline(count=page_size,
+                                              max_id=max_id,
+                                              include_rts=1,
+                                              include_entities=1)
             else:
                 if max_id is None:
                     logger.debug("Fetch status: since=%d", since_id)
-                    ss = api.friends_timeline(count=page_size, since_id=since_id)
+                    ss = api.friends_timeline(count=page_size,
+                                              since_id=since_id,
+                                              include_rts=1,
+                                              include_entities=1)
                 else:
                     logger.debug("Fetch status: since_id=%d, max_id=%d",
                                  since_id, max_id)
                     ss = api.friends_timeline(count=page_size,
                                               max_id=max_id,
-                                              since_id=since_id)
+                                              since_id=since_id,
+                                              include_rts=1,
+                                              include_entities=1)
             calls_left -= 1
 
             last_fetch_count = len(ss)
@@ -79,6 +89,11 @@ class TweetLinkFetcher:
             # Chinese tweet only
             # print "Skip none Chinese tweet: %s" % s.text
             return
+
+        if s.retweet_count is not None:
+            logger.debug("Tweet with retweet count: %d %s %s %d %s",
+                         s.id, s.user.screen_name, str(s.created_at),
+                         s.retweet_count, s.text.encode('utf-8'))
 
         # update Tweet
         t = Tweet(id = s.id,

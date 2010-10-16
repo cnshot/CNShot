@@ -78,11 +78,15 @@ def evaluate_user(user, api=None):
         while len(ss) < cfg.user_evaluating.count:
             if max_id is None:
                 status = api.user_timeline(screen_name=user.screen_name,
-                                           count=cfg.user_evaluating.count)
+                                           count=cfg.user_evaluating.count,
+                                           include_rts=1,
+                                           include_entities=1)
             else:
                 status = api.user_timeline(screen_name=user.screen_name,
                                            count=cfg.user_evaluating.count,
-                                           max_id=max_id)
+                                           max_id=max_id,
+                                           include_rts=1,
+                                           include_entities=1)
             logger.debug("Got %d tweets.", len(status))
             if len(status) == 0:
                 break
