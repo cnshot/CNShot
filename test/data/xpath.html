@@ -1,0 +1,654 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0047)http://www.w3schools.com/xpath/xpath_syntax.asp -->
+<HTML lang="en-US" xml:lang="en-US" xmlns="http://www.w3.org/1999/xhtml"><STYLE>body.delicious {
+	font: normal 12px arial, helvetica, arial, verdana;
+	color: #000;
+	overflow: hidden;
+	border: 0px;
+	}
+	.delicious div.toolstrip-button {
+		color: #000;
+		cursor: hand;
+		padding: 6px;
+		border-bottom: 1px solid #eee;
+		}
+	.delicious div.toolstrip-button {
+		color: #000;
+		cursor: hand;
+		font: normal 12px helvetica, arial, verdana;
+		width: 150px;
+		padding: 6px;
+		border-bottom: 1px solid #eee;
+		}
+		div.toolstrip-button:last-child {border-bottom-style: none;}
+		.delicious div.toolstrip-button:hover {
+			background-color: #3274d0;
+			color: #fff;
+			}
+	/*************************
+	OPTIONS pages
+	**************************/
+	.delicious .options h3 {
+		font-weight: bold;
+		margin-bottom: 9px;
+		}
+		.options small {font-size: 10px; font-family: verdana;}
+		.message p {padding: 4px;}
+			p.fail {
+				background-color: #ff0000;
+				color: #000;
+				}
+			p.success {
+				background-color: #ffff99;
+				color: #000;
+				}
+	.delicious #bookmarks {
+		padding: 6px;
+		}
+	.delicious #bookmarks h3 {
+		font-weight: normal;
+		font-size: 12px;
+		}
+	.delicious #bookmarks h3 small {
+		font-size: 10px;
+		text-decoration: underline;
+		}
+	.delicious #bookmarks ul {
+		margin: 0;
+		padding: 0;
+		list-style: none outside;
+		}
+	.delicious #bookmarks li {
+		margin: 0;
+		padding: 4px;
+		line-height: 14px;
+		list-style: none outside;
+		}
+	.delicious #bookmarks li.even {
+		background-color: #f1f1f1;
+		}
+	.delicious #bookmarks li a,
+	.delicious #bookmarks li a:link {
+		color: #1259c7;
+		text-decoration: none;
+		}
+	.delicious #bookmarks li a:visited {
+		color: #515697;
+		}
+	.delicious #bookmarks li a:hover,
+	.delicious #bookmarks li a:active,
+	.delicious #bookmarks li a:focus {
+		color: #1259c7;
+		text-decoration: underline;
+		}
+</STYLE><HEAD><META http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+
+<TITLE>XPath Syntax</TITLE>
+ 
+<LINK rel="shortcut icon" href="http://www.w3schools.com/favicon.ico" type="image/x-icon">
+
+<META name="Keywords" content="xml,tutorial,html,dhtml,css,xsl,xhtml,javascript,asp,ado,vbscript,dom,sql,colors,soap,php,authoring,programming,training,learning,beginner&#39;s guide,primer,lessons,school,howto,reference,examples,samples,source code,tags,demos,tips,links,FAQ,tag list,forms,frames,color table,w3c,cascading style sheets,active server pages,dynamic html,internet,database,development,Web building,Webmaster,html guide">
+
+<META name="Description" content="Free HTML XHTML CSS JavaScript DHTML XML DOM XSL XSLT RSS AJAX ASP ADO PHP SQL tutorials, references, examples for web building.">
+
+<META http-equiv="pragma" content="no-cache">
+<META http-equiv="cache-control" content="no-cache">
+<META http-equiv="expires" content="-1">
+
+<LINK rel="stylesheet" type="text/css" href="./xpath_files/stdtheme.css">
+
+<SCRIPT type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</SCRIPT><SCRIPT src="./xpath_files/ga.js" type="text/javascript"></SCRIPT>
+<SCRIPT type="text/javascript">
+function searchfield_focus(obj)
+{
+obj.style.color=""
+obj.style.fontStyle=""
+if (obj.value=="Search W3Schools")
+	{
+	obj.value=""
+	}
+}
+
+var pageTracker = _gat._getTracker("UA-3855518-1");
+pageTracker._initData();
+pageTracker._trackPageview();
+</SCRIPT>
+<!--[if gt IE 7]>
+<style>
+body
+{
+overflow-y:scroll;
+}
+</style>
+<![endif]-->
+
+
+</HEAD><BODY>
+
+<CENTER>
+<TABLE style="width:902px;margin-top:0px;margin-bottom:0px;background-color:#ffffff;" border="0" cellpadding="0" cellspacing="0">
+<TBODY><TR><TD align="center"><A name="top"></A>
+
+<TABLE width="890" border="0" cellpadding="0" cellspacing="0" style="margin-top:1px;background-color:#606060;border-bottom:1px solid black">
+<TBODY><TR style="height:47px">
+<TD width="15">&nbsp;</TD>
+<TD width="500" valign="middle" style="text-align:left">
+<A href="http://www.w3schools.com/">
+<IMG style="margin-top:6px" border="0" src="./xpath_files/h_logo.gif" width="203" height="20" alt="w3schools" title="w3schools"></A>
+</TD>
+<TD align="right" valign="bottom">
+<FORM style="font-size:10px;margin-bottom:10px;" method="get" name="searchform" action="http://www.google.com/search" target="_blank">
+<TABLE cellpadding="0" cellspacing="0" border="0"><TBODY><TR>
+<TD><INPUT type="hidden" name="sitesearch" value="www.w3schools.com"></TD>
+<TD><INPUT onfocus="searchfield_focus(this)" style="width:128px;color:#808080;font-style:italic;" alt="search" type="text" name="as_q" size="20" value="Search W3Schools"></TD>
+<TD><INPUT type="submit" value="Search" title="Search W3Schools"></TD>
+</TR></TBODY></TABLE>
+</FORM>
+</TD>
+<TD>&nbsp;&nbsp;</TD>
+</TR>
+</TBODY></TABLE>
+
+<TABLE width="890" border="0" cellpadding="0" cellspacing="0" style="margin:0px;margin-bottom:2px;padding:0px;background-color:#606060">
+<TBODY><TR style="height:20px">
+<TD class="blacknav" width="50" style="border-left:none"><A class="m_item" href="http://www.w3schools.com/default.asp" target="_top">HOME</A></TD>
+<TD class="blacknav" width="50"><A class="m_item" href="http://www.w3schools.com/html/default.asp" target="_top">HTML</A></TD>
+<TD class="blacknav" width="40"><A class="m_item" href="http://www.w3schools.com/css/default.asp" target="_top">CSS</A></TD>
+<TD class="blacknav" width="40"><A class="m_item" href="http://www.w3schools.com/xml/default.asp" target="_top">XML</A></TD>
+<TD class="blacknav" width="90"><A class="m_item" href="http://www.w3schools.com/js/default.asp" target="_top">JAVASCRIPT</A></TD>
+<TD class="blacknav" width="40"><A class="m_item" href="http://www.w3schools.com/asp/default.asp" target="_top">ASP</A></TD>
+<TD class="blacknav" width="40"><A class="m_item" href="http://www.w3schools.com/php/default.asp" target="_top">PHP</A></TD>
+<TD class="blacknav" width="40"><A class="m_item" href="http://www.w3schools.com/sql/default.asp" target="_top">SQL</A></TD>
+<TD class="blacknav" width="60"><A class="m_item" href="http://www.w3schools.com/sitemap/sitemap_tutorials.asp" target="_top">MORE...</A></TD>
+<TD class="blacknav">&nbsp;</TD>
+<TD class="blacknav" width="80"><A class="m_item" href="http://www.w3schools.com/sitemap/sitemap_references.asp" target="_top">References</A></TD>
+<TD class="blacknav" width="70"><A class="m_item" href="http://www.w3schools.com/sitemap/sitemap_examples.asp" target="_top">Examples</A></TD>
+<TD class="blacknav" width="50"><A class="m_item" href="http://www.w3schools.com/forum/default.asp" target="_blank">Forum</A></TD>
+<TD class="blacknav" width="50" style="border-right:none"><A class="m_item" href="http://www.w3schools.com/about/default.asp" target="_top">About</A></TD>
+</TR>
+</TBODY></TABLE>
+
+<DIV style="width:890px;height:94px;position:relative;margin-left:auto;margin-right:auto;margin:0px;padding:0px;overflow:hidden">
+
+<DIV class="toprect_txt">
+<B>YOUR FREE WEBSITE</B><BR><BR>
+<A target="_blank" rel="nofollow" href="http://www.wix.com/start/wfree?utm_campaign=w3&experiment_id=w307">Free Flash Website</A><BR>
+<A target="_blank" rel="nofollow" href="http://www.wix.com/start/wfree?utm_campaign=w3&experiment_id=w308">Free Website Builder</A><BR>
+<A target="_blank" rel="nofollow" href="http://www.wix.com/start/wfree?utm_campaign=w3&experiment_id=w309">Free Web Design</A>
+
+</DIV><DIV style="width:728px;height:90px;position:absolute;right:0px;top:0px;">
+<IFRAME id="leaderframe" style="background-color:#ffffff;height:90px;width:728px" src="./xpath_files/leaderframe.html" height="90" width="728" marginwidth="0" marginheight="0" frameborder="0" scrolling="no">
+Your browser does not support inline frames or is currently configured not to display inline frames.
+</IFRAME>
+</DIV></DIV>
+
+<TABLE width="890" border="0" cellpadding="0" cellspacing="0" style="padding:0">
+<TBODY><TR><TD id="leftcolumn" width="161" align="left" valign="top">
+<DIV style="margin-left:1px;margin-top:5px"><H2 class="left"><SPAN class="left_h2">XPath</SPAN> Tutorial</H2>
+<A target="_top" href="http://www.w3schools.com/xpath/default.asp">XPath HOME</A><BR>
+<A target="_top" href="http://www.w3schools.com/xpath/xpath_intro.asp">XPath Intro</A><BR>
+<A target="_top" href="http://www.w3schools.com/xpath/xpath_nodes.asp">XPath Nodes</A><BR>
+<A target="_top" href="./xpath_files/xpath.html" style="font-weight:bold;">XPath Syntax</A><BR>
+<A target="_top" href="http://www.w3schools.com/xpath/xpath_axes.asp">XPath Axes</A><BR>
+<A target="_top" href="http://www.w3schools.com/xpath/xpath_operators.asp">XPath Operators</A><BR>
+<A target="_top" href="http://www.w3schools.com/xpath/xpath_examples.asp">XPath Examples</A><BR>
+<A target="_top" href="http://www.w3schools.com/xpath/xpath_summary.asp">XPath Summary</A><BR>
+<BR>
+<H2 class="left"><SPAN class="left_h2">XPath</SPAN> Reference</H2>
+<A target="_top" href="http://www.w3schools.com/xpath/xpath_functions.asp">XPath Functions</A><BR>
+
+</DIV>
+</TD>
+<TD align="left" valign="top">
+<TABLE style="background-color:#ffffff;color:#000000;padding-bottom:8px;padding-right:5px" width="574" border="0" cellpadding="0" cellspacing="0">
+<TBODY><TR>
+<TD style="padding-top:4px">
+
+<H1>XPath <SPAN class="color_h1">Syntax</SPAN></H1>
+<TABLE class="chapter" border="0" width="100%" cellspacing="0" cellpadding="0"><TBODY><TR>
+<TD class="prev"><A class="chapter" href="http://www.w3schools.com/xpath/xpath_nodes.asp">« Previous</A></TD>
+<TD class="next"><A class="chapter" href="http://www.w3schools.com/xpath/xpath_axes.asp">Next Chapter »</A></TD>
+</TR></TBODY></TABLE>
+<HR>
+<P class="intro">XPath uses path expressions to select nodes or node-sets in an XML document. 
+The node is selected by following a path or steps.</P>
+<HR>
+
+<H2>The XML Example Document</H2>
+<P>We will use the following XML document in the examples below.</P>
+
+<TABLE class="code" cellspacing="0" cellpadding="0" border="0" width="100%">
+<TBODY><TR><TD>
+&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;<BR><BR>
+&lt;bookstore&gt;<BR><BR>
+&lt;book&gt;<BR>
+&nbsp;
+&lt;title lang="eng"&gt;Harry Potter&lt;/title&gt;<BR>
+&nbsp;
+&lt;price&gt;29.99&lt;/price&gt;<BR>
+&lt;/book&gt;<BR><BR>
+&lt;book&gt;<BR>
+&nbsp;
+&lt;title lang="eng"&gt;Learning XML&lt;/title&gt;<BR>
+&nbsp;
+&lt;price&gt;39.95&lt;/price&gt;<BR>
+&lt;/book&gt;<BR><BR>
+&lt;/bookstore&gt;</TD></TR>
+</TBODY></TABLE>
+<BR>
+<HR>
+
+<H2>Selecting Nodes</H2>
+<P>XPath uses path expressions to select nodes in an XML document. The node is selected by following a path or steps. 
+The most useful 
+path expressions are listed below:</P>
+<TABLE class="reference" cellspacing="0" cellpadding="0" border="1" width="100%">
+  <TBODY><TR>
+	<TH width="25%" valign="top" align="left">Expression</TH>
+    <TH valign="top" align="left">Description</TH>
+  </TR>
+  <TR>
+    <TD valign="top"><I>nodename</I></TD>
+    <TD valign="top">Selects all child nodes of the named node</TD>
+    </TR>
+  <TR>
+    <TD valign="top">/</TD>
+    <TD valign="top">Selects from the root node</TD>
+    </TR>
+  <TR>
+    <TD valign="top">//</TD>
+    <TD valign="top">Selects nodes in the document from the current node that 
+	match the selection no matter where they are </TD>
+  </TR>
+  <TR>
+    <TD valign="top">.</TD>
+    <TD valign="top">Selects the current node</TD>
+  </TR>
+  <TR>
+    <TD valign="top">..</TD>
+    <TD valign="top">Selects the parent of the current node</TD>
+  </TR>
+  <TR>
+    <TD valign="top">@</TD>
+    <TD valign="top">Selects attributes</TD>
+  </TR>
+</TBODY></TABLE>
+
+<P>In the table below we have listed some path expressions and the result of the 
+expressions:</P>
+<TABLE class="reference" cellspacing="0" cellpadding="0" border="1" width="100%">
+  <TBODY><TR>
+	<TH width="25%" valign="top" align="left">Path Expression</TH>
+    <TH valign="top" align="left">Result</TH>
+  </TR>
+  <TR>
+    <TD valign="top">bookstore</TD>
+    <TD valign="top">Selects all the child nodes of the bookstore element</TD>
+    </TR>
+  <TR>
+    <TD valign="top">/bookstore</TD>
+    <TD valign="top">Selects the root element bookstore<P><B>Note:</B> If the path starts with a slash ( / ) it 
+	always represents an absolute 
+path to an element!</P></TD>
+    </TR>
+  <TR>
+    <TD valign="top">bookstore/book</TD>
+    <TD valign="top">Selects all book elements that are children of bookstore</TD>
+  </TR>
+  <TR>
+    <TD valign="top">//book</TD>
+    <TD valign="top">Selects all book elements no matter where they are in the 
+	document</TD>
+  </TR>
+  <TR>
+    <TD valign="top">bookstore//book</TD>
+    <TD valign="top">Selects all book elements that are descendant of the 
+	bookstore element, no matter where they are under the bookstore element</TD>
+  </TR>
+  <TR>
+    <TD valign="top">//@lang</TD>
+    <TD valign="top">Selects all attributes that are named lang</TD>
+  </TR>
+  </TBODY></TABLE>
+<BR>
+<HR>
+
+<H2>Predicates</H2>
+<P>Predicates are used to find a specific node or a node that contains a specific value.</P>
+<P>Predicates are always embedded in square brackets.</P>
+
+<P>In the table below we have listed some path expressions with predicates and the result of the 
+expressions:</P>
+<TABLE class="reference" cellspacing="0" cellpadding="0" border="1" width="100%">
+  <TBODY><TR>
+	<TH width="40%" valign="top" align="left">Path Expression</TH>
+    <TH valign="top" align="left">Result</TH>
+  </TR>
+  <TR>
+    <TD valign="top">/bookstore/book[1] </TD>
+    <TD valign="top">Selects the first book element that is the child of the 
+	bookstore element.<P><B>Note:</B> IE5 and later has implemented that [0] should be the first node, 
+but according to the W3C standard it should have been [1]!!</P></TD>
+    </TR>
+  <TR>
+    <TD valign="top">/bookstore/book[last()]</TD>
+    <TD valign="top">Selects the last book element that is the child of the 
+	bookstore element</TD>
+    </TR>
+  <TR>
+    <TD valign="top">/bookstore/book[last()-1]</TD>
+    <TD valign="top">Selects the last but one book element that is the child of the 
+	bookstore element</TD>
+  </TR>
+  <TR>
+    <TD valign="top">/bookstore/book[position()&lt;3]</TD>
+    <TD valign="top">Selects the first two book elements that are children of the 
+	bookstore element</TD>
+  </TR>
+  <TR>
+    <TD valign="top">//title[@lang]</TD>
+    <TD valign="top">Selects all the title elements that have an attribute named 
+	lang</TD>
+  </TR>
+  <TR>
+    <TD valign="top">//title[@lang='eng']</TD>
+    <TD valign="top">Selects all the title elements that have an attribute named lang 
+	with a value of 'eng'</TD>
+  </TR>
+  <TR>
+    <TD valign="top">/bookstore/book[price&gt;35.00]</TD>
+    <TD valign="top">Selects all the book elements of the bookstore element that 
+	have a price element with a value greater than 35.00</TD>
+  </TR>
+  <TR>
+    <TD valign="top">/bookstore/book[price&gt;35.00]/title</TD>
+    <TD valign="top">Selects all the title elements of the book elements of the 
+	bookstore element that have a price element with a value greater than 35.00</TD>
+  </TR>
+  </TBODY></TABLE>
+<BR>
+<HR>
+
+<H2>Selecting Unknown Nodes</H2>
+<P>XPath wildcards can be used to select unknown XML elements.</P>
+<TABLE class="reference" cellspacing="0" cellpadding="0" border="1" width="100%">
+  <TBODY><TR>
+	<TH width="25%" valign="top" align="left">Wildcard</TH>
+    <TH valign="top" align="left">Description</TH>
+  </TR>
+  <TR>
+    <TD valign="top">*</TD>
+    <TD valign="top">Matches any element node</TD>
+    </TR>
+  <TR>
+    <TD valign="top">@*</TD>
+    <TD valign="top">Matches any attribute node</TD>
+  </TR>
+  <TR>
+    <TD valign="top">node()</TD>
+    <TD valign="top">Matches any node of any kind</TD>
+    </TR>
+  </TBODY></TABLE>
+
+<P>In the table below we have listed some path expressions and the result of the 
+expressions:</P>
+<TABLE class="reference" cellspacing="0" cellpadding="0" border="1" width="100%">
+  <TBODY><TR>
+	<TH width="25%" valign="top" align="left">Path Expression</TH>
+    <TH valign="top" align="left">Result</TH>
+  </TR>
+  <TR>
+    <TD valign="top">/bookstore/*</TD>
+    <TD valign="top">Selects all the child nodes of the bookstore element</TD>
+    </TR>
+  <TR>
+    <TD valign="top">//*</TD>
+    <TD valign="top">Selects all elements in the document</TD>
+    </TR>
+  <TR>
+    <TD valign="top">//title[@*]</TD>
+    <TD valign="top">Selects all title elements which have any attribute</TD>
+  </TR>
+  </TBODY></TABLE>
+<BR>
+<HR>
+
+<H2>Selecting Several Paths</H2>
+<P>By using the | operator in an XPath expression you can select several paths.</P>
+
+<P>In the table below we have listed some path expressions and the result of the 
+expressions:</P>
+<TABLE class="reference" cellspacing="0" cellpadding="0" border="1" width="100%">
+  <TBODY><TR>
+	<TH width="40%" valign="top" align="left">Path Expression</TH>
+    <TH valign="top" align="left">Result</TH>
+  </TR>
+  <TR>
+    <TD valign="top">//book/title | //book/price</TD>
+    <TD valign="top">Selects all the title AND price elements of all book 
+	elements</TD>
+    </TR>
+  <TR>
+    <TD valign="top">//title | //price</TD>
+    <TD valign="top">Selects all the title AND price elements in the document</TD>
+    </TR>
+  <TR>
+    <TD valign="top">/bookstore/book/title | //price</TD>
+    <TD valign="top">Selects all the title elements of the book element of the 
+	bookstore element AND all the price elements in the document</TD>
+  </TR>
+  </TBODY></TABLE>
+<BR>
+<TABLE class="chapter" border="0" width="100%" cellspacing="0" cellpadding="0"><TBODY><TR>
+<TD class="prev"><A class="chapter" href="http://www.w3schools.com/xpath/xpath_nodes.asp">« Previous</A></TD>
+<TD class="next"><A class="chapter" href="http://www.w3schools.com/xpath/xpath_axes.asp">Next Chapter »</A></TD>
+</TR></TBODY></TABLE>
+
+<HR>
+
+<!-- **** SPOTLIGHTS 1 **** -->
+
+<IFRAME id="w3schools_spot1" name="w3schools_spot1" src="./xpath_files/aspallframe.html" height="100" width="100%" marginwidth="0" marginheight="0" frameborder="0" scrolling="no">
+Your browser does not support inline frames or is currently configured not to display inline frames.
+</IFRAME>
+<HR>
+
+<!-- **** SPOTLIGHTS 2 **** -->
+
+<H2><A class="header" target="_blank" rel="nofollow" href="http://www.wix.com/start/wfree?utm_campaign=w3&experiment_id=w490">
+Create Your Own Website Like a Pro</A></H2>
+<P><A target="_blank" rel="nofollow" href="http://www.wix.com/start/wfree?utm_campaign=w3&experiment_id=w490">
+Start Creating</A> a stunning, Flash website. It's easy and free!</P>
+<P>Wix.com offers you a simple, powerful, drag &amp; drop editing platform to create stunning Flash websites, layouts, and more.</P>
+<P>With added e-commerce features such as search engine visibility and professional tools, Wix is the ultimate solution for creating a spectacular site.</P>
+<HR>
+
+
+
+<!-- **** SPOTLIGHTS 3 **** -->
+<SCRIPT type="text/javascript"><!--
+document.write('<table cellpadding="0" cellspacing="0"><tr><td width="108">&nbsp;</td><td>');
+google_ad_client = "pub-3440800076797949";
+/*txt*/
+google_ad_slot = "1699448869";
+google_ad_width = 336;
+google_ad_height = 280;
+//-->
+</SCRIPT><TABLE cellpadding="0" cellspacing="0"><TBODY><TR><TD width="108">&nbsp;</TD><TD>
+<SCRIPT type="text/javascript" src="./xpath_files/show_ads.js">
+</SCRIPT><SCRIPT src="./xpath_files/test_domain.js"></SCRIPT><SCRIPT>google_protectAndRun("ads_core.google_render_ad", google_handleError, google_render_ad);</SCRIPT><IFRAME name="google_ads_frame" width="336" height="280" frameborder="0" src="./xpath_files/ads.html" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no"></IFRAME>
+<SCRIPT type="text/javascript">
+<!--
+document.write("</td></tr></table>");
+//-->
+</SCRIPT></TD></TR></TBODY></TABLE>
+
+<HR>
+<TABLE>
+<TBODY><TR>
+<TD width="220"><A href="http://www.w3schools.com/cert/default.asp"><IMG src="./xpath_files/w3cert.gif" alt="W3Schools Certification" border="0"></A></TD>
+<TD valign="middle">
+<P><B>W3Schools' Online Certification Program</B></P>
+<P>The perfect solution for professionals who need to balance work, family, and career building.</P>
+<P>More than 5000 certificates already issued!</P>
+</TD>
+</TR>
+</TBODY></TABLE>
+<P>The <A href="http://www.w3schools.com/cert/default.asp">HTML Certificate</A> documents your knowledge of HTML, XHTML, and CSS.</P>
+<P>The <A href="http://www.w3schools.com/cert/default.asp">JavaScript Certificate</A> documents your knowledge of JavaScript and HTML DOM.</P>
+<P>The <A href="http://www.w3schools.com/cert/default.asp">XML Certificate</A> documents your knowledge of XML, XML DOM and XSLT.</P>
+<P>The <A href="http://www.w3schools.com/cert/default.asp">ASP Certificate</A> documents your knowledge of ASP, SQL, and ADO.</P>
+<P>The <A href="http://www.w3schools.com/cert/default.asp">PHP Certificate</A> documents your knowledge of PHP and SQL (MySQL).</P>
+
+
+</TD></TR>
+</TBODY></TABLE>
+</TD>
+
+<TD id="rightcolumn" width="155" align="center" valign="top">
+<TABLE cellspacing="0">
+<TBODY><TR><TH>WEB HOSTING</TH></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.lunarpages.com/">Best Web Hosting</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.eukhost.com/">PHP MySQL Hosting</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.web-hosting-top.com/">Top 10 Web Hosting</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.heartinternet.co.uk/index.shtml">UK Reseller Hosting</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.webhosting.uk.com/">Web Hosting</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.imhosted.com/">FREE Web Hosting</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://stats.justhost.com/track?c878c3580275f4db3720fbc777a282233">Top Web Hosting</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.webhostingbreak.com/?camp=w3schools">Ian's Best Web Hosting</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.doteasy.com/index.cfm?A=w3school">$0 Doteasy Web Hosting</A>
+</TD></TR>
+</TBODY></TABLE>
+
+<TABLE cellspacing="0">
+<TBODY><TR><TH>WEB BUILDING</TH></TR>
+<TR><TD>
+
+<A target="_blank" rel="nofollow" href="http://www.altova.com/ref/?s=w3s_text&q=xmlspy">Download XML Editor</A>
+
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.wix.com/start/wfree?utm_campaign=w3&experiment_id=w300">FREE Flash Website</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.dreamtemplate.com/?ref=w3txt">FREE Web Templates</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.seoconsult.co.uk/">SEO Company</A>
+</TD></TR>
+<TR><TD>
+<A target="_blank" rel="nofollow" href="http://www.all-computer-schools.com/featured/web-design-development-programs?src=asd_acom_062007_00000001">US Web Design Schools</A>
+</TD></TR>
+</TBODY></TABLE>
+
+<TABLE cellspacing="0">
+<TBODY><TR><TH>W3SCHOOLS EXAMS</TH></TR>
+<TR><TD>
+<A target="_blank" href="http://www.w3schools.com/cert/default.asp">Get Certified in:<BR>HTML, CSS, JavaScript, XML, PHP, and ASP</A>
+</TD></TR>
+</TBODY></TABLE>
+
+<TABLE cellspacing="0">
+<TBODY><TR><TH>W3SCHOOLS BOOKS</TH></TR>
+<TR><TD>
+<A target="_blank" href="http://www.w3schools.com/books/default.asp">
+New Paperbacks:<BR>HTML, CSS<BR>
+JavaScript, and Ajax</A>
+</TD></TR>
+</TBODY></TABLE>
+
+<TABLE cellspacing="0">
+<TBODY><TR><TH>STATISTICS</TH></TR>
+<TR><TD>
+<A target="_top" href="http://www.w3schools.com/browsers/browsers_stats.asp">Browser Statistics</A><BR>
+<A target="_top" href="http://www.w3schools.com/browsers/browsers_os.asp">Browser OS</A><BR>
+<A target="_top" href="http://www.w3schools.com/browsers/browsers_display.asp">Browser Display</A>
+</TD></TR></TBODY></TABLE>
+
+<SCRIPT type="text/javascript">
+<!--
+function sharethis()
+{
+txt='<a href="http://www.facebook.com/sharer.php?u='+document.URL+'" target="_blank" title="Facebook">'
+txt=txt+'<img src="/images/share_facebook.gif" border="0" width="16px" height="16px" style="margin-right:4px" /></a>';
+txt=txt+'<a href="http://twitter.com/home?status=Currently reading '+document.URL+'" target="_blank" title="Twitter">';
+txt=txt+'<img src="/images/share_twitter.gif" border="0" width="16px" height="16px" style="margin-right:4px" /></a>';
+txt=txt+'<a href="mailto:?&amp;subject='+document.title+'&amp;body=Take%20a%20look%20at%20this%20page%20at%20W3Schools.com:%20'+document.URL+'" target="_blank" title="E-mail">';
+txt=txt+'<img src="/images/share_email.gif" border="0" width="16px" height="16px" style="margin-right:4px" /></a>';
+txt=txt+'<a href="http://delicious.com/save?v=5&noui&jump=close&url='+document.URL+'&title='+document.title+'" target="_blank" title="Delicious">';
+txt=txt+'<img src="/images/share_delicious.gif" border="0" width="16px" height="16px" style="margin-right:4px" /></a>';
+txt=txt+'<a href="http://www.reddit.com/submit?url='+document.URL+'" target="_blank" title="Reddit">';
+txt=txt+'<img src="/images/share_reddit.gif" border="0" width="16px" height="16px" style="margin-right:4px" /></a>';
+txt=txt+'<a href="http://digg.com/submit?url='+document.URL+'&amp;title='+document.title+'" target="_blank" title="Digg">';
+txt=txt+'<img src="/images/share_digg.gif" border="0" width="16px" height="16px" style="margin-right:4px" /></a>';
+txt=txt+'<a href="http://www.stumbleupon.com/submit?url='+document.URL+'%26title%3D'+document.title+'" target="_blank" title="Stumbleupon">';
+txt=txt+'<img src="/images/share_stumbleupon.gif" border="0" width="16px" height="16px" /></a>';
+document.getElementById("sharethis").innerHTML=txt;
+}
+//--></SCRIPT>
+<TABLE cellspacing="0">
+<TBODY><TR><TH>SHARE THIS PAGE</TH></TR>
+<TR>
+<TD id="sharethis">
+<DIV style="height:16px">
+<A href="http://www.w3schools.com/xpath/xpath_syntax.asp#" onclick="sharethis();return false;">Share with »</A>
+</DIV>
+</TD>
+</TR>
+</TBODY></TABLE>
+
+
+</TD></TR></TBODY></TABLE>
+
+<TABLE id="footer" align="center" border="0" width="890">
+<TBODY><TR>
+<TD align="left" width="200">
+<A href="http://www.w3schools.com/"><IMG border="0" src="./xpath_files/w3schoolscom_gray.gif" alt="W3Schools.com"></A>
+</TD>
+<TD align="right" style="word-spacing:6px;font-size:90%;padding-right:10px;">
+<A href="http://www.w3schools.com/default.asp" target="_top">HOME</A> |
+<A href="http://www.w3schools.com/xpath/xpath_syntax.asp#top" target="_top">TOP</A> |
+<A href="http://www.w3schools.com/xpath/xpath_syntax.asp?output=print" target="_blank">PRINT</A> |
+<A href="http://www.w3schools.com/forum/default.asp" target="_blank">FORUM</A> |
+<A href="http://www.w3schools.com/about/default.asp" target="_top">ABOUT</A>
+</TD>
+</TR>
+<TR>
+<TD valign="top" colspan="2" align="center" style="padding-top:10px">
+W3Schools is for training only. We do not warrant the correctness of its content.
+The risk from using it lies entirely with the user.
+<BR>
+While using this site, you agree to have read and accepted our
+<A href="http://www.w3schools.com/about/about_copyright.asp">terms of use</A> and
+<A href="http://www.w3schools.com/about/about_privacy.asp">privacy policy</A>.<BR>
+<A href="http://www.w3schools.com/about/about_copyright.asp">Copyright 1999-2010</A> by Refsnes Data. All Rights Reserved.
+</TD>
+</TR>
+</TBODY></TABLE>
+
+</TD>
+</TR></TBODY></TABLE>
+</CENTER>
+
+
+</BODY></HTML>

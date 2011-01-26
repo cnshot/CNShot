@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://tempuri.org/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+      <s:element name="Segment">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="splitstr" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="ismatchname" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="isfilterstopword" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="isshowposition" type="s:boolean" />
+            <s:element minOccurs="1" maxOccurs="1" name="isshowtype" type="s:boolean" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="SegmentResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="SegmentResult" type="tns:ArrayOfString" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfString">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="string" nillable="true" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="Getcategory">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="str" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetcategoryResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetcategoryResult" type="tns:ArrayOfRsupport" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfRsupport">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="Rsupport" nillable="true" type="tns:Rsupport" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Rsupport">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Word" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Weight" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="GetAbstract">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="str" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="percent" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetAbstractResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetAbstractResult" type="tns:MainAbstract" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="MainAbstract">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Abstract" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MainWord" type="tns:ArrayOfString" />
+        </s:sequence>
+      </s:complexType>
+      <s:element name="ArrayOfString" nillable="true" type="tns:ArrayOfString" />
+      <s:element name="ArrayOfRsupport" nillable="true" type="tns:ArrayOfRsupport" />
+      <s:element name="MainAbstract" nillable="true" type="tns:MainAbstract" />
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="SegmentSoapIn">
+    <wsdl:part name="parameters" element="tns:Segment" />
+  </wsdl:message>
+  <wsdl:message name="SegmentSoapOut">
+    <wsdl:part name="parameters" element="tns:SegmentResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetcategorySoapIn">
+    <wsdl:part name="parameters" element="tns:Getcategory" />
+  </wsdl:message>
+  <wsdl:message name="GetcategorySoapOut">
+    <wsdl:part name="parameters" element="tns:GetcategoryResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetAbstractSoapIn">
+    <wsdl:part name="parameters" element="tns:GetAbstract" />
+  </wsdl:message>
+  <wsdl:message name="GetAbstractSoapOut">
+    <wsdl:part name="parameters" element="tns:GetAbstractResponse" />
+  </wsdl:message>
+  <wsdl:message name="SegmentHttpGetIn">
+    <wsdl:part name="splitstr" type="s:string" />
+    <wsdl:part name="ismatchname" type="s:string" />
+    <wsdl:part name="isfilterstopword" type="s:string" />
+    <wsdl:part name="isshowposition" type="s:string" />
+    <wsdl:part name="isshowtype" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="SegmentHttpGetOut">
+    <wsdl:part name="Body" element="tns:ArrayOfString" />
+  </wsdl:message>
+  <wsdl:message name="GetcategoryHttpGetIn">
+    <wsdl:part name="str" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="GetcategoryHttpGetOut">
+    <wsdl:part name="Body" element="tns:ArrayOfRsupport" />
+  </wsdl:message>
+  <wsdl:message name="GetAbstractHttpGetIn">
+    <wsdl:part name="str" type="s:string" />
+    <wsdl:part name="percent" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="GetAbstractHttpGetOut">
+    <wsdl:part name="Body" element="tns:MainAbstract" />
+  </wsdl:message>
+  <wsdl:message name="SegmentHttpPostIn">
+    <wsdl:part name="splitstr" type="s:string" />
+    <wsdl:part name="ismatchname" type="s:string" />
+    <wsdl:part name="isfilterstopword" type="s:string" />
+    <wsdl:part name="isshowposition" type="s:string" />
+    <wsdl:part name="isshowtype" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="SegmentHttpPostOut">
+    <wsdl:part name="Body" element="tns:ArrayOfString" />
+  </wsdl:message>
+  <wsdl:message name="GetcategoryHttpPostIn">
+    <wsdl:part name="str" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="GetcategoryHttpPostOut">
+    <wsdl:part name="Body" element="tns:ArrayOfRsupport" />
+  </wsdl:message>
+  <wsdl:message name="GetAbstractHttpPostIn">
+    <wsdl:part name="str" type="s:string" />
+    <wsdl:part name="percent" type="s:string" />
+  </wsdl:message>
+  <wsdl:message name="GetAbstractHttpPostOut">
+    <wsdl:part name="Body" element="tns:MainAbstract" />
+  </wsdl:message>
+  <wsdl:portType name="TextDMSoap">
+    <wsdl:operation name="Segment">
+      <wsdl:input message="tns:SegmentSoapIn" />
+      <wsdl:output message="tns:SegmentSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Getcategory">
+      <wsdl:input message="tns:GetcategorySoapIn" />
+      <wsdl:output message="tns:GetcategorySoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetAbstract">
+      <wsdl:input message="tns:GetAbstractSoapIn" />
+      <wsdl:output message="tns:GetAbstractSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:portType name="TextDMHttpGet">
+    <wsdl:operation name="Segment">
+      <wsdl:input message="tns:SegmentHttpGetIn" />
+      <wsdl:output message="tns:SegmentHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Getcategory">
+      <wsdl:input message="tns:GetcategoryHttpGetIn" />
+      <wsdl:output message="tns:GetcategoryHttpGetOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetAbstract">
+      <wsdl:input message="tns:GetAbstractHttpGetIn" />
+      <wsdl:output message="tns:GetAbstractHttpGetOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:portType name="TextDMHttpPost">
+    <wsdl:operation name="Segment">
+      <wsdl:input message="tns:SegmentHttpPostIn" />
+      <wsdl:output message="tns:SegmentHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="Getcategory">
+      <wsdl:input message="tns:GetcategoryHttpPostIn" />
+      <wsdl:output message="tns:GetcategoryHttpPostOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetAbstract">
+      <wsdl:input message="tns:GetAbstractHttpPostIn" />
+      <wsdl:output message="tns:GetAbstractHttpPostOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="TextDMSoap" type="tns:TextDMSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="Segment">
+      <soap:operation soapAction="http://tempuri.org/Segment" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Getcategory">
+      <soap:operation soapAction="http://tempuri.org/Getcategory" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAbstract">
+      <soap:operation soapAction="http://tempuri.org/GetAbstract" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="TextDMSoap12" type="tns:TextDMSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="Segment">
+      <soap12:operation soapAction="http://tempuri.org/Segment" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Getcategory">
+      <soap12:operation soapAction="http://tempuri.org/Getcategory" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAbstract">
+      <soap12:operation soapAction="http://tempuri.org/GetAbstract" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="TextDMHttpGet" type="tns:TextDMHttpGet">
+    <http:binding verb="GET" />
+    <wsdl:operation name="Segment">
+      <http:operation location="/Segment" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Getcategory">
+      <http:operation location="/Getcategory" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAbstract">
+      <http:operation location="/GetAbstract" />
+      <wsdl:input>
+        <http:urlEncoded />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="TextDMHttpPost" type="tns:TextDMHttpPost">
+    <http:binding verb="POST" />
+    <wsdl:operation name="Segment">
+      <http:operation location="/Segment" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Getcategory">
+      <http:operation location="/Getcategory" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetAbstract">
+      <http:operation location="/GetAbstract" />
+      <wsdl:input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </wsdl:input>
+      <wsdl:output>
+        <mime:mimeXml part="Body" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="TextDM">
+    <wsdl:port name="TextDMSoap" binding="tns:TextDMSoap">
+      <soap:address location="http://dm.griddss.cn/TextDM.asmx" />
+    </wsdl:port>
+    <wsdl:port name="TextDMSoap12" binding="tns:TextDMSoap12">
+      <soap12:address location="http://dm.griddss.cn/TextDM.asmx" />
+    </wsdl:port>
+    <wsdl:port name="TextDMHttpGet" binding="tns:TextDMHttpGet">
+      <http:address location="http://dm.griddss.cn/TextDM.asmx" />
+    </wsdl:port>
+    <wsdl:port name="TextDMHttpPost" binding="tns:TextDMHttpPost">
+      <http:address location="http://dm.griddss.cn/TextDM.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

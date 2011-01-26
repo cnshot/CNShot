@@ -1,0 +1,598 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0074)http://hackaday.com/2008/12/19/android-adds-a2dp-avrcp-bluetooth-and-more/ -->
+<HTML xmlns="http://www.w3.org/1999/xhtml" dir="ltr" lang="en"><STYLE>body.delicious {
+	font: normal 12px arial, helvetica, arial, verdana;
+	color: #000;
+	overflow: hidden;
+	border: 0px;
+	}
+	.delicious div.toolstrip-button {
+		color: #000;
+		cursor: hand;
+		padding: 6px;
+		border-bottom: 1px solid #eee;
+		}
+	.delicious div.toolstrip-button {
+		color: #000;
+		cursor: hand;
+		font: normal 12px helvetica, arial, verdana;
+		width: 150px;
+		padding: 6px;
+		border-bottom: 1px solid #eee;
+		}
+		div.toolstrip-button:last-child {border-bottom-style: none;}
+		.delicious div.toolstrip-button:hover {
+			background-color: #3274d0;
+			color: #fff;
+			}
+	/*************************
+	OPTIONS pages
+	**************************/
+	.delicious .options h3 {
+		font-weight: bold;
+		margin-bottom: 9px;
+		}
+		.options small {font-size: 10px; font-family: verdana;}
+		.message p {padding: 4px;}
+			p.fail {
+				background-color: #ff0000;
+				color: #000;
+				}
+			p.success {
+				background-color: #ffff99;
+				color: #000;
+				}
+	.delicious #bookmarks {
+		padding: 6px;
+		}
+	.delicious #bookmarks h3 {
+		font-weight: normal;
+		font-size: 12px;
+		}
+	.delicious #bookmarks h3 small {
+		font-size: 10px;
+		text-decoration: underline;
+		}
+	.delicious #bookmarks ul {
+		margin: 0;
+		padding: 0;
+		list-style: none outside;
+		}
+	.delicious #bookmarks li {
+		margin: 0;
+		padding: 4px;
+		line-height: 14px;
+		list-style: none outside;
+		}
+	.delicious #bookmarks li.even {
+		background-color: #f1f1f1;
+		}
+	.delicious #bookmarks li a,
+	.delicious #bookmarks li a:link {
+		color: #1259c7;
+		text-decoration: none;
+		}
+	.delicious #bookmarks li a:visited {
+		color: #515697;
+		}
+	.delicious #bookmarks li a:hover,
+	.delicious #bookmarks li a:active,
+	.delicious #bookmarks li a:focus {
+		color: #1259c7;
+		text-decoration: underline;
+		}
+</STYLE><HEAD profile="http://gmpg.org/xfn/11"><META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<TITLE>  Android adds A2DP, AVRCP Bluetooth and more  - Hack a Day  </TITLE>
+<META name="verify-v1" content="CKQvmWep3fKNs4a+RpjbVmK0ghDqfezZ0MgXHjSLL1k=">
+<LINK rel="stylesheet" href="./hack_a_day_files/style.css" type="text/css" media="screen">
+<LINK rel="alternate" type="application/rss+xml" title="Hack a Day RSS Feed" href="http://hackaday.com/feed/">
+<SCRIPT>
+window.google_analytics_uacct = "UA-2201445-6";
+</SCRIPT>
+<!-- PUT THIS TAG IN THE head SECTION -->
+<SCRIPT type="text/javascript" src="./hack_a_day_files/google_service.js">
+</SCRIPT>
+<SCRIPT type="text/javascript">
+  GS_googleAddAdSenseService("ca-pub-1812638130783065");
+  GS_googleEnableAllServices();
+</SCRIPT><SCRIPT src="./hack_a_day_files/google_ads.js"></SCRIPT>
+    <SCRIPT type="text/javascript">
+      GA_googleAddSlot("ca-pub-1812638130783065", "HAD_MedRect_Main_300x250");
+      GA_googleAddSlot("ca-pub-1812638130783065", "HAD_MedRect_Main_300x250_0");
+      GA_googleAddSlot("ca-pub-1812638130783065", "HAD_Leaderboard_728x90");
+      GA_googleAddSlot("ca-pub-1812638130783065", "HAD_MedRect_Sidebar_300x250");
+      GA_googleAddSlot("ca-pub-1812638130783065", "HAD_MedRect_Main_300x250_1");
+      GA_googleAddSlot("ca-pub-1812638130783065", "HAD_MedRect_Main_300x250_2");
+      GA_googleAddSlot("ca-pub-1812638130783065", "HAD_MedRect_Main_300x250_3");
+      GA_googleAddSlot("ca-pub-1812638130783065", "HAD_Skyscraper_Sidebar_120x600");
+    </SCRIPT>
+<SCRIPT type="text/javascript">
+  GA_googleFetchAds();
+</SCRIPT>
+<!-- END OF TAG FOR head SECTION -->
+
+<LINK rel="pingback" href="http://hackaday.com/xmlrpc.php">
+<LINK rel="shortcut icon" href="http://s2.wp.com/wp-content/themes/vip/hackadaycom/favicon.ico?m=1269039855g">
+
+		<SCRIPT src="./hack_a_day_files/remote-login.php" type="text/javascript"></SCRIPT>
+		<LINK rel="alternate" type="application/rss+xml" title="Hack a Day &raquo; Android adds A2DP, AVRCP Bluetooth and&nbsp;more Comments Feed" href="http://hackaday.com/2008/12/19/android-adds-a2dp-avrcp-bluetooth-and-more/feed/">
+<SCRIPT type="text/javascript">
+/* <![CDATA[ */
+function addLoadEvent(func){var oldonload=window.onload;if(typeof window.onload!='function'){window.onload=func;}else{window.onload=function(){oldonload();func();}}}
+/* ]]> */
+</SCRIPT>
+<LINK rel="stylesheet" href="./hack_a_day_files/global.css" type="text/css">
+<LINK rel="EditURI" type="application/rsd+xml" title="RSD" href="http://hackadaycom.wordpress.com/xmlrpc.php?rsd">
+<LINK rel="wlwmanifest" type="application/wlwmanifest+xml" href="http://hackadaycom.wordpress.com/wp-includes/wlwmanifest.xml"> 
+<LINK rel="index" title="Hack a Day" href="http://hackaday.com/">
+<LINK rel="prev" title="WiFi streaming&nbsp;radio" href="http://hackaday.com/2008/12/19/wifi-streaming-radio/">
+<LINK rel="next" title="T-Mobile G1&nbsp;teardown" href="http://hackaday.com/2008/12/19/t-mobile-g1-teardown/">
+<META name="generator" content="WordPress.com">
+<LINK rel="canonical" href="./hack_a_day_files/hack_a_day.html">
+<LINK rel="shortlink" href="http://wp.me/pk3lN-1PO">
+<LINK rel="openid.server" href="http://hackadaycom.wordpress.com/?openidserver=1">
+<LINK rel="openid.delegate" href="http://hackadaycom.wordpress.com/">
+<LINK rel="search" type="application/opensearchdescription+xml" href="http://wordpress.com/opensearch.xml" title="WordPress.com">
+<LINK rel="search" type="application/opensearchdescription+xml" href="http://hackaday.com/osd.xml" title="Hack a Day">
+</HEAD><BODY>
+
+<DIV id="leaderboard">
+	
+	<SCRIPT type="text/javascript">
+	 GA_googleFillSlot("HAD_Leaderboard_728x90");
+	</SCRIPT><SCRIPT src="./hack_a_day_files/ads"></SCRIPT><DIV id="google_ads_div_HAD_Leaderboard_728x90">
+<IFRAME id="google_ads_iframe_HAD_Leaderboard_728x90" name="google_ads_iframe_HAD_Leaderboard_728x90" width="728" height="90" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; "></IFRAME></DIV>
+<SCRIPT>GA_googleCreateDomIframe('google_ads_div_HAD_Leaderboard_728x90' ,'HAD_Leaderboard_728x90');</SCRIPT>
+
+</DIV>
+
+<DIV id="adslice">
+
+	<SCRIPT type="text/javascript"><!--
+	google_ad_client = "pub-1812638130783065";
+	/* Hackaday, 728x15, created 4/26/08, AdSlice */
+	google_ad_slot = "0246324944";
+	google_ad_width = 728;
+	google_ad_height = 15;
+	//-->
+	</SCRIPT>
+
+	<SCRIPT type="text/javascript" src="./hack_a_day_files/show_ads.js">
+	</SCRIPT><SCRIPT src="./hack_a_day_files/test_domain.js"></SCRIPT><SCRIPT>google_protectAndRun("ads_core.google_render_ad", google_handleError, google_render_ad);</SCRIPT><IFRAME name="google_ads_frame" width="728" height="15" frameborder="0" src="./hack_a_day_files/ads.html" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no"></IFRAME>
+	
+</DIV>
+
+	
+<DIV id="container">
+
+	<DIV id="content">
+
+		<DIV id="header">
+			<DIV id="branding">
+				<H1><A class="imglink" title="Hack a Day home" href="http://hackaday.com/"><IMG src="./hack_a_day_files/hackaday-logo.gif" alt="Hack a Day"></A></H1>
+			</DIV>
+
+		</DIV>
+	
+<BR>
+
+	<DIV class="post" id="post-">
+			<H2><A href="./hack_a_day_files/hack_a_day.html" rel="bookmark" title="Permanent Link to Android adds A2DP, AVRCP Bluetooth and&nbsp;more">Android adds A2DP, AVRCP Bluetooth and&nbsp;more</A></H2>
+				posted Dec 19th 2008 3:05pm by <A href="http://hackaday.com/author/eliotphillips/" title="Posts by Eliot Phillips">Eliot Phillips</A><BR>
+				filed under: <A href="http://hackaday.com/category/android-hacks/" title="View all posts in android hacks" rel="category tag">android hacks</A>, <A href="http://hackaday.com/category/cellphones-hacks/" title="View all posts in cellphones hacks" rel="category tag">cellphones hacks</A>, <A href="http://hackaday.com/category/g1-hacks/" title="View all posts in g1 hacks" rel="category tag">g1 hacks</A>, <A href="http://hackaday.com/category/google-hacks/" title="View all posts in google hacks" rel="category tag">google hacks</A>, <A href="http://hackaday.com/category/wireless-hacks/" title="View all posts in wireless hacks" rel="category tag">wireless hacks</A> <BR>
+
+			<DIV class="entry">
+				<DIV class="snap_preview"><P><IMG class="alignnone size-full wp-image-5781" title="tmobileg1" src="./hack_a_day_files/tmobileg1.jpg" alt="tmobileg1" width="450" height="150"></P>
+<P>While working towards <A title="Android source code released  - Hack a Day" href="http://hackaday.com/2008/10/21/android-source-code-released/">open-sourcing Android</A>, the team continued to work on new features in their own private development branch. These have now been <A href="http://source.android.com/roadmap/cupcake">published publicly in the “cupcake” branch</A>. There’s a lot of interesting new features and bug fixes included. We’ve got a rundown of many of the significant additions after the break.</P>
+<P><SPAN id="more-7056"></SPAN></P>
+<P>The A2DP and AVRCP <A title="Bluetooth profile - Wikipedia, the free encyclopedia" href="http://en.wikipedia.org/wiki/Bluetooth_profile">profiles</A> were both added to the Bluetooth stack. This means support for stereo headsets and remote control. Dial Up Networking wasn’t added, but preliminary work was done on USB Gadget Framework support, which means future devices could appear to the host device as just an ethernet interface.</P>
+<P>The browser has been bumped up to the November release of WebKit with the optimized JavaScript engine <A title="SquirrelFish &ndash; WebKit" href="http://trac.webkit.org/wiki/SquirrelFish">SquirrelFish</A>. Copy/paste in browser and a 5x draw speed improvement were also added. The trackball now does accelerated scrolling.</P>
+<P>Hardware accelerated video recording and playback, an often noted oversight in the initial <A title="G1 Hacks- Mahalo" href="http://www.mahalo.com/G1_Hacks">T-Mobile G1</A> release, finally show up. A framework for an on-screen keyboard and predictive text are being worked on. Android lets you run background processes and users will be pleased to know there’s a process manager now. Finally, a new Linux 2.6.27 kernel and the least explained addition “basic x86 support” round out the branch.</P>
+<P>While there are many good improvements here, there is no indication as to when G1 users will see them or when <A title="Hardware-unlocked Android G1 for sale  - Hack a Day" href="http://hackaday.com/2008/12/08/hardware-unlocked-android-g1-for-sale/">Android Dev Phone 1</A> (ADP1) owners will be able to build the release themselves. [Disconnect] <A href="http://www.gotontheinter.net/content/oooh-hidden-gem-cupcake-sources">points out</A> that there were some other gems included in the branch that aren’t in the announcement like <A href="http://android.git.kernel.org/?p=platform/system/core.git;a=blob;f=mountd/ASEC.c;h=3d8e50e0ae47c6a5b7e5f6ac2ac225f867434b59;hb=cupcake">mounting an encrypted e2fs volume</A> which could enable installing apps on the SD card.</P>
+<P>[photo: <A href="http://flickr.com/photos/tnkgrl/2963841190/in/set-72157608262752711/">tnkgrl</A>]</P>
+<P>[via <A href="http://www.gotontheinter.net/content/google-releases-updated-source-treefinally">GotOnTheInter.Net</A>]</P>
+</DIV>				<DIV class="postmeta">
+					 <P class="readlink">
+											</P>
+				<UL>
+				<LI class="commentslink"><A href="http://hackaday.com/2008/12/19/android-adds-a2dp-avrcp-bluetooth-and-more/#comments" title="View reader comments on this entry">Comments</A> [3]</LI>
+				
+				</UL>
+				<DIV>
+				tagged: <A href="http://hackaday.com/tag/a2dp/" rel="tag">a2dp</A>, <A href="http://hackaday.com/tag/adp1/" rel="tag">adp1</A>, <A href="http://hackaday.com/tag/android/" rel="tag">android</A>, <A href="http://hackaday.com/tag/android-dev-phone-1/" rel="tag">android dev phone 1</A>, <A href="http://hackaday.com/tag/avrcp/" rel="tag">avrcp</A>, <A href="http://hackaday.com/tag/bluetooth/" rel="tag">bluetooth</A>, <A href="http://hackaday.com/tag/cupcake/" rel="tag">cupcake</A>, <A href="http://hackaday.com/tag/dev-phone-1/" rel="tag">dev phone 1</A>, <A href="http://hackaday.com/tag/dun/" rel="tag">dun</A>, <A href="http://hackaday.com/tag/framework/" rel="tag">framework</A>, <A href="http://hackaday.com/tag/g1/" rel="tag">G1</A>, <A href="http://hackaday.com/tag/google/" rel="tag">google</A>, <A href="http://hackaday.com/tag/javascript/" rel="tag">javascript</A>, <A href="http://hackaday.com/tag/kernel/" rel="tag">kernel</A>, <A href="http://hackaday.com/tag/linux/" rel="tag">linux</A>, <A href="http://hackaday.com/tag/squirrelfish/" rel="tag">squirrelfish</A>, <A href="http://hackaday.com/tag/t-mobile/" rel="tag">t-mobile</A>, <A href="http://hackaday.com/tag/t-mobile-g1/" rel="tag">t-mobile g1</A>, <A href="http://hackaday.com/tag/usb/" rel="tag">usb</A>, <A href="http://hackaday.com/tag/usb-gadget-framework/" rel="tag">usb gadget framework</A>, <A href="http://hackaday.com/tag/webkit/" rel="tag">webkit</A><BR>				</DIV>
+				</DIV>
+							</DIV>
+		</DIV>
+		
+	
+
+	<H3 id="recentheadlines">Recent Posts</H3>
+<UL>
+<LI> <A href="http://hackaday.com/2010/05/19/balancing-cube-looks-more-like-a-star/" rel="bookmark">Balancing cube looks more like a star</A> (05/19/2010)<BR></LI><LI> <A href="http://hackaday.com/2010/05/19/arduino-based-eatc-replacement/" rel="bookmark">Arduino based EATC replacement</A> (05/19/2010)<BR></LI><LI> <A href="http://hackaday.com/2010/05/19/shredding-to-street-fighter/" rel="bookmark">Shredding to Street Fighter</A> (05/19/2010)<BR></LI><LI> <A href="http://hackaday.com/2010/05/19/cramming-more-pixels-into-a-thinkpad/" rel="bookmark">Cramming more pixels into a Thinkpad</A> (05/19/2010)<BR></LI><LI> <A href="http://hackaday.com/2010/05/19/solder-station-hack-adds-temperature-control/" rel="bookmark">Solder station hack adds temperature control</A> (05/19/2010)<BR></LI></UL>
+
+<BR>
+<SCRIPT type="text/javascript">
+ GA_googleFillSlot("HAD_MedRect_Main_300x250");
+</SCRIPT><SCRIPT src="./hack_a_day_files/ads(1)"></SCRIPT><DIV id="google_ads_div_HAD_MedRect_Main_300x250">
+<IFRAME id="google_ads_iframe_HAD_MedRect_Main_300x250" name="google_ads_iframe_HAD_MedRect_Main_300x250" width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; "></IFRAME></DIV>
+<SCRIPT>GA_googleCreateDomIframe('google_ads_div_HAD_MedRect_Main_300x250' ,'HAD_MedRect_Main_300x250');</SCRIPT>
+<BR>
+	
+
+
+<!-- You can start editing here. -->
+
+	<H3 id="comments">Reader Comments</H3>
+
+	
+		
+	<DIV class="commentlinks" id="commentlinks-55866">
+		<DIV class="statsclass1" id="comment-55866" style="padding-bottom: 10px">
+						<P></P><P>Awesome. Reading this makes me practically salivate. I want a good android device with AT&amp;T 3G dammit! I’d almost buy a dev phone, but i really want 3G. I had it for years on my various phones till i switched to the iphone 2G, and I’m not spending any more money on i-products.<BR>
+-Taylor</P>
+<P></P>
+			<P class="credits">Posted at <A href="http://hackaday.com/2008/12/19/android-adds-a2dp-avrcp-bluetooth-and-more/#comment-55866">3:18 pm</A> on Dec 19th, 2008 by <A href="http://digitalsantacruz.com/" rel="external nofollow" class="url">Taylor Alexander</A></P>
+		</DIV>
+	</DIV>
+
+	
+		
+	<DIV class="commentlinks" id="commentlinks-55902">
+		<DIV class="statsclass2" id="comment-55902" style="padding-bottom: 10px">
+						<P></P><P>more to the point i just want a wider range of android phones!</P>
+<P></P>
+			<P class="credits">Posted at <A href="http://hackaday.com/2008/12/19/android-adds-a2dp-avrcp-bluetooth-and-more/#comment-55902">8:04 pm</A> on Dec 19th, 2008 by <A href="http://www.dealextreme.com/products.dx/just.released~r.83188615" rel="external nofollow" class="url">D3XTR</A></P>
+		</DIV>
+	</DIV>
+
+	
+		
+	<DIV class="commentlinks" id="commentlinks-55964">
+		<DIV class="statsclass1" id="comment-55964" style="padding-bottom: 10px">
+						<P></P><P>Even more of a reason for me to toss this on my Nokia n810.  The thing left out both of those abilities, and was a serious letdown because of it.</P>
+<P></P>
+			<P class="credits">Posted at <A href="http://hackaday.com/2008/12/19/android-adds-a2dp-avrcp-bluetooth-and-more/#comment-55964">8:23 am</A> on Dec 20th, 2008 by jimmie</P>
+		</DIV>
+	</DIV>
+
+	
+
+
+
+
+<H3 id="respond">Leave a Reply</H3>
+
+
+<FORM action="http://hackaday.com/wp-comments-post.php" method="post" id="commentform">
+
+
+<P><INPUT type="text" name="author" id="author" value="" size="22" tabindex="1">
+
+<LABEL for="author"><SMALL>Name (required)</SMALL></LABEL></P>
+
+<P><INPUT type="text" name="email" id="email" value="" size="22" tabindex="2">
+
+<LABEL for="email"><SMALL>Mail (will not be published) (required)</SMALL></LABEL></P>
+
+<P><INPUT type="text" name="url" id="url" value="" size="22" tabindex="3">
+
+<LABEL for="url"><SMALL>Website</SMALL></LABEL></P>
+
+
+<!--<p><small><strong>XHTML:</strong> You can use these tags: <code>&lt;a href=&quot;&quot; title=&quot;&quot;&gt; &lt;abbr title=&quot;&quot;&gt; &lt;acronym title=&quot;&quot;&gt; &lt;b&gt; &lt;blockquote cite=&quot;&quot;&gt; &lt;cite&gt; &lt;code&gt; &lt;pre&gt; &lt;del datetime=&quot;&quot;&gt; &lt;em&gt; &lt;i&gt; &lt;q cite=&quot;&quot;&gt; &lt;strike&gt; &lt;strong&gt; </code></small></p>-->
+
+<P><TEXTAREA name="comment" id="comment" cols="50" rows="10" tabindex="4"></TEXTAREA></P>
+
+<P><INPUT name="submit" type="submit" id="submit" tabindex="5" value="Submit Comment">
+
+<INPUT type="hidden" name="comment_post_ID" value="7056">
+
+</P>
+
+
+<INPUT type="hidden" name="genseq" value="1274316071">
+<P><INPUT type="checkbox" name="subscribe" id="subscribe" value="subscribe" style="width: auto;" tabindex="6"> <LABEL class="subscribe-label" id="subscribe-label" for="subscribe">Notify me of follow-up comments via email.</LABEL></P><P><INPUT type="checkbox" name="subscribe_blog" id="subscribe_blog" value="subscribe" style="width: auto;" tabindex="7"> <LABEL class="subscribe-label" id="subscribe-blog-label" for="subscribe_blog">Notify me of new posts via email.</LABEL></P><INPUT type="hidden" name="sub-type" value="comment-form-text0">
+</FORM>
+
+
+
+
+
+
+
+
+
+</DIV>
+
+
+
+</DIV>
+
+
+
+<DIV id="subcontent">
+
+	<DIV id="bloginfo">
+
+		<P>Hack a Day serves up fresh hacks each day, every day from around the web and a special How-To hack each week.</P>
+		<P><A href="http://hackaday.com/contact-hack-a-day/">Send us your hacks</A></P>
+
+
+		<BR>
+
+		<FORM method="get" id="searchform" action="http://hackaday.com/">
+<INPUT type="text" value="" name="s" id="s">
+<INPUT type="submit" id="searchsubmit" value="Search">
+
+</FORM>
+
+		<BR>
+
+					<DIV class="textwidget"><A href="http://hackaday.com/category/how-to/"><IMG src="./hack_a_day_files/howtos.jpg" border="0"></A><BR><A href="http://hackaday.com/category/reviews/"><IMG src="./hack_a_day_files/reviews.jpg" border="0"></A><BR><A href="http://hackaday.com/category/parts/"><IMG src="./hack_a_day_files/parts.jpg" border="0"></A><BR><A href="http://twitter.com/hackaday"><IMG src="./hack_a_day_files/twitterhad.jpg" border="0"></A><BR><A href="http://answers.hackaday.com/"><IMG src="./hack_a_day_files/had_answers.jpg" border="0"></A><BR></DIV>
+		<BR>		
+
+	</DIV>
+
+	<DIV id="medrect">
+
+		<BR>
+		
+		<SCRIPT type="text/javascript">
+		 GA_googleFillSlot("HAD_MedRect_Sidebar_300x250");
+		</SCRIPT><SCRIPT src="./hack_a_day_files/ads(2)"></SCRIPT><DIV id="google_ads_div_HAD_MedRect_Sidebar_300x250">
+<IFRAME id="google_ads_iframe_HAD_MedRect_Sidebar_300x250" name="google_ads_iframe_HAD_MedRect_Sidebar_300x250" width="300" height="250" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; "></IFRAME></DIV>
+<SCRIPT>GA_googleCreateDomIframe('google_ads_div_HAD_MedRect_Sidebar_300x250' ,'HAD_MedRect_Sidebar_300x250');</SCRIPT>
+		
+		<BR>
+
+	</DIV>
+
+<HR>
+
+	<DIV id="linkscol">
+
+	<H3>Hacks</H3>
+
+		<UL>
+			<LI class="cat-item cat-item-18020710"><A href="http://hackaday.com/category/android-hacks/" title="View all posts filed under android hacks">android hacks</A> (55)
+</LI>
+	<LI class="cat-item cat-item-18020705"><A href="http://hackaday.com/category/arduino-hacks/" title="View all posts filed under arduino hacks">arduino hacks</A> (313)
+</LI>
+	<LI class="cat-item cat-item-33199679"><A href="http://hackaday.com/category/ask-hackaday/" title="View all posts filed under Ask Hackaday">Ask Hackaday</A> (5)
+</LI>
+	<LI class="cat-item cat-item-25122024"><A href="http://hackaday.com/category/beer-hacks/" title="View all posts filed under beer hacks">beer hacks</A> (6)
+</LI>
+	<LI class="cat-item cat-item-12115263"><A href="http://hackaday.com/category/blackberry-hacks/" title="View all posts filed under blackberry hacks">blackberry hacks</A> (6)
+</LI>
+	<LI class="cat-item cat-item-10969031"><A href="http://hackaday.com/category/cellphones-hacks/" title="View all posts filed under cellphones hacks">cellphones hacks</A> (214)
+</LI>
+	<LI class="cat-item cat-item-35745764"><A href="http://hackaday.com/category/chemistry-hacks/" title="View all posts filed under chemistry hacks">chemistry hacks</A> (1)
+</LI>
+	<LI class="cat-item cat-item-24483654"><A href="http://hackaday.com/category/classic-hacks/" title="View all posts filed under classic hacks">classic hacks</A> (516)
+</LI>
+	<LI class="cat-item cat-item-31677810"><A href="http://hackaday.com/category/clock-hacks/" title="View all posts filed under clock hacks">clock hacks</A> (16)
+</LI>
+	<LI class="cat-item cat-item-18755632"><A href="http://hackaday.com/category/cnc-hacks/" title="View all posts filed under cnc hacks">cnc hacks</A> (100)
+</LI>
+	<LI class="cat-item cat-item-78428"><A href="http://hackaday.com/category/cons/" title="View all posts filed under cons">cons</A> (124)
+</LI>
+	<LI class="cat-item cat-item-5738"><A href="http://hackaday.com/category/contests/" title="View all posts filed under contests">contests</A> (47)
+</LI>
+	<LI class="cat-item cat-item-10969032"><A href="http://hackaday.com/category/digital-audio-hacks/" title="View all posts filed under digital audio hacks">digital audio hacks</A> (207)
+</LI>
+	<LI class="cat-item cat-item-10969033"><A href="http://hackaday.com/category/digital-cameras-hacks/" title="View all posts filed under digital cameras hacks">digital cameras hacks</A> (185)
+</LI>
+	<LI class="cat-item cat-item-10969034"><A href="http://hackaday.com/category/downloads-hacks/" title="View all posts filed under downloads hacks">downloads hacks</A> (100)
+</LI>
+	<LI class="cat-item cat-item-17762632"><A href="http://hackaday.com/category/ds-hacks/" title="View all posts filed under ds hacks">ds hacks</A> (33)
+</LI>
+	<LI class="cat-item cat-item-551890"><A href="http://hackaday.com/category/firefox-hacks/" title="View all posts filed under firefox hacks">firefox hacks</A> (21)
+</LI>
+	<LI class="cat-item cat-item-18020562"><A href="http://hackaday.com/category/g1-hacks/" title="View all posts filed under g1 hacks">g1 hacks</A> (26)
+</LI>
+	<LI class="cat-item cat-item-10969035"><A href="http://hackaday.com/category/gameboy-hacks/" title="View all posts filed under gameboy hacks">gameboy hacks</A> (65)
+</LI>
+	<LI class="cat-item cat-item-320557"><A href="http://hackaday.com/category/google-hacks/" title="View all posts filed under google hacks">google hacks</A> (41)
+</LI>
+	<LI class="cat-item cat-item-10969036"><A href="http://hackaday.com/category/gps-hacks/" title="View all posts filed under gps hacks">gps hacks</A> (62)
+</LI>
+	<LI class="cat-item cat-item-24535490"><A href="http://hackaday.com/category/green-hacks/" title="View all posts filed under green hacks">green hacks</A> (32)
+</LI>
+	<LI class="cat-item cat-item-27311668"><A href="http://hackaday.com/category/hackaday-links/" title="View all posts filed under Hackaday links">Hackaday links</A> (18)
+</LI>
+	<LI class="cat-item cat-item-21755374"><A href="http://hackaday.com/category/hackerspaces/" title="View all posts filed under Hackerspaces">Hackerspaces</A> (1)
+</LI>
+	<LI class="cat-item cat-item-6310599"><A href="http://hackaday.com/category/hackit/" title="View all posts filed under HackIt">HackIt</A> (61)
+</LI>
+	<LI class="cat-item cat-item-10969037"><A href="http://hackaday.com/category/handhelds-hacks/" title="View all posts filed under handhelds hacks">handhelds hacks</A> (139)
+</LI>
+	<LI class="cat-item cat-item-79"><A href="http://hackaday.com/category/hardware/" title="View all posts filed under hardware">hardware</A> (20)
+</LI>
+	<LI class="cat-item cat-item-10969038"><A href="http://hackaday.com/category/home-entertainment-hacks/" title="View all posts filed under home entertainment hacks">home entertainment hacks</A> (373)
+</LI>
+	<LI class="cat-item cat-item-5660882"><A href="http://hackaday.com/category/home-hacks/" title="View all posts filed under home hacks">home hacks</A> (292)
+</LI>
+	<LI class="cat-item cat-item-2708"><A href="http://hackaday.com/category/how-to/" title="Hardware hacking how-tos">how-to</A> (39)
+</LI>
+	<LI class="cat-item cat-item-1416772"><A href="http://hackaday.com/category/iphone-hacks/" title="View all posts filed under iphone hacks">iphone hacks</A> (116)
+</LI>
+	<LI class="cat-item cat-item-1275163"><A href="http://hackaday.com/category/ipod-hacks/" title="View all posts filed under ipod hacks">ipod hacks</A> (118)
+</LI>
+	<LI class="cat-item cat-item-10969048"><A href="http://hackaday.com/category/laptops-hacks/" title="View all posts filed under laptops hacks">laptops hacks</A> (84)
+</LI>
+	<LI class="cat-item cat-item-10969055"><A href="http://hackaday.com/category/laser-hacks/" title="View all posts filed under laser hacks">laser hacks</A> (70)
+</LI>
+	<LI class="cat-item cat-item-18020716"><A href="http://hackaday.com/category/led-hacks/" title="View all posts filed under led hacks">led hacks</A> (224)
+</LI>
+	<LI class="cat-item cat-item-10626"><A href="http://hackaday.com/category/lifehacks/" title="View all posts filed under lifehacks">lifehacks</A> (14)
+</LI>
+	<LI class="cat-item cat-item-729674"><A href="http://hackaday.com/category/linux-hacks/" title="View all posts filed under linux hacks">linux hacks</A> (37)
+</LI>
+	<LI class="cat-item cat-item-20732807"><A href="http://hackaday.com/category/lockpicking-hacks/" title="View all posts filed under lockpicking hacks">lockpicking hacks</A> (6)
+</LI>
+	<LI class="cat-item cat-item-10969060"><A href="http://hackaday.com/category/macs-hacks/" title="View all posts filed under macs hacks">macs hacks</A> (102)
+</LI>
+	<LI class="cat-item cat-item-11284667"><A href="http://hackaday.com/category/medical-hacks/" title="View all posts filed under Medical hacks">Medical hacks</A> (15)
+</LI>
+	<LI class="cat-item cat-item-5611793"><A href="http://hackaday.com/category/misc-hacks/" title="View all posts filed under misc hacks">misc hacks</A> (1204)
+</LI>
+	<LI class="cat-item cat-item-18020730"><A href="http://hackaday.com/category/multitouch-hacks/" title="View all posts filed under multitouch hacks">multitouch hacks</A> (50)
+</LI>
+	<LI class="cat-item cat-item-22652725"><A href="http://hackaday.com/category/musical-hacks/" title="View all posts filed under musical hacks">musical hacks</A> (4)
+</LI>
+	<LI class="cat-item cat-item-18020722"><A href="http://hackaday.com/category/netbook-hacks/" title="View all posts filed under netbook hacks">netbook hacks</A> (45)
+</LI>
+	<LI class="cat-item cat-item-103"><A href="http://hackaday.com/category/news/" title="View all posts filed under news">news</A> (645)
+</LI>
+	<LI class="cat-item cat-item-18020685"><A href="http://hackaday.com/category/nintendo-hacks/" title="View all posts filed under nintendo hacks">nintendo hacks</A> (157)
+</LI>
+	<LI class="cat-item cat-item-245123"><A href="http://hackaday.com/category/parts/" title="View all posts filed under parts">parts</A> (33)
+</LI>
+	<LI class="cat-item cat-item-10969077"><A href="http://hackaday.com/category/pcs-hacks/" title="View all posts filed under pcs hacks">pcs hacks</A> (263)
+</LI>
+	<LI class="cat-item cat-item-10969081"><A href="http://hackaday.com/category/peripherals-hacks/" title="View all posts filed under peripherals hacks">peripherals hacks</A> (442)
+</LI>
+	<LI class="cat-item cat-item-16325149"><A href="http://hackaday.com/category/phone-hacks/" title="View all posts filed under phone hacks">phone hacks</A> (6)
+</LI>
+	<LI class="cat-item cat-item-10969088"><A href="http://hackaday.com/category/playstation-hacks/" title="View all posts filed under playstation hacks">playstation hacks</A> (83)
+</LI>
+	<LI class="cat-item cat-item-2060"><A href="http://hackaday.com/category/podcasts/" title="View all posts filed under podcasts">podcasts</A> (8)
+</LI>
+	<LI class="cat-item cat-item-10969096"><A href="http://hackaday.com/category/portable-audio-hacks/" title="View all posts filed under portable audio hacks">portable audio hacks</A> (61)
+</LI>
+	<LI class="cat-item cat-item-10969099"><A href="http://hackaday.com/category/portable-video-hacks/" title="View all posts filed under portable video hacks">portable video hacks</A> (52)
+</LI>
+	<LI class="cat-item cat-item-21227722"><A href="http://hackaday.com/category/pre-hacks/" title="View all posts filed under pre hacks">pre hacks</A> (5)
+</LI>
+	<LI class="cat-item cat-item-588444"><A href="http://hackaday.com/category/psp-hacks/" title="View all posts filed under psp hacks">psp hacks</A> (43)
+</LI>
+	<LI class="cat-item cat-item-47"><A href="http://hackaday.com/category/rants/" title="View all posts filed under rants">rants</A> (6)
+</LI>
+	<LI class="cat-item cat-item-21870780"><A href="http://hackaday.com/category/repair-hacks/" title="View all posts filed under repair hacks">repair hacks</A> (10)
+</LI>
+	<LI class="cat-item cat-item-309"><A href="http://hackaday.com/category/reviews/" title="View all posts filed under reviews">reviews</A> (9)
+</LI>
+	<LI class="cat-item cat-item-10969101"><A href="http://hackaday.com/category/robots-hacks/" title="View all posts filed under robots hacks">robots hacks</A> (396)
+</LI>
+	<LI class="cat-item cat-item-30302"><A href="http://hackaday.com/category/roundup/" title="View all posts filed under roundup">roundup</A> (22)
+</LI>
+	<LI class="cat-item cat-item-10969111"><A href="http://hackaday.com/category/security-hacks/" title="View all posts filed under security hacks">security hacks</A> (223)
+</LI>
+	<LI class="cat-item cat-item-10969116"><A href="http://hackaday.com/category/solar-hacks/" title="View all posts filed under solar hacks">solar hacks</A> (13)
+</LI>
+	<LI class="cat-item cat-item-10969121"><A href="http://hackaday.com/category/tablet-pcs-hacks/" title="View all posts filed under tablet pcs hacks">tablet pcs hacks</A> (10)
+</LI>
+	<LI class="cat-item cat-item-3075183"><A href="http://hackaday.com/category/teardown/" title="View all posts filed under teardown">teardown</A> (6)
+</LI>
+	<LI class="cat-item cat-item-10969130"><A href="http://hackaday.com/category/tool-hacks/" title="View all posts filed under tool hacks">tool hacks</A> (237)
+</LI>
+	<LI class="cat-item cat-item-25277004"><A href="http://hackaday.com/category/toy-hacks/" title="View all posts filed under toy hacks">toy hacks</A> (55)
+</LI>
+	<LI class="cat-item cat-item-10969134"><A href="http://hackaday.com/category/transportation-hacks/" title="View all posts filed under transportation hacks">transportation hacks</A> (210)
+</LI>
+	<LI class="cat-item cat-item-1"><A href="http://hackaday.com/category/uncategorized/" title="View all posts filed under Uncategorized">Uncategorized</A> (330)
+</LI>
+	<LI class="cat-item cat-item-3184456"><A href="http://hackaday.com/category/video-hacks/" title="View all posts filed under video hacks">video hacks</A> (43)
+</LI>
+	<LI class="cat-item cat-item-12552193"><A href="http://hackaday.com/category/wearable-hacks/" title="View all posts filed under wearable hacks">wearable hacks</A> (74)
+</LI>
+	<LI class="cat-item cat-item-714758"><A href="http://hackaday.com/category/wii-hacks/" title="View all posts filed under wii hacks">wii hacks</A> (62)
+</LI>
+	<LI class="cat-item cat-item-4891215"><A href="http://hackaday.com/category/wireless-hacks/" title="View all posts filed under wireless hacks">wireless hacks</A> (188)
+</LI>
+	<LI class="cat-item cat-item-7079455"><A href="http://hackaday.com/category/xbox-hacks/" title="View all posts filed under xbox hacks">xbox hacks</A> (95)
+</LI>
+		</UL>
+
+		<H3>Resources</H3>
+		<UL>
+			<LI><A href="http://hackaday.com/contact-hack-a-day/">Send us news tips</A></LI>
+			<LI><A href="http://hackaday.com/contact-hack-a-day/">Contact us</A></LI>
+		</UL>
+
+		<H3>RSS newsfeeds</H3>
+		<UL>
+			<LI><A href="http://hackaday.com/feed/">RSS news feed</A></LI>
+		</UL>
+
+		<P>Powered by <A href="http://wordpress.com/" rel="generator">WordPress</A></P>
+
+		<SCRIPT type="text/javascript">
+		 GA_googleFillSlot("HAD_Skyscraper_Sidebar_120x600");
+		</SCRIPT><SCRIPT src="./hack_a_day_files/ads(3)"></SCRIPT><DIV id="google_ads_div_HAD_Skyscraper_Sidebar_120x600">
+<IFRAME id="google_ads_iframe_HAD_Skyscraper_Sidebar_120x600" name="google_ads_iframe_HAD_Skyscraper_Sidebar_120x600" width="120" height="600" scrolling="no" marginwidth="0" marginheight="0" frameborder="0" style="border-top-width: 0px; border-right-width: 0px; border-bottom-width: 0px; border-left-width: 0px; border-style: initial; border-color: initial; "></IFRAME></DIV>
+<SCRIPT>GA_googleCreateDomIframe('google_ads_div_HAD_Skyscraper_Sidebar_120x600' ,'HAD_Skyscraper_Sidebar_120x600');</SCRIPT>
+
+	</DIV>
+
+	<DIV id="statscol">
+		<H3>Most commented on <SPAN>(30 days)</SPAN></H3>
+		<UL>
+			<LI class="statsclass1"><A href="http://hackaday.com/2010/05/15/a-black-box-mystery/" title="A Black Box Mystery">A Black Box Mystery</A> (147)</LI><LI class="statsclass2"><A href="http://hackaday.com/2010/05/08/xkcd-takes-a-swipe-at-the-arduino/" title="XKCD takes a swipe at the Arduino">XKCD takes a swipe at the Arduino</A> (95)</LI><LI class="statsclass1"><A href="http://hackaday.com/2010/04/29/sony-removes-ps3-linux-support-gets-sued-for-it/" title="Sony removes PS3 Linux support; Gets sued for it">Sony removes PS3 Linux support; Gets sued for it</A> (77)</LI><LI class="statsclass2"><A href="http://hackaday.com/2010/04/26/lawnmowerstakeropeanalog-robotic-lawn-service/" title="Lawnmower+stake+rope=Analog robotic lawn service">Lawnmower+stake+rope=Analog robotic lawn service</A> (73)</LI><LI class="statsclass1"><A href="http://hackaday.com/2010/05/15/minimalist-avr-programmer-is-just-fab/" title="Minimalist AVR programmer is just fab!">Minimalist AVR programmer is just fab!</A> (73)</LI><LI class="statsclass2"><A href="http://hackaday.com/2010/04/21/are-you-human-resistor-edition/" title="Are you human? Resistor edition">Are you human? Resistor edition</A> (72)</LI><LI class="statsclass1"><A href="http://hackaday.com/2010/05/13/ghetto-repairs-desoldering-with-a-candle/" title="Ghetto repairs: Desoldering with a candle">Ghetto repairs: Desoldering with a candle</A> (62)</LI><LI class="statsclass2"><A href="http://hackaday.com/2010/04/26/spinning-ball-of-led-awesomeness/" title="Spinning ball of LED awesomeness">Spinning ball of LED awesomeness</A> (59)</LI><LI class="statsclass1"><A href="http://hackaday.com/2010/05/18/modern-car-data-systems-lack-security/" title="Modern car data systems lack security">Modern car data systems lack security</A> (58)</LI><LI class="statsclass2"><A href="http://hackaday.com/2010/04/22/get-serious-about-building-a-sequencer/" title="Get serious about building a sequencer">Get serious about building a sequencer</A> (55)</LI>		</UL>
+
+		<H3>Recent comments </H3>
+		<UL>
+			<LI class="statsclass1">Mu Metal on <A href="http://hackaday.com/2010/05/18/cathode-ray-tube-leads-the-way-on-this-bot/#comment-143611" title="View the entire comment by Mu Metal">Cathode ray tube leads the way on this bot</A></LI><LI class="statsclass2">Alexand3rS on <A href="http://hackaday.com/2010/05/18/composing-music-with-the-force-trainer/#comment-143610" title="View the entire comment by Alexand3rS">Composing music with the Force Trainer</A></LI><LI class="statsclass1">Paul Potter on <A href="http://hackaday.com/2010/05/14/biopunk-watch-time-temperature-gaming/#comment-143609" title="View the entire comment by Paul Potter">Biopunk watch: time, temperature, gaming</A></LI><LI class="statsclass2">nullinvoid on <A href="http://hackaday.com/2010/05/19/cramming-more-pixels-into-a-thinkpad/#comment-143607" title="View the entire comment by nullinvoid">Cramming more pixels into a Thinkpad</A></LI><LI class="statsclass1">Travas* on <A href="http://hackaday.com/2010/05/19/arduino-based-eatc-replacement/#comment-143606" title="View the entire comment by Travas*">Arduino based EATC replacement</A></LI><LI class="statsclass2">gyppo on <A href="http://hackaday.com/2010/05/19/balancing-cube-looks-more-like-a-star/#comment-143603" title="View the entire comment by gyppo">Balancing cube looks more like a star</A></LI><LI class="statsclass1">bhtooefr on <A href="http://hackaday.com/2010/05/19/cramming-more-pixels-into-a-thinkpad/#comment-143601" title="View the entire comment by bhtooefr">Cramming more pixels into a Thinkpad</A></LI><LI class="statsclass2">Fwirt on <A href="http://hackaday.com/2010/05/19/solder-station-hack-adds-temperature-control/#comment-143600" title="View the entire comment by Fwirt">Solder station hack adds temperature control</A></LI><LI class="statsclass1">bhtooefr on <A href="http://hackaday.com/2010/05/19/cramming-more-pixels-into-a-thinkpad/#comment-143598" title="View the entire comment by bhtooefr">Cramming more pixels into a Thinkpad</A></LI><LI class="statsclass2">bhtooefr on <A href="http://hackaday.com/2010/05/19/cramming-more-pixels-into-a-thinkpad/#comment-143597" title="View the entire comment by bhtooefr">Cramming more pixels into a Thinkpad</A></LI>		</UL>
+		
+		<BR>
+	
+	</DIV>
+	
+
+	
+
+</DIV>
+
+
+
+
+<BR>
+
+
+
+<DIV id="footer">
+<HR>
+	All contents copyright © 2010, Hack a Day. All Rights Reserved.
+	
+</DIV>
+
+
+<DIV style="text-align: right;">
+<!-- Site Meter -->
+<A target="_top" href="http://www.sitemeter.com/stats.asp?site=sm6hackaday" id="idSiteMeterHREF"><IMG border="0" alt="Site Meter" src="./hack_a_day_files/meter.asp"></A><IFRAME frameborder="0" width="1" height="0" src="./hack_a_day_files/saved_resource(1).html"></IFRAME><IFRAME frameborder="0" width="1" height="0" src="./hack_a_day_files/saved_resource.html"></IFRAME><SCRIPT type="text/javascript" src="./hack_a_day_files/counter.js">
+</SCRIPT>
+<NOSCRIPT></NOSCRIPT>
+<!-- Copyright (c)2006 Site Meter -->
+</DIV>
+<SCRIPT type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</SCRIPT><SCRIPT src="./hack_a_day_files/ga.js" type="text/javascript"></SCRIPT>
+<SCRIPT type="text/javascript">
+var pageTracker = _gat._getTracker("UA-2201445-6");
+pageTracker._trackPageview();
+</SCRIPT>
+<!-- Start Quantcast tag -->
+<SCRIPT type="text/javascript">
+_qoptions={
+qacct:"p-cc6zkdHuZwUDM"
+};
+</SCRIPT>
+<SCRIPT type="text/javascript" src="./hack_a_day_files/quant.js"></SCRIPT>
+<NOSCRIPT></NOSCRIPT>
+<!-- End Quantcast tag -->
+		<SCRIPT type="text/javascript">_qacct='p-18-mFEk4J448M';_qoptions={labels:'adt.0,language.en,vip.hackadaycom'};</SCRIPT>
+<SCRIPT type="text/javascript" src="./hack_a_day_files/quant(1).js"></SCRIPT>
+<NOSCRIPT></NOSCRIPT>
+<SCRIPT src="http://s.stats.wordpress.com/w.js?19" type="text/javascript"></SCRIPT>
+<SCRIPT type="text/javascript">
+st_go({'blog':'4779443','v':'wpcom','user_id':'0','post':'7056','subd':'hackadaycom'});
+ex_go({'crypt':'RDZ8LFkxbXFIfEJddV00MnlKXVZsRU92T1hDVC0mbTktTzV4TlloVTJHZDdPTmJVMSxEU1RPOHpfS2osR3I4T0xmMD9XN0laUn40dk04Zy45P3NQaz9UV0RFJm0tZjVBc2xoNUh6SGhjYzIuTT9odm8xMTg/eGo/L2cxR2t6dFg1RmVvS0xXc2RbKytdQUcxJS9bU3YlZmxVaWg0V3RXXSwsXU55a1I4bmdbUVMveC9NNHNuODAtUF81TWYtdDhidHdGdllIcWkxRXM/T1lJRi8yTjI='});
+addLoadEvent(function(){linktracker_init('4779443',7056);});
+	</SCRIPT>
+
+
+
+
+</BODY></HTML>
