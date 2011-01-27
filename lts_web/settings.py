@@ -79,3 +79,8 @@ INSTALLED_APPS = (
     'lts_web.lts',
     'django.contrib.admin',
 )
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
