@@ -1,3 +1,4 @@
 *.pyc
 *~
 local_settings.py
+/lts_web/lts_dev.cfg
