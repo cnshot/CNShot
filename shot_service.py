@@ -299,21 +299,21 @@ def killChildProcesses(signum, frame):
 def restartChildProcess(signum, frame):
     logger.warn("Child exited ...")
     for i in range(len(child_processes)):
-        if child_processes[i] == 0:
+        if child_processes[i]['pid'] == 0:
             continue
-        logger.warn("Testing child %d: %d", i, child_processes[i])
+        logger.warn("Testing child %d: %d", i, child_processes[i]['pid'])
         try:
             done_pid = 0
             exit_status = 0
-            done_pid, exit_status = os.waitpid(child_processes[i], os.WNOHANG)
+            done_pid, exit_status = os.waitpid(child_processes[i]['pid'], os.WNOHANG)
         except OSError,e:
-            logger.warn("Failed to waitpid: %d %s", child_processes[i], str(e))
-            done_pid = child_processes[i]
+            logger.warn("Failed to waitpid: %d %s", child_processes[i]['pid'], str(e))
+            done_pid = child_processes[i]['pid']
             pass
         if done_pid > 0:
             logger.warn("Child %d exited: %d %d", i, done_pid, exit_status)
-            new_pid = ShotProcessWorker(id=str(i)).run()
-            child_processes[i]=pid
+            new_pid = child_processes[i]['class'](id=str(i)).run()
+            child_processes[i]['pid']=pid
             return
 
 if __name__ == '__main__':
@@ -404,7 +404,9 @@ if __name__ == '__main__':
 
     for i in range(cfg.shot_service.workers):
         pid = ShotProcessWorker(id=str(i)).run()
-        child_processes.append(pid)
+        child_processes.append(
+            {'pid':pid, 'class':ShotProcessWorker}
+        )
 
     signal.signal(signal.SIGINT, killChildProcesses)
     signal.signal(signal.SIGTERM, killChildProcesses)

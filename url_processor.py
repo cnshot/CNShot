@@ -12,6 +12,9 @@ from urlparse import urlparse
 from lts.models import ImageSitePattern, IgnoredSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, SizedCanvasSitePattern
 
+global patterns
+patterns = None
+
 class TaskProcessingThread(threading.Thread):
     def __init__(self, task):
         threading.Thread.__init__(self)
@@ -76,6 +79,8 @@ class TaskProcessingThread(threading.Thread):
                             mime_type[1], self.task['url'])
                 self.writeMQ(cfg.queues.cancel, self.task)
                 return
+
+        global patterns
 
         if patterns.ignore(self.task['url']):
             # enqueue cancel
@@ -222,38 +227,15 @@ def extend_url(s):
         return None
     
     return m.group(1).rstrip()
-    
-if __name__ == '__main__':
-    description = '''Shot task URL pre-processor.'''
-    parser = OptionParser(usage="usage: %prog [options]",
-                          version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
-                          description=description)
 
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
-                      type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
-
-    (options,args) = parser.parse_args()
-    if len(args) != 0:
-        parser.error("incorrect number of arguments") 
-
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-
-    logging.config.fileConfig(cfg.common.log_config)
-    logger = logging.getLogger("url_processor")
-
+def process_url():
+    global patterns
     patterns = URLPatterns()
 
     # loop, dequeue source, create processing thread
     if not cfg.queues.fetched:
         logger.error("Source queue is undefined.")
-        exit(1)
+        return 1
 
     logger.info("Start URL processing.")
 
@@ -289,4 +271,31 @@ if __name__ == '__main__':
                 pass
 
         TaskProcessingThread(pickle.loads(m.body)).start()
-        
+            
+    
+if __name__ == '__main__':
+    description = '''Shot task URL pre-processor.'''
+    parser = OptionParser(usage="usage: %prog [options]",
+                          version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
+                          description=description)
+
+    parser.add_option("-c", "--config",
+                      dest="config",
+                      default="lts.cfg",
+                      type="string",
+                      help="Config file [default %default].",
+                      metavar="CONFIG")
+
+    (options,args) = parser.parse_args()
+    if len(args) != 0:
+        parser.error("incorrect number of arguments") 
+
+    cfg=Config(file(filter(lambda x: os.path.isfile(x),
+                           [options.config,
+                            os.path.expanduser('~/.lts.cfg'),
+                            '/etc/lts.cfg'])[0]))
+
+    logging.config.fileConfig(cfg.common.log_config)
+    logger = logging.getLogger("url_processor")
+
+    url_process()

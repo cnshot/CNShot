@@ -1,3 +1,5 @@
+# migrated from original shot_service.py
+
 import os, sys, logging, logging.config, signal
 
 from django.core.management.base import BaseCommand, CommandError
@@ -17,7 +19,7 @@ class Command(BaseCommand):
         )
     help = '''Screenshot service with QtPt.'''
     
-    def handle(self, *test_labels, **options):
+    def handle(self, *args, **options):
         cfg_file = options.get('config', 'lts.cfg')
         cfg = Config(file(filter(lambda x: os.path.isfile(x),
                                  [cfg_file,
@@ -44,7 +46,9 @@ class Command(BaseCommand):
 
         for i in range(cfg.shot_service.workers):
             pid = shot_service.ShotProcessWorker(id=str(i)).run()
-            shot_service.child_processes.append(pid)
+            shot_service.child_processes.append(
+                {'pid':pid, 'class':shot_service.ShotProcessWorker}
+            )
 
         signal.signal(signal.SIGINT, shot_service.killChildProcesses)
         signal.signal(signal.SIGTERM, shot_service.killChildProcesses)

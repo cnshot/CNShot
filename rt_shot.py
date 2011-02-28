@@ -22,6 +22,7 @@ from django.core.files.base import ContentFile
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, LinkShot, Tweet, ShotCache
 
+global mc
 mc = None
 
 def update_linkshot(task, s, url, thumbnail_url):

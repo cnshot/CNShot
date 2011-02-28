@@ -80,7 +80,14 @@ INSTALLED_APPS = (
     'django.contrib.admin',
 )
 
+import os
+LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.conf')
+
 try:
     from local_settings import *
 except ImportError:
     pass
+
+import logging, logging.config
+logging.config.fileConfig(LOGGING_CONFIG)
+
