@@ -85,6 +85,12 @@ LTS_SCHEDULE = {
     'crawl': '5m',
     'img_upload': '5m',
     'tweet': '12m',
+    'cluster': '5m',
+    'clear_cache': '1h',
+    'update_twitter_accounts': '1d',
+    'update_twitter_users': '6h',
+    'follow_users': '1d',
+    'update_tweet_mentioned': '1d',
 }
 
 import os
