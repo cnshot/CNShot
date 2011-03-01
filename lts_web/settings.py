@@ -78,10 +78,16 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'lts_web.lts',
     'django.contrib.admin',
+    'django_future',
 )
+
+LTS_SCHEDULE = {
+    'crawl': '5m',
+}
 
 import os
 LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.conf')
+LTS_CONFIG = os.path.join(os.path.dirname(__file__), 'lts.cfg')
 
 try:
     from local_settings import *

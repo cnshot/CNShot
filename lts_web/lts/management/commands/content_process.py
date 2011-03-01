@@ -1,37 +1,27 @@
 # migrated from original rt_shot.py
 
-import os, sys, logging, logging.config, memcache
+import os, sys, logging, memcache
 
 from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
 from optparse import make_option
 from config import Config, ConfigMerger
 
 import rt_shot
 
+logger = logging.getLogger(__name__)
+
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
-        make_option("-c", "--config",
-                    dest="config",
-                    default="lts.cfg",
-                    type="string",
-                    help="Config file [default %default].",
-                    metavar="CONFIG"),
         )
     help = '''RT screenshots.'''
 
     def handle(self, *args, **options):
-        cfg_file = options.get('config', 'lts.cfg')
-        cfg = Config(file(filter(lambda x: os.path.isfile(x),
-                                 [cfg_file,
-                                  os.path.expanduser('~/.lts.cfg'),
-                                  '/etc/lts.cfg'])[0]))
+        cfg = Config(file(settings.LTS_CONFIG))
 
         # walk around encoding issue
         reload(sys)
         sys.setdefaultencoding('utf-8')
-
-        logging.config.fileConfig(cfg.common.log_config)
-        logger = logging.getLogger("content_process")
 
         rt_shot.logger = logger
         rt_shot.cfg = cfg

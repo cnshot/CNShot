@@ -1,37 +1,27 @@
 # migrated from original shot_service.py
 
-import os, sys, logging, logging.config, signal
+import os, sys, logging, signal
 
 from django.core.management.base import BaseCommand, CommandError
+from django.conf import settings
 from optparse import make_option
 from config import Config, ConfigMerger
 
 import shot_service
 
+logger = logging.getLogger(__name__)
+
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
-        make_option("-c", "--config",
-                    dest="config",
-                    default="lts.cfg",
-                    type="string",
-                    help="Config file [default %default].",
-                    metavar="CONFIG"),
         )
     help = '''Screenshot service with QtPt.'''
     
     def handle(self, *args, **options):
-        cfg_file = options.get('config', 'lts.cfg')
-        cfg = Config(file(filter(lambda x: os.path.isfile(x),
-                                 [cfg_file,
-                                  os.path.expanduser('~/.lts.cfg'),
-                                  '/etc/lts.cfg'])[0]))
+        cfg = Config(file(settings.LTS_CONFIG))
 
         # walk around encoding issue
         reload(sys)
         sys.setdefaultencoding('utf-8')
-
-        logging.config.fileConfig(cfg.common.log_config)
-        logger = logging.getLogger("shot_service")
 
         logger.info("Workers: %d", cfg.shot_service.workers)
         logger.info("Max width: %d", cfg.shot_service.max_width)
