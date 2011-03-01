@@ -22,8 +22,9 @@ from django.core.files.base import ContentFile
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, LinkShot, Tweet, ShotCache
 
-global mc
+global mc, stomp
 mc = None
+stomp = None
 
 def update_linkshot(task, s, url, thumbnail_url):
     try:
@@ -156,6 +157,7 @@ def readability_parse(task):
 #         logger.error('-'*60)
 
 def onReceiveTask(m):
+    global stomp
     stomp.ack(m)
     task = pickle.loads(m.body)
 
@@ -166,6 +168,7 @@ def onReceiveTask(m):
     logger.info("Got task: %s %s %s", task['url'], task['filename'], task['html_filename'])
 
     try:
+        global mc
         s = mc.get(task['id'])
         mc.delete(task['id'])
 
@@ -197,6 +200,26 @@ def onReceiveTask(m):
                         os.unlink(task['html_filename']+str(i))
             except:
                 pass
+
+class RTShotWorker:
+    def __init__(self, id='UNKNOWN'):
+        self.id = id
+
+    def run(self):
+        pid = os.fork()
+        if pid > 0:
+            return pid
+
+        global mc
+        mc = memcache.Client(['127.0.0.1:11211'], debug=0)
+
+        global stomp
+        stomp = stompy.simple.Client()
+        stomp.connect()
+        stomp.subscribe(cfg.queues.shotted, ack='client')
+
+        while True:
+            m = stomp.get(callback=onReceiveTask)
 
 if __name__ == '__main__':
     description = '''RT screenshots.'''

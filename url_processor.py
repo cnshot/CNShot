@@ -272,7 +272,17 @@ def process_url():
 
         TaskProcessingThread(pickle.loads(m.body)).start()
             
-    
+class URLProcessWorker:
+    def __init__(self, id='UNKNOWN'):
+        self.id = id
+
+    def run(self):
+        pid = os.fork()
+        if pid > 0:
+            return pid
+
+        process_url()
+
 if __name__ == '__main__':
     description = '''Shot task URL pre-processor.'''
     parser = OptionParser(usage="usage: %prog [options]",

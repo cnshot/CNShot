@@ -83,6 +83,8 @@ INSTALLED_APPS = (
 
 LTS_SCHEDULE = {
     'crawl': '5m',
+    'img_upload': '5m',
+    'tweet': '12m',
 }
 
 import os
@@ -94,6 +96,9 @@ try:
 except ImportError:
     pass
 
-import logging, logging.config
+import logging, logging.config, sys
 logging.config.fileConfig(LOGGING_CONFIG)
 
+# walk around encoding issue
+reload(sys)
+sys.setdefaultencoding('utf-8')

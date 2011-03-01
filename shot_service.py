@@ -287,9 +287,9 @@ def killChildProcesses(signum, frame):
     logger.info("Exiting with %d child processes ...", len(child_processes))
 
     try:
-        for pid in child_processes:
-            logger.info("Killing child process: %d", pid)
-            os.kill(pid, signal.SIGINT)
+        for child in child_processes:
+            logger.info("Killing child process: %d", child['pid'])
+            os.kill(child['pid'], signal.SIGINT)
     except UnboundLocalError:
         exit(0)
 
@@ -399,7 +399,7 @@ if __name__ == '__main__':
     logger.info("Dest queue: %s", cfg.queues.shotted)
     logger.info("Timeout: %d", cfg.shot_service.timeout)
 
-    global child_processes
+#    global child_processes
     # child_processes = []
 
     for i in range(cfg.shot_service.workers):

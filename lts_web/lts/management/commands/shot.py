@@ -7,7 +7,7 @@ from django.conf import settings
 from optparse import make_option
 from config import Config, ConfigMerger
 
-import shot_service
+import shot_service, url_processor, rt_shot, task_gc
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +19,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         cfg = Config(file(settings.LTS_CONFIG))
 
-        # walk around encoding issue
-        reload(sys)
-        sys.setdefaultencoding('utf-8')
-
         logger.info("Workers: %d", cfg.shot_service.workers)
         logger.info("Max width: %d", cfg.shot_service.max_width)
         logger.info("Max height: %d", cfg.shot_service.max_height)
@@ -33,13 +29,35 @@ class Command(BaseCommand):
         shot_service.child_processes = []
         shot_service.logger = logger
         shot_service.cfg = cfg
+        url_processor.logger = logger
+        url_processor.cfg = cfg
+        rt_shot.logger = logger
+        rt_shot.cfg = cfg
 
         for i in range(cfg.shot_service.workers):
-            pid = shot_service.ShotProcessWorker(id=str(i)).run()
             shot_service.child_processes.append(
-                {'pid':pid, 'class':shot_service.ShotProcessWorker}
+                {'pid':shot_service.ShotProcessWorker(id=str(i)).run(),
+                 'class':shot_service.ShotProcessWorker}
+                )
+
+        shot_service.child_processes.append(
+            {'pid':url_processor.URLProcessWorker(id="url_processor").run(),
+             'class':url_processor.URLProcessWorker
+             }
             )
 
+        shot_service.child_processes.append(
+            {'pid':rt_shot.RTShotWorker(id="rt_shot").run(),
+             'class':rt_shot.RTShotWorker
+             }
+            )
+
+        shot_service.child_processes.append(
+            {'pid':task_gc.GCWorker(id="task_gc").run(),
+             'class':task_gc.GCWorker
+             }
+            )
+        
         signal.signal(signal.SIGINT, shot_service.killChildProcesses)
         signal.signal(signal.SIGTERM, shot_service.killChildProcesses)
         signal.signal(signal.SIGCHLD, shot_service.restartChildProcess)
