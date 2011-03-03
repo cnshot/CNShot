@@ -84,6 +84,7 @@ INSTALLED_APPS = (
 LTS_SCHEDULE = {
     'crawl': '5m',
     'img_upload': '5m',
+    'rating': '5m',
     'tweet': '12m',
     'cluster': '5m',
     'clear_cache': '1h',

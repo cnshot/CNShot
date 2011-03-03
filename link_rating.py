@@ -155,6 +155,25 @@ class TaskProcessor:
             # enqueue for ratings
             queue.put({'linkshot':ls, 'links':links})
 
+def rate():
+    q=Queue()
+
+    # read recent tweet links from DB
+    #   filter out: a) tweeted links, b) links rated in last x mins
+    TaskProcessor.loadTasks(q)
+
+    # feed links to input queue
+    # start rating threads
+    # wait for rating threads exit
+    workers = []
+    for i in range(cfg.link_rating.workers):
+        w = LinkRatingThread(i, q)
+        w.start()
+        workers.append(w)
+
+    for i in range(cfg.link_rating.workers):
+        workers[i].join()    
+
 if __name__ == '__main__':
     description = '''Link rating processor.'''
     parser = OptionParser(usage="usage: %prog [options]",

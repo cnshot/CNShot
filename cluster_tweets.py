@@ -46,7 +46,7 @@ def cluster_tweets():
 
     if len(clusters) <= 0:
         logger.warn("No valid cluster found.")
-        sys.exit(0)
+        return
 
     tt = datetime.utcnow() - timedelta(seconds = cfg.cluster_tweets.duplicated_check_time)
     logger.debug("Getting RTs after: %s", tt)
@@ -101,7 +101,7 @@ def cluster_tweets():
  
             if hasattr(rts, 'error'):
                 logger.warn("Failed to update status: %s", rts.error)
-                sys.exit(1)
+                return
 
             rt = RTPublish(status_id = rts.id,
                            text = rts.text,
@@ -110,7 +110,7 @@ def cluster_tweets():
             rt.save()
         except tweepy.error.TweepError, e:
             logger.warn("Failed to tweet: %s", e)
-            sys.exit(1)
+            return
         except AttributeError:
             logger.info("AttributeError of status: %s %s", rts.error, dir(rts))
 
