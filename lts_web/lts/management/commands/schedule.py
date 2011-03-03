@@ -55,6 +55,21 @@ def rating(job):
     link_rating.rate()
 
 @job_as_parameter
+def blog(job):
+    # avoid frequent twitter api calling on error
+    schedule_job(settings.LTS_SCHEDULE['blog'],
+                 str(job.callable_name))
+    
+    import blog_post
+
+    cfg = Config(file(settings.LTS_CONFIG))
+
+    blog_post.logger = logger
+    blog_post.cfg = cfg
+
+    blog_post.BlogPost.blogPost()
+
+@job_as_parameter
 def tweet(job):
     # avoid frequent twitter api calling on error
     schedule_job(settings.LTS_SCHEDULE['tweet'],
@@ -176,6 +191,8 @@ class Command(BaseCommand):
                             'lts_web.lts.management.commands.schedule.img_upload')
         schedule_unique_job(settings.LTS_SCHEDULE['rating'],
                             'lts_web.lts.management.commands.schedule.rating')
+        schedule_unique_job(settings.LTS_SCHEDULE['blog'],
+                            'lts_web.lts.management.commands.schedule.blog')
         schedule_unique_job(settings.LTS_SCHEDULE['tweet'],
                             'lts_web.lts.management.commands.schedule.tweet')
         schedule_unique_job(settings.LTS_SCHEDULE['cluster'],
