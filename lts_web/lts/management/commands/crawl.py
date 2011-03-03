@@ -7,7 +7,7 @@ from django.conf import settings
 from optparse import make_option
 from config import Config, ConfigMerger
 
-import fetch_tweet_link
+from lts import fetch_tweet_link
 
 logger = logging.getLogger(__name__)
 

@@ -15,7 +15,7 @@ def crawl(job):
     schedule_job(settings.LTS_SCHEDULE['crawl'],
                  str(job.callable_name))
 
-    import fetch_tweet_link
+    from lts import fetch_tweet_link
 
     cfg = Config(file(settings.LTS_CONFIG))
 
@@ -30,7 +30,7 @@ def img_upload(job):
     job.reschedule(settings.LTS_SCHEDULE['img_upload'],
                    callable_name=str(job.callable_name))
     
-    import image_upload
+    from lts import image_upload
 
     cfg = Config(file(settings.LTS_CONFIG))
 
@@ -45,7 +45,7 @@ def rating(job):
     schedule_job(settings.LTS_SCHEDULE['rating'],
                  str(job.callable_name))
     
-    import link_rating
+    from lts import link_rating
 
     cfg = Config(file(settings.LTS_CONFIG))
 
@@ -60,7 +60,7 @@ def blog(job):
     schedule_job(settings.LTS_SCHEDULE['blog'],
                  str(job.callable_name))
     
-    import blog_post
+    from lts import blog_post
 
     cfg = Config(file(settings.LTS_CONFIG))
 
@@ -75,7 +75,7 @@ def tweet(job):
     schedule_job(settings.LTS_SCHEDULE['tweet'],
                  str(job.callable_name))
 
-    import tweet_shot
+    from lts import tweet_shot
 
     cfg = Config(file(settings.LTS_CONFIG))
 
@@ -90,7 +90,7 @@ def cluster(job):
     schedule_job(settings.LTS_SCHEDULE['cluster'],
                  str(job.callable_name))
 
-    import cluster_tweets
+    from lts import cluster_tweets
 
     cfg = Config(file(settings.LTS_CONFIG))
 
@@ -104,7 +104,7 @@ def clear_cache(job):
     job.reschedule(settings.LTS_SCHEDULE['clear_cache'],
                    callable_name=str(job.callable_name))
 
-    import cache_gc
+    from lts import cache_gc
 
     cfg = Config(file(settings.LTS_CONFIG))
 
@@ -119,7 +119,7 @@ def update_twitter_accounts(job):
     schedule_job(settings.LTS_SCHEDULE['update_twitter_accounts'],
                  str(job.callable_name))
     
-    import update_twitter_users as utu
+    from lts import update_twitter_users as utu
 
     cfg = Config(file(settings.LTS_CONFIG))
 
@@ -134,7 +134,7 @@ def update_twitter_users(job):
     schedule_job(settings.LTS_SCHEDULE['update_twitter_users'],
                  str(job.callable_name))
     
-    import update_twitter_users as utu
+    from lts import update_twitter_users as utu
 
     cfg = Config(file(settings.LTS_CONFIG))
 
@@ -149,7 +149,7 @@ def follow_users(job):
     schedule_job(settings.LTS_SCHEDULE['follow_users'],
                    str(job.callable_name))
     
-    import update_twitter_users as utu
+    from lts import update_twitter_users as utu
 
     cfg = Config(file(settings.LTS_CONFIG))
 
@@ -164,7 +164,7 @@ def update_tweet_mentioned(job):
     schedule_job(settings.LTS_SCHEDULE['update_tweet_mentioned'],
                  str(job.callable_name))
     
-    import update_twitter_users as utu
+    from lts import update_twitter_users as utu
 
     cfg = Config(file(settings.LTS_CONFIG))
 

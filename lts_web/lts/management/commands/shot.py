@@ -7,7 +7,7 @@ from django.conf import settings
 from optparse import make_option
 from config import Config, ConfigMerger
 
-import shot_service, url_processor, rt_shot, task_gc
+from lts import shot_service, url_processor, rt_shot, task_gc
 
 logger = logging.getLogger(__name__)
 

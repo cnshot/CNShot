@@ -7,7 +7,7 @@ from django.conf import settings
 from optparse import make_option
 from config import Config, ConfigMerger
 
-import url_processor
+from lts import url_processor
 
 logger = logging.getLogger(__name__)
 
