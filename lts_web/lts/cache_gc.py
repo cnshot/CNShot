@@ -19,6 +19,13 @@ def clear_shot_cache(lifetime):
             logger.info('Delete expired shot cache: %s', sc.linkshot.link.url)
             sc.delete()
 
+def run(_cfg, _logger):
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
+
+    clear_shot_cache(cfg.cache_gc.lifetime)
+
 if __name__ == '__main__':
     description = '''Shot cache GC.'''
     parser = OptionParser(usage="usage: %prog [options]",
@@ -45,3 +52,4 @@ if __name__ == '__main__':
     logger = logging.getLogger("cache_gc")
 
     clear_shot_cache(cfg.cache_gc.lifetime)
+

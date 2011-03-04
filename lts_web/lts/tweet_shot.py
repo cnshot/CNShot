@@ -12,7 +12,6 @@ from poster.streaminghttp import register_openers
 from pyTweetPhoto import pyTweetPhoto
 from lxml import etree
 
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate, ShotCache, \
     ShotBlogPost
 
@@ -361,6 +360,13 @@ WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
             tweeted += 1
 
         logger.info("Tweeted %d shots.", tweeted)
+
+def run(_cfg, _logger):
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
+
+    TweetShot.tweetShot()
         
 if __name__ == '__main__':
     description = '''Tweet screenshots.'''

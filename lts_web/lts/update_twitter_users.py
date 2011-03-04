@@ -274,6 +274,42 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
             # check user info, and add twitter user if necessary
             user_evaluating.evaluate_screen_name(user)
 
+class UpdateTwitterAccounts:
+    @classmethod
+    def run(_cfg, _logger):
+        global cfg, logger
+        cfg = _cfg
+        logger = _logger
+        
+        updateTwitterAccounts()
+
+class UpdateTwitterUsers:
+    @classmethod
+    def run(_cfg, _logger):
+        global cfg, logger
+        cfg = _cfg
+        logger = _logger
+        
+        updateTwitterUsers()
+
+class FollowUsers:
+    @classmethod
+    def run(_cfg, _logger):
+        global cfg, logger
+        cfg = _cfg
+        logger = _logger
+        
+        followUsers()
+
+class UpdateTweetMentioned:
+    @classmethod
+    def run(_cfg, _logger):
+        global cfg, logger
+        cfg = _cfg
+        logger = _logger
+        
+        updateTweetMentioned()
+
 if __name__ == '__main__':
     description = '''Update basic Twitter users' information.'''
     parser = OptionParser(usage="usage: %prog [options]",

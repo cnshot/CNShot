@@ -161,7 +161,11 @@ class TaskProcessor:
             # enqueue for ratings
             queue.put({'linkshot':ls, 'links':links})
 
-def rate():
+def run(_cfg, _logger):
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
+
     q=Queue()
 
     # read recent tweet links from DB

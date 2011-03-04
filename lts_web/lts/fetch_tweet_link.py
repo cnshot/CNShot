@@ -181,6 +181,14 @@ class TweetLinkFetcher:
                              account.screen_name, account.since)
                 account.save()
 
+def run(_cfg, _logger):
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
+
+    fetcher = TweetLinkFetcher()
+    fetcher.fetchTweetLinkAll()    
+
 if __name__ == '__main__':
     description = '''Fetch Twitter timeline and enqueue links.'''
     parser = OptionParser(usage="usage: %prog [options]",

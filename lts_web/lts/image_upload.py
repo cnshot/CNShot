@@ -260,6 +260,13 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
             except (Tweet.DoesNotExist, IndexError, ShotCache.DoesNotExist):
                 logger.warn("Failed to get tweet info of link: %s", lr.link.url)
 
+def run(_cfg, _logger):
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
+
+    ImageUploader.uploadImages()
+
 if __name__ == '__main__':
     description = '''Upload images.'''
     parser = OptionParser(usage="usage: %prog [options]",

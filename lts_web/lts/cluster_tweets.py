@@ -114,6 +114,13 @@ def cluster_tweets():
         except AttributeError:
             logger.info("AttributeError of status: %s %s", rts.error, dir(rts))
 
+def run(_cfg, _logger):
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
+
+    cluster_tweets()
+
 if __name__ == '__main__':
     description = '''Clustering tweets.'''
     parser = OptionParser(usage="usage: %prog [options]",
