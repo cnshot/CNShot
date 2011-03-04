@@ -83,7 +83,7 @@ class Command(LabelCommand):
     def handle_label(self, command, **options):
         if command == 'schedule':
             for k in command_list.keys():
-                job_str = "lts_web.lts.management.commands.schedule.%s" % k
+                job_str = "%s.%s" % (__name__,k)
                 schedule_unique_job(settings.LTS_SCHEDULE[k], job_str)
         elif command in command_list.keys():
             cfg = Config(file(settings.LTS_CONFIG))
