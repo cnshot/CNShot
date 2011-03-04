@@ -86,4 +86,5 @@ class Command(LabelCommand):
                 job_str = "lts_web.lts.management.commands.schedule.%s" % k
                 schedule_unique_job(settings.LTS_SCHEDULE[k], job_str)
         elif command in command_list.keys():
-            command_list[command]['command'].run()
+            cfg = Config(file(settings.LTS_CONFIG))
+            command_list[command]['command'].run(cfg, logger)
