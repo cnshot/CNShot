@@ -26,7 +26,7 @@ class ScheduledFunc:
 
         cfg = Config(file(settings.LTS_CONFIG))
 
-        self.model.run(cfg, logger)        
+        self.model.run(cfg, logger)
 
 thismodule = sys.modules[__name__]
 

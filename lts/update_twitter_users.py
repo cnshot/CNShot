@@ -276,7 +276,7 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
 
 class UpdateTwitterAccounts:
     @classmethod
-    def run(_cfg, _logger):
+    def run(cls, _cfg, _logger):
         global cfg, logger
         cfg = _cfg
         logger = _logger
@@ -285,7 +285,7 @@ class UpdateTwitterAccounts:
 
 class UpdateTwitterUsers:
     @classmethod
-    def run(_cfg, _logger):
+    def run(cls, _cfg, _logger):
         global cfg, logger
         cfg = _cfg
         logger = _logger
@@ -294,7 +294,7 @@ class UpdateTwitterUsers:
 
 class FollowUsers:
     @classmethod
-    def run(_cfg, _logger):
+    def run(cls, _cfg, _logger):
         global cfg, logger
         cfg = _cfg
         logger = _logger
@@ -303,7 +303,7 @@ class FollowUsers:
 
 class UpdateTweetMentioned:
     @classmethod
-    def run(_cfg, _logger):
+    def run(cls, _cfg, _logger):
         global cfg, logger
         cfg = _cfg
         logger = _logger

@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Site patterns
-from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
+from lts.models import ImageSitePattern, IgnoredSitePattern, \
     SizedCanvasSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser, TwitterUserExt, \
     TwitterAccount, TwitterApiSite, TwitterApiAuth, ShotBlogPost, \

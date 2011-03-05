@@ -265,7 +265,7 @@ def run(_cfg, _logger):
     cfg = _cfg
     logger = _logger
 
-    ImageUploader.uploadImages()
+    ImageUpload.uploadImages()
 
 if __name__ == '__main__':
     description = '''Upload images.'''
