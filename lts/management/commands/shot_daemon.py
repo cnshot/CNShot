@@ -35,29 +35,13 @@ class Command(BaseCommand):
         rt_shot.cfg = cfg
 
         for i in range(cfg.shot_service.workers):
-            pm.child_processes.append(
-                {'pid':shot_service.ShotProcessWorker(id=str(i)).run(),
-                 'class':shot_service.ShotProcessWorker}
-                )
+            pm.add(shot_service.ShotProcessWorker(cfg, logger, id=("Shot%d" % i)))
 
-        pm.child_processes.append(
-            {'pid':url_processor.URLProcessWorker(id="url_processor").run(),
-             'class':url_processor.URLProcessWorker
-             }
-            )
+        pm.add(url_processor.URLProcessWorker(cfg, logger, id='URLProcessor'))
+        pm.add(rt_shot.RTShotWorker(cfg, logger, 'RTShot'))
+        pm.add(task_gc.GCWorker(cfg, logger, 'TaskGC'))
 
-        pm.child_processes.append(
-            {'pid':rt_shot.RTShotWorker(id="rt_shot").run(),
-             'class':rt_shot.RTShotWorker
-             }
-            )
-
-        pm.child_processes.append(
-            {'pid':task_gc.GCWorker(id="task_gc").run(),
-             'class':task_gc.GCWorker
-             }
-            )
-        
+        pm.startAll()
         pm.setSignal()
         
         while True:

@@ -1,22 +1,15 @@
 #!/usr/bin/python
 
-import sys, signal, pickle, stompy, tempfile, os, threading, html5lib, StringIO, \
-    urllib
+import sys, signal, pickle, stompy, tempfile, os, threading, urllib
 
 from datetime import datetime
 from PyQt4.QtCore import *
 from PyQt4.QtGui import QImage, QPainter, QApplication
 from PyQt4.QtWebKit import QWebPage
 
-from html5lib import treebuilders
+from lts.process_manager import ProcessWorker
 
-global child_processes, logger, cfg
-child_processes = []
-
-def fixXml(s):
-    parser = html5lib.HTMLParser(tree=treebuilders.getTreeBuilder("dom"))
-    dom = parser.parse(StringIO.StringIO(s), 'utf-8')
-    return dom.toxml().encode('utf-8')
+global logger, cfg
 
 class ScreenshotWorker(QThread):
     def __init__(self):
@@ -26,7 +19,7 @@ class ScreenshotWorker(QThread):
         self.processing = QWaitCondition()
         self.timer = QTimer(self.webpage)
         QThread.__init__(self)
-
+    
     def postSetup(self, name):
         # Called by main after start()
         QObject.connect(self, SIGNAL("open"), 
@@ -248,16 +241,12 @@ class ScreenshotWorker(QThread):
 
             self.mutex.unlock()
 
-class ShotProcessWorker:
-    def __init__(self, id='UNKNOWN', lifetime=None):
-        self.id = id
+class ShotProcessWorker(ProcessWorker):
+    def __init__(self, cfg, logger, id='UNKNOWN', lifetime=None):
+        super(ShotProcessWorker, self).__init__(cfg, logger, id)
         self.lifetime = lifetime
 
     def run(self):
-        pid = os.fork()
-        if pid > 0:
-            return pid
-
         app = QApplication([])
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         signal.signal(signal.SIGCHLD, signal.SIG_DFL)

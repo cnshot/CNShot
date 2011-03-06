@@ -1,16 +1,11 @@
 #!/usr/bin/python
 
-import stompy, os
+import stompy
 
-class GCWorker:
-    def __init__(self, id='UNKNOWN'):
-        self.id = id
+from lts.process_manager import ProcessWorker
 
+class GCWorker(ProcessWorker):
     def run(self):
-        pid = os.fork()
-        if pid > 0:
-            return pid
-
         stomp = stompy.simple.Client()
         stomp.connect()
         stomp.subscribe("/queue/cancel", ack='auto')

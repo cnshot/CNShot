@@ -11,6 +11,7 @@ from lxml import etree
 
 from django.core.files.base import ContentFile
 from lts.models import Link, LinkShot, Tweet, ShotCache
+from lts.process_manager import ProcessWorker
 
 global mc, stomp, cfg, logger
 mc = None
@@ -162,15 +163,8 @@ def onReceiveTask(m):
             except:
                 pass
 
-class RTShotWorker:
-    def __init__(self, id='UNKNOWN'):
-        self.id = id
-
+class RTShotWorker(ProcessWorker):
     def run(self):
-        pid = os.fork()
-        if pid > 0:
-            return pid
-
         global mc
         mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 
