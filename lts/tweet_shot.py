@@ -368,36 +368,3 @@ def run(_cfg, _logger):
 
     TweetShot.tweetShot()
         
-if __name__ == '__main__':
-    description = '''Tweet screenshots.'''
-    parser = OptionParser(usage="usage: %prog [options]",
-                          version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
-                          description=description)
-
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
-                      type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
-
-    (options,args) = parser.parse_args()
-    if len(args) != 0:
-        parser.error("incorrect number of arguments")
-
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
-
-    # user_evaluating.cfg = cfg
-
-    # walk around encoding issue
-    reload(sys)
-    sys.setdefaultencoding('utf-8') 
-
-    logging.config.fileConfig(cfg.common.log_config)
-    logger = logging.getLogger("tweet_shot")
-
-    TweetShot.tweetShot()

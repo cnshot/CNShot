@@ -75,7 +75,7 @@ class LinkRateAdmin(admin.ModelAdmin):
     raw_id_fields = ['link']
 
     def link_url(self, obj):
-      return ("%s" % (obj.link.url))
+        return ("%s" % (obj.link.url))
     link_url.short_description = 'Link URL'
 
     def tweet(self, obj):

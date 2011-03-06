@@ -1,11 +1,10 @@
-import os, sys, logging, threading
+import sys, logging
 
-from django.core.management.base import LabelCommand, CommandError
+from django.core.management.base import LabelCommand
 from django.conf import settings
 from django_future import schedule_job, job_as_parameter
 from django_future.models import ScheduledJob
-from optparse import make_option
-from config import Config, ConfigMerger
+from config import Config
 
 logger = logging.getLogger(__name__)
 
