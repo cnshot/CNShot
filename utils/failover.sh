@@ -1,7 +1,7 @@
 #!/bin/bash
 
 CMD_LINE=$@
-EXEC=`basename $1`
+EXEC=${EXEC:=`basename $1`}
 
 PID_DIR=/tmp
 PID_POSTFIX=".pid"

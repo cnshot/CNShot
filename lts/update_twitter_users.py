@@ -274,55 +274,39 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
             # check user info, and add twitter user if necessary
             user_evaluating.evaluate_screen_name(user)
 
-if __name__ == '__main__':
-    description = '''Update basic Twitter users' information.'''
-    parser = OptionParser(usage="usage: %prog [options]",
-                          version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
-                          description=description)
-
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
-                      type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
-
-    action_choices = ['update_accounts',
-                      'update_users', 
-                      'follow_users',
-                      'update_tweet_mentioned']
-    parser.add_option("-a", "--action",
-                      dest="action",
-                      default="update_accounts",
-                      type="choice",
-                      choices=action_choices,
-                      help="""
-Action to execute, options: %s [default %%default].
-""" % ', '.join(action_choices),
-                      metavar="ACTION")
-
-    (options,args) = parser.parse_args()
-    if len(args) != 0:
-        parser.error("incorrect number of arguments")
-
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-
-    cfg.addNamespace(options, 'cmdline')
-
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
-
-    logging.config.fileConfig(cfg.common.log_config)
-    logger = logging.getLogger("update_twitter_users")
-
-    if options.action == 'update_accounts':
+class UpdateTwitterAccounts:
+    @classmethod
+    def run(cls, _cfg, _logger):
+        global cfg, logger
+        cfg = _cfg
+        logger = _logger
+        
         updateTwitterAccounts()
-    elif options.action == 'update_users':
+
+class UpdateTwitterUsers:
+    @classmethod
+    def run(cls, _cfg, _logger):
+        global cfg, logger
+        cfg = _cfg
+        logger = _logger
+        
         updateTwitterUsers()
-    elif options.action == 'follow_users':
+
+class FollowUsers:
+    @classmethod
+    def run(cls, _cfg, _logger):
+        global cfg, logger
+        cfg = _cfg
+        logger = _logger
+        
         followUsers()
-    elif options.action == 'update_tweet_mentioned':
+
+class UpdateTweetMentioned:
+    @classmethod
+    def run(cls, _cfg, _logger):
+        global cfg, logger
+        cfg = _cfg
+        logger = _logger
+        
         updateTweetMentioned()
+

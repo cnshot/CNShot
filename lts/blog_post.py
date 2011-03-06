@@ -124,6 +124,13 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
 
         logger.info("Posted %d shots.", posted)
 
+def run(_cfg, _logger):
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
+
+    BlogPost.blogPost()
+
 if __name__ == '__main__':
     description = '''Blog post screenshots.'''
     parser = OptionParser(usage="usage: %prog [options]",

@@ -4,25 +4,18 @@
 # longer for retweeting. All codes about retweeting and image uploading
 # are moved to other scripts.
 
-import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
-    xml, readability, re
+import stompy, pickle, memcache, sys, traceback, os, readability
 
-from optparse import OptionParser
-from config import Config, ConfigMerger
 from SOAPpy import WSDL
 from lxml import etree
 
-#from xml.dom import minidom
-# from poster.encode import multipart_encode
-# from poster.streaminghttp import register_openers
-# from pyTweetPhoto import pyTweetPhoto
-# from lxml import etree
 from django.core.files.base import ContentFile
-
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, LinkShot, Tweet, ShotCache
+from lts.process_manager import ProcessWorker
 
+global mc, stomp, cfg, logger
 mc = None
+stomp = None
 
 def update_linkshot(task, s, url, thumbnail_url):
     try:
@@ -128,33 +121,8 @@ def readability_parse(task):
         logger.error("%s", traceback.format_exc())
         logger.error('-'*60)
 
-# def tweet_image(task, s, url):
-#     if not url:
-#         return
-
-#     try:
-#         if not cfg.rt_shot.tweet:
-#             logger.info("Tweet disabled.")
-#             return
-
-#         logger.info("Tweet enalbed.")
-
-#         rt_text = u'RT @' + s.user.screen_name + u': ' + s.text
-#         t = unicode(url) + u" " + rt_text
-#         api = twitter.Api(username=cfg.common.username,
-#                           password=cfg.common.password)
-#         rts = api.PostUpdate(t[0:140], in_reply_to_status_id=s.id)
-
-#         logger.info("New tweet: %d %s %s", 
-#                     rts.id, str(rts.created_at),
-#                     rts.text.encode('utf-8'))
-#     except:
-#         logger.error("Failed to tweet image: %s", sys.exc_info()[0])
-#         logger.error('-'*60)
-#         logger.error("%s", traceback.format_exc())
-#         logger.error('-'*60)
-
 def onReceiveTask(m):
+    global stomp
     stomp.ack(m)
     task = pickle.loads(m.body)
 
@@ -165,6 +133,7 @@ def onReceiveTask(m):
     logger.info("Got task: %s %s %s", task['url'], task['filename'], task['html_filename'])
 
     try:
+        global mc
         s = mc.get(task['id'])
         mc.delete(task['id'])
 
@@ -177,12 +146,9 @@ def onReceiveTask(m):
                     s.id, str(s.user.screen_name),
                     str(s.created_at), s.text.encode('utf-8'))
 
-        # image_url, thumbnail_url = post_image_func(task, s)
-
         readability_parse(task)
 
         # update_linkshot(task, s, image_url, thumbnail_url)
-
         update_linkshot(task, s, None, None)
 
     finally:
@@ -197,46 +163,16 @@ def onReceiveTask(m):
             except:
                 pass
 
-if __name__ == '__main__':
-    description = '''RT screenshots.'''
-    parser = OptionParser(usage="usage: %prog [options]",
-                          version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
-                          description=description)
+class RTShotWorker(ProcessWorker):
+    def run(self):
+        global mc
+        mc = memcache.Client(['127.0.0.1:11211'], debug=0)
 
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
-                      type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
+        global stomp
+        stomp = stompy.simple.Client()
+        stomp.connect()
+        stomp.subscribe(cfg.queues.shotted, ack='client')
 
-    (options,args) = parser.parse_args()
-    if len(args) != 0:
-        parser.error("incorrect number of arguments")
+        while True:
+            m = stomp.get(callback=onReceiveTask)
 
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-
-    # walk around encoding issue
-    reload(sys)
-    sys.setdefaultencoding('utf-8') 
-
-    logging.config.fileConfig(cfg.common.log_config)
-    logger = logging.getLogger("rt_shot")
-
-    mc = memcache.Client(['127.0.0.1:11211'], debug=0)
-
-    stomp = stompy.simple.Client()
-    stomp.connect()
-    stomp.subscribe(cfg.queues.shotted, ack='client')
-
-    logger.info("rt_shot started.")
-    if cfg.rt_shot.dummy:
-        logger.info("Dummy mode enabled.")
-
-    # register_openers()
-
-    while True:
-        m = stomp.get(callback=onReceiveTask)

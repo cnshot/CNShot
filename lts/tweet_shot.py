@@ -12,7 +12,6 @@ from poster.streaminghttp import register_openers
 from pyTweetPhoto import pyTweetPhoto
 from lxml import etree
 
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate, ShotCache, \
     ShotBlogPost
 
@@ -361,37 +360,11 @@ WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
             tweeted += 1
 
         logger.info("Tweeted %d shots.", tweeted)
-        
-if __name__ == '__main__':
-    description = '''Tweet screenshots.'''
-    parser = OptionParser(usage="usage: %prog [options]",
-                          version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
-                          description=description)
 
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
-                      type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
-
-    (options,args) = parser.parse_args()
-    if len(args) != 0:
-        parser.error("incorrect number of arguments")
-
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
-
-    # user_evaluating.cfg = cfg
-
-    # walk around encoding issue
-    reload(sys)
-    sys.setdefaultencoding('utf-8') 
-
-    logging.config.fileConfig(cfg.common.log_config)
-    logger = logging.getLogger("tweet_shot")
+def run(_cfg, _logger):
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
 
     TweetShot.tweetShot()
+        

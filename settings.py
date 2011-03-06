@@ -63,7 +63,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
 )
 
-ROOT_URLCONF = 'lts_web.urls'
+ROOT_URLCONF = 'urls'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -76,6 +76,37 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
-    'lts_web.lts',
+    'lts',
     'django.contrib.admin',
+    'django_future',
 )
+
+LTS_SCHEDULE = {
+    'crawl': '5m',
+    'img_upload': '5m',
+    'rating': '5m',
+    'blog': '15m',
+    'tweet': '12m',
+    'cluster': '5m',
+    'clear_cache': '1h',
+    'update_twitter_accounts': '1d',
+    'update_twitter_users': '6h',
+    'follow_users': '1d',
+    'update_tweet_mentioned': '1d',
+}
+
+import os
+LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.conf')
+LTS_CONFIG = os.path.join(os.path.dirname(__file__), 'lts.cfg')
+
+try:
+    from local_settings import *
+except ImportError:
+    pass
+
+import logging, logging.config, sys
+logging.config.fileConfig(LOGGING_CONFIG)
+
+# walk around encoding issue
+reload(sys)
+sys.setdefaultencoding('utf-8')

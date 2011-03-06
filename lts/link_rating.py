@@ -86,7 +86,7 @@ class LinkRatingThread(Thread):
         try:
             # s = api.GetSearch(url, lang='', per_page=cfg.link_rating.max_ranking_tweets)
             s = api.search(q=url, lang='',rpp=cfg.link_rating.max_ranking_tweets)
-        except HTTPError:
+        except (HTTPError, ValueError):
             logger.warn("Failed to call search API: %s", url)
             return 0
         
@@ -105,7 +105,13 @@ class LinkRatingThread(Thread):
         if i < len(s) or len(s) < cfg.link_rating.max_ranking_tweets:
             return i
 
-        t = datetime.fromtimestamp(time.mktime(rfc822.parsedate(s[-1].created_at)))
+        try:
+            t = datetime.fromtimestamp(time.mktime(rfc822.parsedate(str(s[-1].created_at))))
+        except TypeError:
+            logger.warn("Failed to get create time of tweet, use thredshold instead: %d",
+                        s[-1].id)
+            t = tt
+            
         logger.debug("Estimating rate: t=%s tt=%s delta=%s",
                      str(t), str(tt), str(t-tt))
 
@@ -154,6 +160,29 @@ class TaskProcessor:
 
             # enqueue for ratings
             queue.put({'linkshot':ls, 'links':links})
+
+def run(_cfg, _logger):
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
+
+    q=Queue()
+
+    # read recent tweet links from DB
+    #   filter out: a) tweeted links, b) links rated in last x mins
+    TaskProcessor.loadTasks(q)
+
+    # feed links to input queue
+    # start rating threads
+    # wait for rating threads exit
+    workers = []
+    for i in range(cfg.link_rating.workers):
+        w = LinkRatingThread(i, q)
+        w.start()
+        workers.append(w)
+
+    for i in range(cfg.link_rating.workers):
+        workers[i].join()    
 
 if __name__ == '__main__':
     description = '''Link rating processor.'''

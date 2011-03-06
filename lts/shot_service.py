@@ -1,30 +1,15 @@
 #!/usr/bin/python
 
-import sys, signal, xmlrpclib, pickle, stompy, tempfile, os, re, \
-    logging, logging.config, codecs, time, threading, html5lib, StringIO, \
-    urllib
+import sys, signal, pickle, stompy, tempfile, os, threading, urllib
 
 from datetime import datetime
-from Queue import Queue
 from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from PyQt4.QtGui import QImage, QPainter, QApplication
 from PyQt4.QtWebKit import QWebPage
 
-from SimpleXMLRPCServer import SimpleXMLRPCServer
-from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+from lts.process_manager import ProcessWorker
 
-from optparse import OptionParser
-from config import Config, ConfigMerger
-
-from html5lib import treebuilders
-
-global child_processes
-child_processes = []
-
-def fixXml(s):
-    parser = html5lib.HTMLParser(tree=treebuilders.getTreeBuilder("dom"))
-    dom = parser.parse(StringIO.StringIO(s), 'utf-8')
-    return dom.toxml().encode('utf-8')
+global logger, cfg
 
 class ScreenshotWorker(QThread):
     def __init__(self):
@@ -34,7 +19,7 @@ class ScreenshotWorker(QThread):
         self.processing = QWaitCondition()
         self.timer = QTimer(self.webpage)
         QThread.__init__(self)
-
+    
     def postSetup(self, name):
         # Called by main after start()
         QObject.connect(self, SIGNAL("open"), 
@@ -256,16 +241,12 @@ class ScreenshotWorker(QThread):
 
             self.mutex.unlock()
 
-class ShotProcessWorker:
-    def __init__(self, id='UNKNOWN', lifetime=None):
-        self.id = id
+class ShotProcessWorker(ProcessWorker):
+    def __init__(self, cfg, logger, id='UNKNOWN', lifetime=None):
+        super(ShotProcessWorker, self).__init__(cfg, logger, id)
         self.lifetime = lifetime
 
     def run(self):
-        pid = os.fork()
-        if pid > 0:
-            return pid
-
         app = QApplication([])
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
@@ -279,154 +260,4 @@ class ShotProcessWorker:
             threading.Timer(self.lifetime, app.exit).start()
         
         exit(app.exec_())
-
-def killChildProcesses(signum, frame):
-    signal.signal(signal.SIGCHLD, signal.SIG_IGN)
-
-    global child_processes
-    logger.info("Exiting with %d child processes ...", len(child_processes))
-
-    try:
-        for pid in child_processes:
-            logger.info("Killing child process: %d", pid)
-            os.kill(pid, signal.SIGINT)
-    except UnboundLocalError:
-        exit(0)
-
-    child_processes=[]
-    exit(0)
-
-def restartChildProcess(signum, frame):
-    logger.warn("Child exited ...")
-    for i in range(len(child_processes)):
-        if child_processes[i] == 0:
-            continue
-        logger.warn("Testing child %d: %d", i, child_processes[i])
-        try:
-            done_pid = 0
-            exit_status = 0
-            done_pid, exit_status = os.waitpid(child_processes[i], os.WNOHANG)
-        except OSError,e:
-            logger.warn("Failed to waitpid: %d %s", child_processes[i], str(e))
-            done_pid = child_processes[i]
-            pass
-        if done_pid > 0:
-            logger.warn("Child %d exited: %d %d", i, done_pid, exit_status)
-            new_pid = ShotProcessWorker(id=str(i)).run()
-            child_processes[i]=pid
-            return
-
-if __name__ == '__main__':
-    description = '''Screenshot service with QtPt.'''
-    parser = OptionParser(usage="usage: %prog [options]",
-                          version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
-                          description=description)
-    
-    # parser.add_option("-n", "--workers", 
-    #                   dest="workers", default=4, type="int",
-    #                   help="Number or worker threads [default: %default].",
-    #                   metavar="WORKERS")
-    # parser.add_option("-w", "--max-width", 
-    #                   dest="max_width", default=2048, type="int",
-    #                   help="Max width of the screenshot image [default: %default].",
-    #                   metavar="MAX_WIDTH")
-#    parser.add_option("--min-width", 
-#                      dest="min_width", default=640, type="int",
-#                      help="Min width of the screenshot image [default: %default].",
-#                      metavar="MAX_WIDTH")
-    # parser.add_option("-g", "--max-height", 
-    #                   dest="max_height", default=4096, type="int",
-    #                   help="Max height of the screenshot image [default: %default].",
-    #                   metavar="MAX_HEIGHT")
-#    parser.add_option("--min-height", 
-#                      dest="min_height", default=480, type="int",
-#                      help="Min height of the screenshot image [default: %default].",
-#                      metavar="MIN_HEIGHT")
-    # parser.add_option("-t", "--timeout", 
-    #                   dest="timeout", default=20, type="int",
-    #                   help="Timeout of page loading in second [default: %default].",
-    #                   metavar="TIMEOUT")
-    # parser.add_option("-s", "--source-queue",
-    #                   dest="source_queue", default="/queue/shot_service",
-    #                   type="string",
-    #                   help="Source message queue path [default: %default].",
-    #                   metavar="SOURCE_QUEUE")
-    # parser.add_option("-d", "--dest-queue", 
-    #                   dest="dest_queue", default="/queue/shot_dest",
-    #                   type="string",
-    #                   help="Dest message queue path [default: %default].",
-    #                   metavar="DEST_QUEUE")
-    # parser.add_option("-c", "--cancel-queue",
-    #                   dest="cancel_queue", default="/queue/cancel",
-    #                   type="string",
-    #                   help="Message queue of tasks to cancel [default: %default].",
-    #                   metavar="CANCEL_QUEUE")
-    # parser.add_option("-l", "--log-config",
-    #                   dest="log_config", 
-    #                   default="/etc/link_shot_tweet_log.conf",
-    #                   type="string",
-    #                   help="Logging config file [default: %default].",
-    #                   metavar="LOG_CONFIG")
-
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
-                      type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
-
-    (options,args) = parser.parse_args()
-    if len(args) != 0:
-        parser.error("incorrect number of arguments") 
-
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
-
-    # walk around encoding issue
-    reload(sys)
-    sys.setdefaultencoding('utf-8') 
-
-    logging.config.fileConfig(cfg.common.log_config)
-    logger = logging.getLogger("shot_service")
-
-    logger.info("Workers: %d", cfg.shot_service.workers)
-    logger.info("Max width: %d", cfg.shot_service.max_width)
-    logger.info("Max height: %d", cfg.shot_service.max_height)
-    logger.info("Source queue: %s", cfg.queues.processed)
-    logger.info("Dest queue: %s", cfg.queues.shotted)
-    logger.info("Timeout: %d", cfg.shot_service.timeout)
-
-    global child_processes
-    # child_processes = []
-
-    for i in range(cfg.shot_service.workers):
-        pid = ShotProcessWorker(id=str(i)).run()
-        child_processes.append(pid)
-
-    signal.signal(signal.SIGINT, killChildProcesses)
-    signal.signal(signal.SIGTERM, killChildProcesses)
-    signal.signal(signal.SIGCHLD, restartChildProcess)
-
-    while True:
-        signal.pause()
-
-    # try:
-    #     os.wait()
-    # except OSError:
-    #     pass
-
-    # app = QApplication([])
-    # signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    # ta = []
-
-    # for i in range(cfg.shot_service.workers):
-    #     t = ScreenshotWorker()
-    #     t.start()
-    #     t.postSetup(str(i))
-    #     ta.append(t)
-
-    # sys.exit(app.exec_())
+        

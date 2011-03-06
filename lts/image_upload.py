@@ -1,19 +1,15 @@
 #!/usr/bin/python
 
-import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
-    twitpic, urllib2, re
+import sys, traceback, twitpic, urllib2, re
 
-from optparse import OptionParser
 from datetime import datetime, timedelta
-from django.core.exceptions import ObjectDoesNotExist
-from config import Config, ConfigMerger
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
 from pyTweetPhoto import pyTweetPhoto
 from lxml import etree
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate, ShotCache
+from lts.models import LinkShot, Tweet, LinkRate, ShotCache
 
 class ImageUploader:
     def __init__(self, uploader_list_cfg):
@@ -260,34 +256,9 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
             except (Tweet.DoesNotExist, IndexError, ShotCache.DoesNotExist):
                 logger.warn("Failed to get tweet info of link: %s", lr.link.url)
 
-if __name__ == '__main__':
-    description = '''Upload images.'''
-    parser = OptionParser(usage="usage: %prog [options]",
-                          version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
-                          description=description)
-
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
-                      type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
-
-    (options,args) = parser.parse_args()
-    if len(args) != 0:
-        parser.error("incorrect number of arguments")
-
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
-
-    # walk around encoding issue
-    reload(sys)
-    sys.setdefaultencoding('utf-8') 
-
-    logging.config.fileConfig(cfg.common.log_config)
-    logger = logging.getLogger("image_upload")
+def run(_cfg, _logger):
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
 
     ImageUpload.uploadImages()

@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Site patterns
-from lts_web.lts.models import ImageSitePattern, IgnoredSitePattern, \
+from lts.models import ImageSitePattern, IgnoredSitePattern, \
     SizedCanvasSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser, TwitterUserExt, \
     TwitterAccount, TwitterApiSite, TwitterApiAuth, ShotBlogPost, \
@@ -75,7 +75,7 @@ class LinkRateAdmin(admin.ModelAdmin):
     raw_id_fields = ['link']
 
     def link_url(self, obj):
-      return ("%s" % (obj.link.url))
+        return ("%s" % (obj.link.url))
     link_url.short_description = 'Link URL'
 
     def tweet(self, obj):
