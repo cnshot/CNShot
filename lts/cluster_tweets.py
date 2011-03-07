@@ -1,12 +1,12 @@
 #!/usr/bin/python
 
-import sys, logging, logging.config, os, scipy, tweepy
+import sys, logging.config, os, scipy, tweepy
 import word_freq, twitter_utils
 
 from optparse import OptionParser
-from config import Config, ConfigMerger
+from config import Config
 from datetime import timedelta, datetime
-from lts.models import Tweet, RTPublish, TweetFreqHashCache
+from lts.models import Tweet, RTPublish
 
 def cluster_tweets():
     tt = datetime.utcnow() - timedelta(seconds = cfg.cluster_tweets.time_limit)
@@ -65,8 +65,8 @@ def cluster_tweets():
     if len(cluster_rs) and len(rt_rs) > 0:
         logger.debug("%s", cluster_rs)
         logger.debug("%s", rt_rs)
-        similarity_matrix = word_freq.hash_filter_knowns(scipy.array(cluster_rs),
-                                                         scipy.array(rt_rs),
+        similarity_matrix = word_freq.hash_filter_knowns(scipy.array(cluster_rs), #@UndefinedVariable
+                                                         scipy.array(rt_rs), #@UndefinedVariable
                                                          similarity_threshold=cfg.cluster_tweets.similarity_threshold)
 
         logger.debug("%s", str(similarity_matrix))
@@ -78,7 +78,7 @@ def cluster_tweets():
         logger.debug("%s", str(ratings))
 
     # logger.debug("%s", str(clusters))
-    i = scipy.array(ratings).argmax()
+    i = scipy.array(ratings).argmax() #@UndefinedVariable
     logger.debug("%d", i)
     if ratings[i] == 0:
         logging.warn("No tweet to RT.")
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     
     # walk around encoding issue
     reload(sys)
-    sys.setdefaultencoding('utf-8') 
+    sys.setdefaultencoding('utf-8') #@UndefinedVariable
 
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("cluster_tweets.py")
@@ -222,8 +222,8 @@ if __name__ == '__main__':
     if len(cluster_rs) and len(rt_rs) > 0:
         logger.debug("%s", cluster_rs)
         logger.debug("%s", rt_rs)
-        similarity_matrix = word_freq.hash_filter_knowns(scipy.array(cluster_rs),
-                                                         scipy.array(rt_rs),
+        similarity_matrix = word_freq.hash_filter_knowns(scipy.array(cluster_rs),  #@UndefinedVariable
+                                                         scipy.array(rt_rs),  #@UndefinedVariable
                                                          similarity_threshold=cfg.cluster_tweets.similarity_threshold)
 
         logger.debug("%s", str(similarity_matrix))
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         logger.debug("%s", str(ratings))
 
     # logger.debug("%s", str(clusters))
-    i = scipy.array(ratings).argmax()
+    i = scipy.array(ratings).argmax()  #@UndefinedVariable
     logger.debug("%d", i)
     if ratings[i] == 0:
         logging.warn("No tweet to RT.")

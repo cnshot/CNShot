@@ -11,7 +11,7 @@
 <value>settings</value>
 </pydev_variables_property>
 <pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
-<path>/lts_git</path>
+<path>/cnshot</path>
 </pydev_pathproperty>
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
 <path>/usr/lib/python2.6</path>
@@ -26,5 +26,8 @@
 <path>/usr/lib/python2.6/dist-packages</path>
 <path>/usr/local/lib/python2.6/dist-packages/tweepy-1.6-py2.6.egg</path>
 <path>/usr/local/lib/python2.6/dist-packages/django_future-0.2.3-py2.6.egg</path>
+<path>/usr/local/lib/python2.6/dist-packages/python_twitter-0.7_devel-py2.6.egg</path>
+<path>/usr/local/lib/python2.6/dist-packages/WordPress_Library-1.0-py2.6.egg</path>
+<path>/usr/local/lib/python2.6/dist-packages/mmseg-1.2.2-py2.6-linux-i686.egg</path>
 </pydev_pathproperty>
 </pydev_project>

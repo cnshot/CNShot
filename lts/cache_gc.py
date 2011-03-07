@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
-import sys, traceback, logging, logging.config, os, time, ConfigParser
+import logging.config, os
 
 from optparse import OptionParser
-from config import Config, ConfigMerger
+from config import Config
 from datetime import timedelta, datetime
 
 from lts.models import LinkShot, ShotCache

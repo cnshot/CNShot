@@ -1,25 +1,20 @@
 #!/usr/bin/python
 
-import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
-    twitpic, urllib2, urllib, re, tweepy, twitter_utils
+import sys, traceback, twitpic, urllib2, urllib, re, tweepy, twitter_utils
 
-from optparse import OptionParser
 from datetime import datetime, timedelta
-from django.core.exceptions import ObjectDoesNotExist
-from config import Config, ConfigMerger
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
 from pyTweetPhoto import pyTweetPhoto
 from lxml import etree
 
-from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate, ShotCache, \
-    ShotBlogPost
+from lts.models import LinkShot, ShotPublish, Tweet, LinkRate, ShotBlogPost
 
 def shortenURL(url_to_shorten,
                shortener = "http://is.gd/api.php", query = "longurl"):
     try:
         return urllib2.urlopen(shortener + "?" + urllib.urlencode({query: url_to_shorten})).read()
-    except urllib2.HTTPError, e:
+    except urllib2.HTTPError:
         logger.warn("Failed to shorten url: %s", url_to_shorten)
         return None
 

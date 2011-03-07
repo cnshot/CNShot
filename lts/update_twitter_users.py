@@ -6,17 +6,13 @@
 
 from __future__ import with_statement
 
-import os, md5, re, uuid, sys, pickle, memcache, time, rfc822, \
-    logging, logging.config, twitter_utils
+import re, twitter_utils
 import tweepy
 import user_evaluating
 
-from optparse import OptionParser
 from datetime import timedelta, datetime
-from config import Config
 
-from lts.models import TwitterUser, TwitterUserExt, TwitterAccount, LinkRate, \
-    TwitterApiSite
+from lts.models import TwitterUser, TwitterUserExt, TwitterAccount, LinkRate
 
 def fetchUsers(func, updateFunc, account):
     next_cursor = -1

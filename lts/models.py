@@ -1,7 +1,7 @@
 import re, random
 
 from django.db import models
-from datetime import timedelta, datetime
+from datetime import datetime
 
 # Create your models here.
 
@@ -67,9 +67,6 @@ class Tweet(models.Model):
 
     def __unicode__(self):
         return u"%s [%s] %s" % (self.user_screenname, self.created_at, self.text)
-
-    class Meta:
-        ordering = ['-created_at']
 
 class LinkShot(models.Model):
 #    id = models.IntegerField(primary_key=True)
@@ -147,13 +144,13 @@ class LinkRate(models.Model):
     def __unicode__(self):
         return self.link.url
 
-# class LinkRateSum(models.Model):
-#     link = models.ForeignKey('Link', primary_key=True)
-#     rate = models.IntegerField(null=True, db_index=True)
-#     tweet = models.ForeignKey('Tweet')
+class LinkRateSum(models.Model):
+    link = models.ForeignKey('Link', primary_key=True)
+    rate = models.IntegerField(null=True, db_index=True)
+    tweet = models.ForeignKey('Tweet')
 
-#     def __unicode__(self):
-#         return self.link.url
+    def __unicode__(self):
+        return self.link.url
 
 class TwitterAccount(models.Model):
     id = models.IntegerField(primary_key=True)

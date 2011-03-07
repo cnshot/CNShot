@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-import sys, os
-import signal, time, logging, logging.config, threading, stompy, pickle
+import sys, os, logging
 import unittest
 
 from Queue import Queue
@@ -9,13 +8,13 @@ from datetime import datetime, timedelta
 
 d = os.path.dirname(__file__)
 if d == '':
-   d = '.' 
+    d = '.' 
 sys.path.append(d + '/../')
 sys.path.append(d + '/../lts_web')
 os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, Tweet, LinkShot, LinkRate
 
-import link_rating, tweet_shot
+from lts import link_rating, tweet_shot
 
 class DummyOptions(object):
     pass

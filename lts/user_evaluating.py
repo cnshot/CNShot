@@ -6,6 +6,8 @@ from lts.models import TwitterUser, TwitterUserExt
 from chinese_detecting import isChinesePhase
 from datetime import timedelta, datetime
 
+global cfg, logger
+
 def evaluate_screen_name(screen_name, api=None):
     logger.debug("Evaluating screen_name: %s", screen_name)
 

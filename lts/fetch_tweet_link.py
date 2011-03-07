@@ -2,16 +2,13 @@
 
 from __future__ import with_statement
 
-import os, md5, re, uuid, sys, pickle, memcache, time, rfc822, \
-    logging, logging.config, twitter_utils, threading, traceback
-# import twitter
-import tweepy
+import os, re, uuid, sys, pickle, memcache, logging.config, twitter_utils, \
+    threading, traceback
 
 from optparse import OptionParser
 from stompy.simple import Client
-from datetime import timedelta, datetime
 from chinese_detecting import isChinesePhase
-from config import Config, ConfigMerger, ConfigList
+from config import Config
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, Tweet, TwitterAccount
@@ -220,7 +217,7 @@ if __name__ == '__main__':
 
     # walk around encoding issue
     reload(sys)
-    sys.setdefaultencoding('utf-8') 
+    sys.setdefaultencoding('utf-8') #@UndefinedVariable
     # locale.setlocale(locale.LC_ALL, 'C')
 
     logging.config.fileConfig(cfg.common.log_config)

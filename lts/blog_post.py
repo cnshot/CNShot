@@ -1,16 +1,14 @@
 #!/usr/bin/python
 
-import stompy, pickle, memcache, sys, traceback, logging, logging.config, os, \
-    twitpic, twitter, wordpresslib, xmlrpclib
+import sys, logging.config, os, xmlrpclib
 
 from optparse import OptionParser
 from datetime import datetime, timedelta
-from django.core.exceptions import ObjectDoesNotExist
 from django.template import Context, Template
-from config import Config, ConfigMerger
+from config import Config
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import Link, LinkShot, ShotBlogPost, Tweet, LinkRate
+from lts.models import LinkShot, ShotBlogPost, Tweet, LinkRate
 
 class BlogPost:
     @classmethod
@@ -155,7 +153,7 @@ if __name__ == '__main__':
 
     # walk around encoding issue
     reload(sys)
-    sys.setdefaultencoding('utf-8') 
+    sys.setdefaultencoding('utf-8') #@UndefinedVariable
 
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("blog_post")

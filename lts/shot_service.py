@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
-import sys, signal, pickle, stompy, tempfile, os, threading, urllib
+import sys, signal, pickle, stompy, tempfile, threading, urllib
 
 from datetime import datetime
-from PyQt4.QtCore import *
+from PyQt4.QtCore import * #@UnusedWildImport
 from PyQt4.QtGui import QImage, QPainter, QApplication
 from PyQt4.QtWebKit import QWebPage
 

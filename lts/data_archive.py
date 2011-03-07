@@ -1,11 +1,11 @@
 #!/usr/bin/python
 
-import sys, traceback, logging, logging.config, os, traceback
+import sys, logging.config, os, traceback
 
 from optparse import OptionParser
-from config import Config, ConfigMerger, ConfigList
+from config import Config
 from datetime import timedelta, datetime
-from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate, ShotCache
+from lts.models import LinkShot, Tweet, LinkRate, ShotCache
 
 def querySetChunk(qs, limit = 1000):
     n = 0
@@ -132,7 +132,7 @@ if __name__ == '__main__':
                             '/etc/lts.cfg'])[0]))
 
     reload(sys)
-    sys.setdefaultencoding('utf-8') 
+    sys.setdefaultencoding('utf-8') #@UndefinedVariable
 
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("data_archive")

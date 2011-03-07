@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-from lts.models import Link, LinkShot, ShotPublish, Tweet, LinkRate, LinkRateSum
+from lts.models import Link, Tweet, LinkRateSum
 
 from datetime import datetime, timedelta
 

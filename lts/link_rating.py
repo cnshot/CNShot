@@ -1,29 +1,20 @@
 #!/usr/bin/python
 
-import stompy, sys, traceback, logging, logging.config, os, time, rfc822, \
-    tweepy, ConfigParser
+import logging.config, os, time, rfc822, tweepy, Queue
 
-from Queue import Queue
 from threading import Thread
 from datetime import timedelta, datetime
 from optparse import OptionParser
 from urllib2 import HTTPError
-from config import Config, ConfigMerger
+from config import Config
 
-# hacks for loading Django models
-#d=os.path.dirname(__file__)
-#sys.path.append('lts_web' if d == '' else (d+"/lts_web"))
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import Link, Tweet, LinkShot, LinkRate, ShotPublish, \
-    TwitterApiSite
+from lts.models import Tweet, LinkShot, LinkRate, ShotPublish, TwitterApiSite
 
 class LinkRatingThread(Thread):
     def __init__(self, id, input_queue):
         Thread.__init__(self)
         self.id = id
-#        self.options = options
         self.input_queue = input_queue
-#        self.logger = logger
 
     def run(self):
         logger.info("Link rating thread %s started.", str(self.id))
@@ -31,7 +22,7 @@ class LinkRatingThread(Thread):
         while not self.input_queue.empty():
             try:
                 task = self.input_queue.get(block=False)
-            except Thread.Empty:
+            except Queue.Empty:
                 break
 
             # rate task['links']
@@ -136,7 +127,7 @@ class TaskProcessor:
                 continue
 
             # get existing rate
-            lrs = LinkRate.objects.filter(link = ls.link)
+#            lrs = LinkRate.objects.filter(link = ls.link)
 
             # get link and link alias
             links=ls.link.getRoot().getAliases()
@@ -166,7 +157,7 @@ def run(_cfg, _logger):
     cfg = _cfg
     logger = _logger
 
-    q=Queue()
+    q=Queue.Queue()
 
     # read recent tweet links from DB
     #   filter out: a) tweeted links, b) links rated in last x mins
@@ -262,7 +253,7 @@ if __name__ == '__main__':
     logging.config.fileConfig(cfg.common.log_config)
     logger = logging.getLogger("link_rating")
                       
-    q=Queue()
+    q=Queue.Queue()
 
     # read recent tweet links from DB
     #   filter out: a) tweeted links, b) links rated in last x mins

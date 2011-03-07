@@ -2,7 +2,7 @@
 
 import tweepy, logging
 
-from lts.models import TwitterAccount, TwitterApiSite, TwitterApiAuth
+from lts.models import TwitterAccount, TwitterApiAuth
 
 class MyOAuthHandler(tweepy.OAuthHandler):
     def set_org_url(self, org_host, org_root,

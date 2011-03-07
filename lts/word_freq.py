@@ -11,7 +11,7 @@ import math
 import logging
 
 from chinese_stop_words import chinese_stop_words
-from scipy import sparse, spatial
+from scipy import spatial
 
 chinese_dict = {}
 chinese_dict_count = ord(u"龥") - ord(u"一") + 1
@@ -118,7 +118,7 @@ def cluto_vcluster(matrix_dump, matrix_size, cluster_sim_threshold=0.5,
     return r
 
 def sparse_hash_matrix(h,column_count):
-    m = scipy.sparse.dok_matrix((len(h), column_count))
+    m = scipy.sparse.dok_matrix((len(h), column_count)) #@UndefinedVariable
     n = 0
     for i in h:
         for j in i.keys():
@@ -127,16 +127,16 @@ def sparse_hash_matrix(h,column_count):
     return m
 
 def cluster_center(m):
-    avg = scipy.sparse.dok_matrix(m.sum(axis=0) / m.shape[0])
+    avg = scipy.sparse.dok_matrix(m.sum(axis=0) / m.shape[0]) #@UndefinedVariable
     return avg
 
 def cluster_center_similarity(m):
     ma = m.toarray()
     x = spatial.distance.cdist(ma, ma, 'cos')
-    i = scipy.zeros((1,1))
+    i = scipy.zeros((1,1)) #@UndefinedVariable
     i[0,0] = math.e
     # print i
-    t = i**scipy.array(-x)
+    t = i**scipy.array(-x) #@UndefinedVariable
     # print t
     # logger.debug("%s", str(t))        
     # print m.shape               # 
@@ -148,9 +148,9 @@ def filter_knowns(news, knowns, similarity_threshold=0.5):
     # logger.debug("%s", str(news))
     # logger.debug("%s", str(knowns))
     x = spatial.distance.cdist(news, knowns, 'cos')
-    i = scipy.zeros((1,1))
+    i = scipy.zeros((1,1)) #@UndefinedVariable
     i[0,0] = math.e
-    x = i**scipy.array(-x)
+    x = i**scipy.array(-x) #@UndefinedVariable
     # logger.debug("%s", str(x))
     return map(lambda i: ((i < similarity_threshold) and [False] or [True])[0],
                x.max(axis=1))

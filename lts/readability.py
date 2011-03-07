@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8
 
-import sys, logging, logging.config, os, html5lib, StringIO, re
+import sys, logging.config, os, StringIO, re
 
 from optparse import OptionParser
-from config import Config, ConfigMerger
+from config import Config
 from lxml import etree, html
 from BeautifulSoup import UnicodeDammit
 from urlparse import urljoin
@@ -256,8 +256,8 @@ class ReadabilityProcessor:
 
     def process(self, html_doc, input_charset=None, output_charset=None, url=None,
                 linkprocessor=None):
-        output_title = None
-        output_body = None
+#        output_title = None
+#        output_body = None
 
         if not html:
             return None
@@ -275,7 +275,7 @@ class ReadabilityProcessor:
         try:
             parser = html.HTMLParser(encoding='utf-8', remove_comments=True, remove_blank_text=True)
             doc   = html.parse(StringIO.StringIO(html_doc), parser)
-        except etree.XMLSyntaxError, e:
+        except etree.XMLSyntaxError:
             logger.warn("Failed to parse HTML with etree.HTMLParser.")
             return None
             # parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder("lxml"), namespaceHTMLElements=False)
@@ -286,7 +286,7 @@ class ReadabilityProcessor:
         # for d in doc.getiterator():
         #     setattr(d, 'a') = 1
 
-        brs=doc.xpath('//br',namespaces={'xhtml':'http://www.w3.org/1999/xhtml'})
+#        brs=doc.xpath('//br',namespaces={'xhtml':'http://www.w3.org/1999/xhtml'})
 
         # logger.debug("Removing font tags...")
 
