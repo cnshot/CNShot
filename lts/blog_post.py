@@ -1,14 +1,97 @@
 #!/usr/bin/python
 
-import sys, logging.config, os, xmlrpclib
+import sys, logging.config, os, xmlrpclib, buzz
 
 from optparse import OptionParser
 from datetime import datetime, timedelta
 from django.template import Context, Template
 from config import Config
 
-#os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import LinkShot, ShotBlogPost, Tweet, LinkRate
+
+try:
+  # This is where simplejson lives on App Engine
+  from django.utils import simplejson
+except (ImportError):
+  import simplejson
+  
+class ExtBuzzClient(buzz.Client):
+    def create_post(self, post):
+        api_endpoint = buzz.API_PREFIX + "/activities/@me/@self"
+        api_endpoint += "?alt=json"
+        json_string = simplejson.dumps({'data': post._json_output})
+        logging.debug('Creating post: %s' % json_string)
+
+        return buzz.Result._parse_post(json_string)
+
+class WordPressPoster:
+    def __init__(self, _cfg, _logger):
+        self.cfg = _cfg
+        self.logger = _logger
+        
+    def post(self, t, link, ls):
+        c = Context({"link": link, 
+                     "tweet": t,
+                     "link_shot": ls})        
+        
+        title_tmp = Template(self.cfg.blog_post.title_template)
+        description_tmp = Template(self.cfg.blog_post.description_template)        
+        
+        content = {'title':str(title_tmp.render(c).encode('utf-8')),
+                   'description':str(description_tmp.render(c).encode('utf-8')),
+                   'mt_keywords':ls.keywords}
+
+        wp_server = xmlrpclib.Server(self.cfg.blog_post.xmlrpc_url)
+        post_id = wp_server.metaWeblog.newPost(self.cfg.blog_post.blog_id,
+                                               self.cfg.blog_post.username,
+                                               self.cfg.blog_post.password,
+                                               content,
+                                               1)
+        post = wp_server.metaWeblog.getPost(post_id,
+                                            self.cfg.blog_post.username,
+                                            self.cfg.blog_post.password)
+        
+        self.logger.info("Posted: [%s]",
+                         post_id)
+
+        return post['link']
+
+class GoogleBuzzPoster:
+    def __init__(self, _cfg, _logger):
+        self.cfg = _cfg
+        self.logger = _logger    
+
+    def post(self, t, link, ls):
+        client = ExtBuzzClient()
+        client.build_oauth_consumer(self.cfg.blog_post.buzz_client_id,
+                                    self.cfg.blog_post.buzz_client_secret)
+        client.oauth_scopes.append(buzz.FULL_ACCESS_SCOPE)
+        # Retrieve the persisted access token
+        client.build_oauth_access_token(self.cfg.blog_post.buzz_access_token_key, 
+                                        self.cfg.blog_post.buzz_access_token_secret)
+        
+        screenshot_attachment = buzz.Attachment(type='photo',
+                                                title=ls.title,
+                                                url=ls.thumbnail_url)
+        article_attachment = buzz.Attachment(type='article',
+                                             title=ls.title,
+                                             uri=link.url)
+        post = buzz.Post(content=t.text,
+                         attachments=[screenshot_attachment, article_attachment])
+        r = client.create_post(post)
+        
+        return r.link
+
+class PosterFactory:
+    def __init__(self, _cfg, _logger):
+        self.cfg = _cfg
+        self.logger = _logger
+        
+    def getPoster(self):
+        if self.cfg.blog_post.poster == 'wordpress':
+            return WordPressPoster(self.cfg, self.logger)
+        elif self.cfg.blog_post.poster == 'buzz':
+            return GoogleBuzzPoster(self.cfg, self.logger)
 
 class BlogPost:
     @classmethod
@@ -49,38 +132,18 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
             logger.warn("Failed to get shot of link: %s", link.url)
             return None
 
-        title_tmp = Template(cfg.blog_post.title_template)
-        description_tmp = Template(cfg.blog_post.description_template)
-
         if not ls.title:
             # just a fake for blog title
             # don't save it
             ls.title = t.text
-
-        c = Context({"link": link, 
-                     "tweet": t,
-                     "link_shot": ls})
-
-        wp_server = xmlrpclib.Server(cfg.blog_post.xmlrpc_url)
-        content = {'title':str(title_tmp.render(c).encode('utf-8')),
-                   'description':str(description_tmp.render(c).encode('utf-8')),
-                   'mt_keywords':ls.keywords}
-        post_id = wp_server.metaWeblog.newPost(cfg.blog_post.blog_id,
-                                               cfg.blog_post.username,
-                                               cfg.blog_post.password,
-                                               content,
-                                               1)
-        post = wp_server.metaWeblog.getPost(post_id,
-                                            cfg.blog_post.username,
-                                            cfg.blog_post.password)
-        logger.info("Posted: [%s] %s %s",
-                    post_id, ls.title, t.text.encode('utf-8'))
         
+        poster_factory = PosterFactory(cfg, logger)
+        post_url = poster_factory.getPoster().post(t, link, ls)
+                
         # update ShotBlogPost
         ShotBlogPost.objects.filter(link=link).delete()
-        # url = "http://twitter.com/" + rts.user.screen_name + "/status/" + str(rts.id)
         sbp = ShotBlogPost(link=link, shot=ls, publish_time=datetime.utcnow(),
-                           url=post['link'], site=cfg.blog_post.xmlrpc_url)
+                           url=post_url, site=cfg.blog_post.xmlrpc_url)
         sbp.save()
 
         return sbp

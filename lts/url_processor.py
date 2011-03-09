@@ -73,7 +73,7 @@ class TaskProcessingThread(threading.Thread):
 
         while True:
             known_urls.append(self.task['url'])
-            (None,h) = http_header(self.task['url'])
+            (c,h) = http_header(self.task['url'])
             if not h:
                 break
             new_url = extend_url(h)
