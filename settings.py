@@ -95,16 +95,19 @@ LTS_SCHEDULE = {
     'update_tweet_mentioned': '1d',
 }
 
-import os
+import os, sys, logging.config
 LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.conf')
 LTS_CONFIG = os.path.join(os.path.dirname(__file__), 'lts.cfg')
+SHOT_DAEMON = True
+SHOT_DAEMON_PIDFILE = '/var/log/shot_daemon.pid'
+SHOT_DAEMON_STDOUT = None
+SHOT_DAEMON_STDERR = None
 
 try:
     from local_settings import * #@UnusedWildImport
 except ImportError:
     pass
 
-import logging.config, sys
 logging.config.fileConfig(LOGGING_CONFIG)
 
 # walk around encoding issue

@@ -242,8 +242,9 @@ class ScreenshotWorker(QThread):
             self.mutex.unlock()
 
 class ShotProcessWorker(ProcessWorker):
-    def __init__(self, cfg, logger, id='UNKNOWN', lifetime=None):
-        super(ShotProcessWorker, self).__init__(cfg, logger, id)
+    def __init__(self, cfg, logger, id='UNKNOWN', post_fork=None, lifetime=None):
+        super(ShotProcessWorker, self).__init__(cfg, logger, id=id,
+                                                post_fork=post_fork)
         self.lifetime = lifetime
 
     def run(self):
@@ -260,4 +261,9 @@ class ShotProcessWorker(ProcessWorker):
             threading.Timer(self.lifetime, app.exit).start()
         
         exit(app.exec_())
+        
+    def clone(self):
+        return self.__class__(self.cfg, self.logger, id=self.id,
+                              post_fork=self.post_fork, lifetime=self.lifetime)
+
         

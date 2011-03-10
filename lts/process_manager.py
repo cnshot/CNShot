@@ -53,7 +53,8 @@ class ProcessManager:
                 done_pid = self.workers[i].pid
                 pass
             if done_pid > 0:
-                self.logger.warn("Child %d exited: %d %d", i, done_pid, exit_status)
+                self.logger.warn("Child %d %s exited: %d %d",
+                                 i, self.workers[i].id, done_pid, exit_status)
                 new_worker = self.workers[i].clone()
                 new_worker._run()
                 self.workers[i] = new_worker
@@ -65,14 +66,16 @@ class ProcessManager:
         signal.signal(signal.SIGCHLD, lambda s, f: self.restartChildProcess(s,f))
 
 class ProcessWorker(object):
-    def __init__(self, cfg, logger, id='UNKNOWN'):
+    def __init__(self, cfg, logger, id='UNKNOWN', post_fork=None):
         self.cfg = cfg
         self.logger = logger
         self.id = id
         self.pid = -1
-    
+        self.post_fork = post_fork
+        
     def clone(self):
-        return self.__class__(self.cfg, self.logger, self.id)
+        return self.__class__(self.cfg, self.logger, id=self.id,
+                              post_fork=self.post_fork)
         
     def _run(self):
         pid = os.fork()
@@ -80,6 +83,9 @@ class ProcessWorker(object):
             self.pid = pid
             return pid
         
+        if self.post_fork:
+            f = self.post_fork
+            f()
         self.run()
         
     def run(self):
