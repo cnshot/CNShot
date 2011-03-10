@@ -4,7 +4,7 @@ Created on 2011-3-6
 @author: yale
 '''
 
-import signal, os
+import signal, os, setproctitle
 
 class ProcessManager:
     def __init__(self, cfg, logger):
@@ -83,6 +83,7 @@ class ProcessWorker(object):
             self.pid = pid
             return pid
         
+        setproctitle.setproctitle(self.id)
         if self.post_fork:
             f = self.post_fork
             f()

@@ -10,6 +10,7 @@ from SOAPpy import WSDL
 from lxml import etree
 
 from django.core.files.base import ContentFile
+from django.core.exceptions import SuspiciousOperation
 from lts.models import Link, LinkShot, Tweet, ShotCache
 from lts.process_manager import ProcessWorker
 
@@ -47,10 +48,14 @@ def update_linkshot(task, s, url, thumbnail_url):
     except ShotCache.DoesNotExist:
         sc = ShotCache(linkshot = ls)
 
-    f=open(task['filename'])
-    sc.image.save(os.path.basename(task['filename']),
-                  ContentFile(f.read()))
-    f.close()
+    try:
+        f=open(task['filename'])
+        sc.image.save(os.path.basename(task['filename']),
+                      ContentFile(f.read()))
+        f.close()
+    except SuspiciousOperation, e:
+        logger.error("Failed to save image file %s: %s",
+                     task['filename'], e)
 
 def readability_parse_file(filename, frame_url=None, task_url=None):
     logger.debug("Readability parse file: %s %s %s", filename, frame_url, task_url)
