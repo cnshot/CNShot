@@ -17,6 +17,7 @@ class ProcessManager:
         
     def startAll(self):
         for w in self.workers:
+            self.logger.info("Starting worker: %s", w.id)
             w._run()
     
     def killChildProcesses(self, signum, frame):

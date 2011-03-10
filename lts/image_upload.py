@@ -75,8 +75,8 @@ class ImageUploader:
         try:
             logger.debug("Post image to moby: %s %s", image_path, s)
 
-            datagen, headers = multipart_encode({'u':cfg.common.username,
-                                                 'p':cfg.common.password,
+            datagen, headers = multipart_encode({'u':cfg.common.moby_username,
+                                                 'p':cfg.common.moby_password,
                                                  'k':cfg.common.moby_key,
                                                  'i':open(image_path, 'rb'),
                                                  'action':'postMediaUrl',
@@ -92,6 +92,8 @@ class ImageUploader:
 
             m = re.match(r'^http://moby\.to/(.+)', image_url)
             if not m:
+                logger.error("Failed to upload image: %d %s",
+                             response.code, image_url)
                 return None, None
 
             datagen, headers = multipart_encode({'t':m.group(1),

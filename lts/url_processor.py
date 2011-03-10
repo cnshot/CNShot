@@ -16,7 +16,7 @@ class TaskProcessingThread(threading.Thread):
         self.task = task
         self.patterns = patterns
         self.cfg = cfg
-        self.logger.logger
+        self.logger = logger
 
     def run(self):
         
@@ -126,23 +126,21 @@ class TaskProcessingThread(threading.Thread):
                 self.writeMQ(self.cfg.queues.cancel, self.task)
                 return
 
-        global patterns
-
-        if patterns.ignore(self.task['url']):
+        if self.patterns.ignore(self.task['url']):
             # enqueue cancel
             self.logger.info("Ignore URL: %s",
                         self.task['url'])            
             self.writeMQ(self.cfg.queues.cancel, self.task)
             return
 
-        if patterns.image(self.task['url']):
+        if self.patterns.image(self.task['url']):
             # enqueue cancel
             self.logger.info("Image URL: %s",
                         self.task['url'])                        
             self.writeMQ(self.cfg.queues.cancel, self.task)
             return
             
-        canvas_pattern = patterns.sized_canvas(self.task['url'])
+        canvas_pattern = self.patterns.sized_canvas(self.task['url'])
         if canvas_pattern:
             self.logger.debug("Canvas pattern obj: %s", dir(canvas_pattern))
             self.task['canvas_size'] = {
@@ -232,7 +230,6 @@ class URLPatterns:
             
 class URLProcessWorker(ProcessWorker):
     def run(self):
-        global patterns
         patterns = URLPatterns(self.cfg, self.logger)
     
         # loop, dequeue source, create processing thread
@@ -273,5 +270,9 @@ class URLProcessWorker(ProcessWorker):
                     self.logger.warn("STOMP unsubscribe failed.")
                     pass
     
-            TaskProcessingThread(pickle.loads(m.body)).start()
+            try:
+                TaskProcessingThread(pickle.loads(m.body), patterns, self.cfg, self.logger).start()
+            except TypeError, e:
+                self.logger.error("Failed to start processing thread: %s", e)
+                self.logger.error("Message body: %s", m.body)
 
