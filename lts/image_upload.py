@@ -255,8 +255,8 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
                 ls.save()
 
                 uploaded += 1
-            except (Tweet.DoesNotExist, IndexError, ShotCache.DoesNotExist):
-                logger.warn("Failed to get tweet info of link: %s", lr.link.url)
+            except (Tweet.DoesNotExist, IndexError, ShotCache.DoesNotExist), e:
+                logger.warn("Failed to get tweet info of link: %s %s", lr.link.url, e)
 
 def run(_cfg, _logger):
     global cfg, logger

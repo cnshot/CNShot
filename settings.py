@@ -102,6 +102,7 @@ SHOT_DAEMON = True
 SHOT_DAEMON_PIDFILE = '/var/log/shot_daemon.pid'
 SHOT_DAEMON_STDOUT = None
 SHOT_DAEMON_STDERR = None
+SHOT_CACHE_PATH = MEDIA_ROOT
 
 try:
     from local_settings import * #@UnusedWildImport

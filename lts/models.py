@@ -2,6 +2,10 @@ import re, random
 
 from django.db import models
 from datetime import datetime
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+
+fs = FileSystemStorage(location=settings.SHOT_CACHE_PATH)
 
 # Create your models here.
 
@@ -104,7 +108,7 @@ class LinkShot(models.Model):
 
 class ShotCache(models.Model):
     linkshot = models.ForeignKey('LinkShot', null=True, primary_key=True)
-    image = models.ImageField(upload_to='shot_cache', null=True)
+    image = models.ImageField(upload_to='shot_cache', storage=fs, null=True)
 
 class ShotPublish(models.Model):
 #    id = models.AutoField(primary_key=True)
