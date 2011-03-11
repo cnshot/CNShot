@@ -7,6 +7,7 @@ from datetime import timedelta, datetime
 from optparse import OptionParser
 from urllib2 import HTTPError
 from config import Config
+from tweepy.error import TweepError
 
 from lts.models import Tweet, LinkShot, LinkRate, ShotPublish, TwitterApiSite
 
@@ -77,7 +78,7 @@ class LinkRatingThread(Thread):
         try:
             # s = api.GetSearch(url, lang='', per_page=cfg.link_rating.max_ranking_tweets)
             s = api.search(q=url, lang='',rpp=cfg.link_rating.max_ranking_tweets)
-        except (HTTPError, ValueError):
+        except (HTTPError, ValueError, TweepError, NameError, KeyError):
             logger.warn("Failed to call search API: %s", url)
             return 0
         
