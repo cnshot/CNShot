@@ -1,6 +1,6 @@
 # migrated from original shot_service.py
 
-import signal, logging, daemon, daemon.pidlockfile
+import signal, logging, logging.config, daemon, daemon.pidlockfile, sys
 
 from django.core.management.base import BaseCommand
 from django.conf import settings
@@ -10,7 +10,7 @@ from lts import shot_service, url_processor, rt_shot, task_gc
 from lts.process_manager import ProcessManager
 
 global logger
-logger = logging.getLogger(__name__)
+logger = None
 
 class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
@@ -56,7 +56,15 @@ class Command(BaseCommand):
             signal.pause()
     
     def handle(self, *args, **options):
-        import sys
+        logging.config.fileConfig(settings.LOGGING_CONFIG)
+
+        # walk around encoding issue
+        reload(sys)
+        sys.setdefaultencoding('utf-8') #@UndefinedVariable
+        
+        global logger
+        logger = logging.getLogger(__name__)
+        
         self.daemon_context = None
         if settings.SHOT_DAEMON:
             pidfile = daemon.pidlockfile.PIDLockFile(settings.SHOT_DAEMON_PIDFILE)
@@ -71,7 +79,6 @@ class Command(BaseCommand):
             with self.daemon_context:
                 # reopen log
                 global logger
-                import logging.config, sys
                 logging.config.fileConfig(settings.LOGGING_CONFIG)
                 # walk around encoding issue
                 reload(sys)

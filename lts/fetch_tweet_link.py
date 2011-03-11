@@ -9,6 +9,8 @@ from optparse import OptionParser
 from stompy.simple import Client
 from chinese_detecting import isChinesePhase
 from config import Config
+from urllib2 import HTTPError
+from tweepy.error import TweepError
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 from lts.models import Link, Tweet, TwitterAccount
@@ -35,42 +37,48 @@ class TweetLinkFetcher:
             if n>left:
                 n=left
 
-            if since_id is None:
-                if max_id is None:
-                    logger.debug("Fetch status without max or since.")
-                    ss = api.friends_timeline(count=page_size,
-                                              include_rts=1,
-                                              include_entities=1)
+            try:
+                if since_id is None:
+                    if max_id is None:
+                        logger.debug("Fetch status without max or since.")
+                        ss = api.friends_timeline(count=page_size,
+                                                  include_rts=1,
+                                                  include_entities=1)
+                    else:
+                        logger.debug("Fetch status: max=%d", max_id)
+                        ss = api.friends_timeline(count=page_size,
+                                                  max_id=max_id,
+                                                  include_rts=1,
+                                                  include_entities=1)
                 else:
-                    logger.debug("Fetch status: max=%d", max_id)
-                    ss = api.friends_timeline(count=page_size,
-                                              max_id=max_id,
-                                              include_rts=1,
-                                              include_entities=1)
-            else:
-                if max_id is None:
-                    logger.debug("Fetch status: since=%d", since_id)
-                    ss = api.friends_timeline(count=page_size,
-                                              since_id=since_id,
-                                              include_rts=1,
-                                              include_entities=1)
-                else:
-                    logger.debug("Fetch status: since_id=%d, max_id=%d",
-                                 since_id, max_id)
-                    ss = api.friends_timeline(count=page_size,
-                                              max_id=max_id,
-                                              since_id=since_id,
-                                              include_rts=1,
-                                              include_entities=1)
-            calls_left -= 1
+                    if max_id is None:
+                        logger.debug("Fetch status: since=%d", since_id)
+                        ss = api.friends_timeline(count=page_size,
+                                                  since_id=since_id,
+                                                  include_rts=1,
+                                                  include_entities=1)
+                    else:
+                        logger.debug("Fetch status: since_id=%d, max_id=%d",
+                                     since_id, max_id)
+                        ss = api.friends_timeline(count=page_size,
+                                                  max_id=max_id,
+                                                  since_id=since_id,
+                                                  include_rts=1,
+                                                  include_entities=1)
 
-            last_fetch_count = len(ss)
-            left -= last_fetch_count
-            if(last_fetch_count > 0):
-                logger.debug("Fetched status: %d - %d", ss[-1].id, ss[0].id)
-                max_id = ss[-1].id - 1
-                statuses += ss
+                last_fetch_count = len(ss)
+                left -= last_fetch_count
+                if(last_fetch_count > 0):
+                    logger.debug("Fetched status: %d - %d", ss[-1].id, ss[0].id)
+                    max_id = ss[-1].id - 1
+                    statuses += ss
+            
+            except (HTTPError, ValueError, TweepError, NameError, KeyError):
+                logger.warn("Failed to fetch friends timeline",)
+            finally:
+                calls_left -= 1
 
+        logger.debug("Statuses count: %d", len(statuses))
         return statuses
 
     def processStatus(self, s, screen_names=[]):

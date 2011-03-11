@@ -1,4 +1,4 @@
-import sys, logging
+import sys, logging, logging.config
 
 from django.core.management.base import LabelCommand
 from django.conf import settings
@@ -6,7 +6,8 @@ from django_future import schedule_job, job_as_parameter
 from django_future.models import ScheduledJob
 from config import Config
 
-logger = logging.getLogger(__name__)
+global logger
+logger = None
 
 class ScheduledFunc:
     def __init__(self, name, model, official_reschedule):
@@ -80,6 +81,15 @@ class Command(LabelCommand):
     args = '''<command>'''
 
     def handle_label(self, command, **options):
+        logging.config.fileConfig(settings.LOGGING_CONFIG)
+
+        # walk around encoding issue
+        reload(sys)
+        sys.setdefaultencoding('utf-8') #@UndefinedVariable
+        
+        global logger
+        logger = logging.getLogger(__name__)        
+        
         if command == 'schedule':
             for k in command_list.keys():
                 job_str = "%s.%s" % (__name__,k)

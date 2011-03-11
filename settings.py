@@ -108,9 +108,3 @@ try:
     from local_settings import * #@UnusedWildImport
 except ImportError:
     pass
-
-logging.config.fileConfig(LOGGING_CONFIG)
-
-# walk around encoding issue
-reload(sys)
-sys.setdefaultencoding('utf-8') #@UndefinedVariable
