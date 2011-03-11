@@ -56,15 +56,6 @@ class Command(BaseCommand):
             signal.pause()
     
     def handle(self, *args, **options):
-        logging.config.fileConfig(settings.LOGGING_CONFIG)
-
-        # walk around encoding issue
-        reload(sys)
-        sys.setdefaultencoding('utf-8') #@UndefinedVariable
-        
-        global logger
-        logger = logging.getLogger(__name__)
-        
         self.daemon_context = None
         if settings.SHOT_DAEMON:
             pidfile = daemon.pidlockfile.PIDLockFile(settings.SHOT_DAEMON_PIDFILE)
@@ -78,11 +69,12 @@ class Command(BaseCommand):
             
             with self.daemon_context:
                 # reopen log
-                global logger
                 logging.config.fileConfig(settings.LOGGING_CONFIG)
                 # walk around encoding issue
                 reload(sys)
                 sys.setdefaultencoding('utf-8') #@UndefinedVariable
+                
+                global logger
                 logger = logging.getLogger(__name__)
                 
                 self.run()                
