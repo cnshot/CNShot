@@ -63,6 +63,11 @@ class Command(BaseCommand):
             self.daemon_context = daemon.DaemonContext(stdout=settings.SHOT_DAEMON_STDOUT,
                                                        stderr=settings.SHOT_DAEMON_STDERR,
                                                        pidfile=pidfile)
+            
+            # close db connection now before entering daemon, it will be reopened later
+            from django.db import connection
+            connection.close()
+            
             with self.daemon_context:
                 # reopen log
                 global logger
