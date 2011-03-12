@@ -109,16 +109,19 @@ def readability_parse(task):
             task['text'] += text
             plain_text += p_t
 
-        try:
-            r = get_abstract(plain_text)
-            task['abstract'] = r['Abstract'].encode('utf-8')
-            task['keywords'] = map(lambda x: x.encode('utf-8'),
-                                   r['MainWord']['string'])
-
-            logger.debug('Abstract: %s', task['abstract'])
-            logger.debug('Keywords: %s', ' '.join(task['keywords']))
-        except:
-            logger.warn("Failed to get abstraction: %s", task['url'])
+        if cfg.rt_shot.abstraction:
+            try:
+                r = get_abstract(plain_text)
+                task['abstract'] = r['Abstract'].encode('utf-8')
+                task['keywords'] = map(lambda x: x.encode('utf-8'),
+                                       r['MainWord']['string'])
+    
+                logger.debug('Abstract: %s', task['abstract'])
+                logger.debug('Keywords: %s', ' '.join(task['keywords']))
+            except:
+                logger.warn("Failed to get abstraction: %s", task['url'])
+        else:
+            logger.debug("Abstraction was disabled")
 
     except:
         logger.error("Failed to parse readability: %s", sys.exc_info()[0])
