@@ -16,6 +16,15 @@ class ScheduledFunc:
         self.official_reschedule = official_reschedule
 
     def __call__(self, job):
+        logging.config.fileConfig(settings.LOGGING_CONFIG)
+
+        # walk around encoding issue
+        reload(sys)
+        sys.setdefaultencoding('utf-8') #@UndefinedVariable
+        
+        global logger
+        logger = logging.getLogger(__name__)
+        
         if self.schedule_name:
             if self.official_reschedule:
                 job.reschedule(settings.LTS_SCHEDULE[self.schedule_name],
@@ -23,7 +32,7 @@ class ScheduledFunc:
             else:
                 schedule_job(settings.LTS_SCHEDULE[self.schedule_name],
                              str(job.callable_name))
-
+        
         cfg = Config(file(settings.LTS_CONFIG))
 
         self.model.run(cfg, logger)
