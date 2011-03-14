@@ -8,6 +8,8 @@ from config import Config
 from datetime import timedelta, datetime
 from lts.models import Tweet, RTPublish
 
+global cfg, logger
+
 def cluster_tweets():
     tt = datetime.utcnow() - timedelta(seconds = cfg.cluster_tweets.time_limit)
     
@@ -67,15 +69,18 @@ def cluster_tweets():
     if len(cluster_rs) and len(rt_rs) > 0:
         logger.debug("%s", cluster_rs)
         logger.debug("%s", rt_rs)
-        similarity_matrix = word_freq.hash_filter_knowns(scipy.array(cluster_rs), #@UndefinedVariable
-                                                         scipy.array(rt_rs), #@UndefinedVariable
+        similarity_matrix = word_freq.hash_filter_knowns(scipy.array(cluster_rs[:cfg.cluster_tweets.duplicated_check_limit]), #@UndefinedVariable
+                                                         scipy.array(rt_rs[:cfg.cluster_tweets.duplicated_check_limit]), #@UndefinedVariable
                                                          similarity_threshold=cfg.cluster_tweets.similarity_threshold)
 
         logger.debug("%s", str(similarity_matrix))
 
         for i in range(len(ratings)):
-            if similarity_matrix[i]:
-                ratings[i] = 0
+            try:
+                if similarity_matrix[i]:
+                    ratings[i] = 0
+            except IndexError:
+                pass
 
         logger.debug("%s", str(ratings))
 

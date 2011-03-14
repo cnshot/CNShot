@@ -156,6 +156,8 @@ def filter_knowns(news, knowns, similarity_threshold=0.5):
                x.max(axis=1))
 
 def hash_filter_knowns(news, knowns, similarity_threshold=0.5):
+    logger.debug("Size of news: %d", news.size)
+    logger.debug("Size of knowns: %d", knowns.size)
     return filter_knowns(sparse_hash_matrix(news, chinese_dict_count).toarray(),
                          sparse_hash_matrix(knowns, chinese_dict_count).toarray(),
                          similarity_threshold)
