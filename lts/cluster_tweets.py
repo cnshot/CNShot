@@ -28,6 +28,8 @@ def cluster_tweets():
 
     clusters = word_freq.vcluster_with_sample(rs,
                                               cluster_sim_threshold=cfg.cluster_tweets.similarity_threshold,
+                                              cluster_item_threshold=cfg.cluster_tweets.item_threshold,
+                                              cluster_item_limit=cfg.cluster_tweets.item_limit,
                                               vcluster_cmd=cfg.cluster_tweets.vcluster_cmd)
 
     for (s, c, r) in clusters:

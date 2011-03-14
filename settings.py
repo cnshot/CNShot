@@ -95,7 +95,7 @@ LTS_SCHEDULE = {
     'update_tweet_mentioned': '1d',
 }
 
-import os, sys, logging.config
+import os
 LOGGING_CONFIG = os.path.join(os.path.dirname(__file__), 'logging.conf')
 LTS_CONFIG = os.path.join(os.path.dirname(__file__), 'lts.cfg')
 SHOT_DAEMON = True

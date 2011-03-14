@@ -163,6 +163,7 @@ def hash_filter_knowns(news, knowns, similarity_threshold=0.5):
 def vcluster_with_sample(hashs,
                          cluster_sim_threshold=0.5,
                          cluster_item_threshold=4,
+                         cluster_item_limit=20,
                          vcluster_cmd='/usr/bin/vcluster'):
     import StringIO
     output_stream = StringIO.StringIO()
@@ -179,11 +180,19 @@ def vcluster_with_sample(hashs,
         # print "%d:%s" % (k, r[k])
         if len(r[k]) < cluster_item_threshold:
             continue
+        if len(r[k]) > cluster_item_limit:
+            logger.debug("Cluster with size over the limit %d: %d",
+                         cluster_item_limit, len(r[k]))
         c = 0.0
         hm = []
+        n = 0
         for i in r[k]:
             c += len(hashs[i])
             hm.append(hashs[i])
+            n += 1
+            if n>= cluster_item_limit:
+                logger.debug("Stop sampling")
+                break
         # print "%f" % (c/len(r[k]))
         m = sparse_hash_matrix(hm, chinese_dict_count)
         # ma = cluster_center(m)
