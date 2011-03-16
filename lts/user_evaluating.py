@@ -97,7 +97,7 @@ def evaluate_user(user, api=None):
     except tweepy.error.TweepError, e:
         logger.warn("Failed to evaluate user %s: %s", user.screen_name, e)
         return
-    except AttributeError:
+    except (NameError, AttributeError):
         logger.warn("Failed to evaluate user %s: %s", user.screen_name,
                     traceback.format_exc())
         return
