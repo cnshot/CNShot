@@ -45,9 +45,15 @@ class Command(BaseCommand):
         for i in range(cfg.shot_service.workers):
             pm.add(shot_service.ShotProcessWorker(cfg, logger, id=("Shot%d" % i), post_fork=post_fork))
     
-        pm.add(url_processor.URLProcessWorker(cfg, logger, id='URLProcessor', post_fork=post_fork))
-        pm.add(rt_shot.RTShotWorker(cfg, logger, 'RTShot', post_fork=post_fork))
-        pm.add(task_gc.GCWorker(cfg, logger, 'TaskGC', post_fork=post_fork))
+        pm.add(url_processor.URLProcessWorker(cfg,
+                                              logging.getLogger(url_processor.__name__),
+                                              id='URLProcessor',
+                                              post_fork=post_fork))
+        pm.add(rt_shot.RTShotWorker(cfg,
+                                    logging.getLogger(rt_shot.__name__),
+                                    id='RTShot',
+                                    post_fork=post_fork))
+        pm.add(task_gc.GCWorker(cfg, logger, id='TaskGC', post_fork=post_fork))
     
         pm.startAll()
         pm.setSignal()
