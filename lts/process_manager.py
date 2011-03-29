@@ -82,6 +82,10 @@ class ProcessWorker(object):
         if pid > 0:
             self.pid = pid
             return pid
+
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGTERM, signal.SIG_DFL)
+        signal.signal(signal.SIGCHLD, signal.SIG_DFL)
         
         setproctitle.setproctitle(self.id)
         if self.post_fork:
