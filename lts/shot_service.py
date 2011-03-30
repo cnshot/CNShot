@@ -14,6 +14,7 @@ global logger, cfg
 class ScreenshotWorker(QThread):
     def __init__(self):
         self.task = None
+        self.last_timeouted_task = None
         self.webpage = QWebPage()
         self.mutex = QMutex()
         self.processing = QWaitCondition()
@@ -33,8 +34,15 @@ class ScreenshotWorker(QThread):
 
         logger.warn("%s Timeout", self.objectName())
 
-        # enable task reader
-        self.webpage.triggerAction(QWebPage.Stop)
+        if (self.task is not None) and \
+            (self.last_timeouted_task is not None) and \
+            (self.task==self.last_timeouted_task):
+            logger.error("%s Duplicated timeout: %s", self.task['url'])
+            QApplication.instance().exit()
+        else:
+            # enable task reader
+            self.last_timeouted_task = self.task
+            self.webpage.triggerAction(QWebPage.Stop)
 
         self.mutex.unlock()        
 
@@ -42,6 +50,7 @@ class ScreenshotWorker(QThread):
         self.mutex.lock()
 
         try:
+            self.last_timeouted_task = None
             self.timer.stop()
         except:
             pass
@@ -217,6 +226,7 @@ class ScreenshotWorker(QThread):
                     pass
 
             self.task = pickle.loads(m.body)
+            self.last_timeouted_task = None
             if self.task['filename'] is None:
                 if sys.hexversion >= 0x02060000:
                     f = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
