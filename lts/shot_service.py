@@ -32,12 +32,13 @@ class ScreenshotWorker(QThread):
     def onTimer(self):
         self.mutex.lock()
 
-        logger.warn("%s Timeout", self.objectName())
+        if self.task is None:
+            logger.warn("%s Timeout without task info", self.objectName())
+        else:
+            logger.warn("%s Timeout: %s", self.objectName(), self.task['url'])
 
-        if (self.task is not None) and \
-            (self.last_timeouted_task is not None) and \
-            (self.task==self.last_timeouted_task):
-            logger.error("%s Duplicated timeout: %s", self.task['url'])
+        if(self.task==self.last_timeouted_task):
+            logger.error("%s Duplicated timeout", self.objectName())
             QApplication.instance().exit()
         else:
             # enable task reader
