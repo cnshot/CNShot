@@ -65,6 +65,7 @@ admin.site.register(LinkShot, LinkShotAdmin)
 
 class ShotCacheAdmin(admin.ModelAdmin):
     list_display = ('linkshot', 'image')
+    search_fields = ['image']
 
 admin.site.register(ShotCache, ShotCacheAdmin)
 

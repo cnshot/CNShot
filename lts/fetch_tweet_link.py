@@ -13,7 +13,7 @@ from urllib2 import HTTPError
 from tweepy.error import TweepError
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import Link, Tweet, TwitterAccount
+from lts.models import Link, Tweet, TwitterAccount, TwitterUser, TwitterUserExt
 
 class TweetLinkFetcher:
     def __init__(self):
@@ -85,6 +85,14 @@ class TweetLinkFetcher:
         # mc = memcache.Client(['127.0.0.1:11211'], debug=0)
         # stomp = Client()
         # stomp.connect()
+        
+        u = None
+        ue = None
+        try:
+            u = TwitterUser.objects.get(id=s.user.id)
+            ue = TwitterUserExt.objects.get(twitteruser=u)
+        except (TwitterUser.DoesNotExist, TwitterUserExt.DoesNotExist):
+            logger.debug('Unkown user: %s %s', s.user.id, s.user.screen_name)
 
         url_pattern = re.compile('((http|ftp|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?)')
         if s.user.screen_name in screen_names :
@@ -130,10 +138,13 @@ class TweetLinkFetcher:
                 # NOTICE: l record may be updated by url_processor after stomp.put
                 ls.append(l)
 
-                self.stomp.put(pickle.dumps({'id':task_id,
-                                        'url':m[0],
-                                        'filename':None}),
-                          destination=cfg.queues.fetched)
+                if ue is None or ue.allowing_shot:
+                    self.stomp.put(pickle.dumps({'id':task_id,
+                                                 'url':m[0],
+                                                 'filename':None}),
+                                                 destination=cfg.queues.fetched)
+                else:
+                    logger.info("Skip URL of user: %s %s", s.user.screen_name, m[0])
 
             # # update Tweet
             # t = Tweet(id = s.id,
