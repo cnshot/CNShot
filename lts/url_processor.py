@@ -11,12 +11,13 @@ from lts.models import ImageSitePattern, IgnoredSitePattern, Link, LinkShot, \
 from lts.process_manager import ProcessWorker
 
 class TaskProcessingThread(threading.Thread):
-    def __init__(self, task, patterns, cfg, logger):
+    def __init__(self, task, patterns, cfg, logger, jobdone=None):
         threading.Thread.__init__(self)
         self.task = task
         self.patterns = patterns
         self.cfg = cfg
         self.logger = logger
+        self.jobdone = jobdone
 
     def run(self):
         
@@ -124,6 +125,7 @@ class TaskProcessingThread(threading.Thread):
                 self.logger.info("Ignore MIME type %s of URL: %s",
                             mime_type[1], self.task['url'])
                 self.writeMQ(self.cfg.queues.cancel, self.task)
+                self.jobdone()
                 return
 
         if self.patterns.ignore(self.task['url']):
@@ -131,6 +133,7 @@ class TaskProcessingThread(threading.Thread):
             self.logger.info("Ignore URL: %s",
                         self.task['url'])            
             self.writeMQ(self.cfg.queues.cancel, self.task)
+            self.jobdone()
             return
 
         if self.patterns.image(self.task['url']):
@@ -138,6 +141,7 @@ class TaskProcessingThread(threading.Thread):
             self.logger.info("Image URL: %s",
                         self.task['url'])                        
             self.writeMQ(self.cfg.queues.cancel, self.task)
+            self.jobdone()
             return
             
         canvas_pattern = self.patterns.sized_canvas(self.task['url'])
@@ -151,6 +155,7 @@ class TaskProcessingThread(threading.Thread):
         # enqueue shot
         self.logger.info("Enqueue task for shot: %s", self.task['url'])
         self.writeMQ(self.cfg.queues.processed, self.task)
+        self.jobdone()
 
     def writeMQ(self, queue, task):
         if not queue:
@@ -229,6 +234,16 @@ class URLPatterns:
             return None
             
 class URLProcessWorker(ProcessWorker):
+    def __init__(self, cfg, logger, id='UNKNOWN', post_fork=None):
+        super(URLProcessWorker, self).__init__(cfg, logger, id=id,
+                                                post_fork=post_fork)
+        self.lock = threading.Lock()
+    
+    def jobDone(self):
+        self.lock.acquire()
+        super(URLProcessWorker, self).jobDone()
+        self.lock.release()
+    
     def run(self):
         patterns = URLPatterns(self.cfg, self.logger)
     
@@ -271,7 +286,8 @@ class URLProcessWorker(ProcessWorker):
                     pass
     
             try:
-                TaskProcessingThread(pickle.loads(m.body), patterns, self.cfg, self.logger).start()
+                TaskProcessingThread(pickle.loads(m.body), patterns, self.cfg,
+                                     self.logger, jobdone=lambda:self.jobDone()).start()
             except TypeError, e:
                 self.logger.error("Failed to start processing thread: %s", e)
                 self.logger.error("Message body: %s", m.body)

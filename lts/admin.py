@@ -5,7 +5,7 @@ from lts.models import ImageSitePattern, IgnoredSitePattern, \
     SizedCanvasSitePattern, \
     Link, Tweet, LinkShot, LinkRate, ShotPublish, TwitterUser, TwitterUserExt, \
     TwitterAccount, TwitterApiSite, TwitterApiAuth, ShotBlogPost, \
-    ShotCache, TweetFreqHashCache, RTPublish
+    ShotCache, TweetFreqHashCache, RTPublish, ProcessWorker
 
 class SiteAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'pattern')
@@ -260,3 +260,13 @@ class RTPublishAdmin(admin.ModelAdmin):
     search_fields = ['text']
 
 admin.site.register(RTPublish, RTPublishAdmin)
+
+class ProcessWorkerAdmin(admin.ModelAdmin):
+    list_display = ('id', 'sid', 'pid', 'running', 'last_start', 'last_success')
+    search_fields = ['sid', 'pid']
+    actions = ['kill']
+    
+    def kill(self, request, queryset):
+        map(lambda x:x.kill(), queryset)
+    
+admin.site.register(ProcessWorker, ProcessWorkerAdmin)

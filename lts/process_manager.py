@@ -5,6 +5,9 @@ Created on 2011-3-6
 '''
 
 import signal, os, setproctitle
+from datetime import datetime, timedelta
+
+from lts.models import ProcessWorker as PWM
 
 class ProcessManager:
     def __init__(self, cfg, logger):
@@ -37,10 +40,15 @@ class ProcessManager:
     
     def restartChildProcess(self, signum, frame):
         self.logger.warn("Child exited ...")
+
         for i in range(len(self.workers)):
             if self.workers[i].pid <= 0:
                 continue
             self.logger.warn("Testing child %d: %d", i, self.workers[i].pid)
+            
+            done_pid = 0
+            exit_status = 0
+            
             try:
                 done_pid = 0
                 exit_status = 0
@@ -52,13 +60,15 @@ class ProcessManager:
                             str(e))
                 done_pid = self.workers[i].pid
                 pass
+            
             if done_pid > 0:
                 self.logger.warn("Child %d %s exited: %d %d",
                                  i, self.workers[i].id, done_pid, exit_status)
                 new_worker = self.workers[i].clone()
                 new_worker._run()
                 self.workers[i] = new_worker
-                return
+            
+        return
             
     def setSignal(self):
         signal.signal(signal.SIGINT, lambda s, f: self.killChildProcesses(s,f))
@@ -86,6 +96,16 @@ class ProcessWorker(object):
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+
+        try:
+            p = PWM.objects.get(sid = self.id)
+        except PWM.DoesNotExist:
+            p = PWM(sid=self.id)
+            
+        p.pid = os.getpid()
+        p.last_start = datetime.now()
+        p.last_success = datetime.now()
+        p.save()
         
         setproctitle.setproctitle(self.id)
         if self.post_fork:
@@ -95,3 +115,22 @@ class ProcessWorker(object):
         
     def run(self):
         pass
+    
+    def jobDone(self):
+        try:
+            p = PWM.objects.get(sid = self.id)
+        except PWM.DoesNotExist:
+            self.logger.warn("No PWM was found for worker: %s", self.id)
+            return
+        
+        p.last_success = datetime.now()
+        p.save()
+        
+class RestartZombines:
+    @classmethod
+    def run(cls, _cfg, _logger):
+        tt = datetime.now() - timedelta(seconds = _cfg.process_manager.success_limit)
+        zombines = filter(lambda x: x.running(), PWM.objects.filter(last_success__lte=tt).filter(last_start__lte=tt))
+        map(lambda x: _logger.info("Found zombine worker: %d %s", x.pid, x.sid), zombines)
+        map(lambda x: x.kill(), zombines)
+        

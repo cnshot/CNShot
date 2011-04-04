@@ -48,7 +48,7 @@ def build_command_pair(name, model, official_reschedule):
         }
 
 from lts import fetch_tweet_link, image_upload, link_rating, blog_post, \
-    tweet_shot, cluster_tweets, cache_gc
+    tweet_shot, cluster_tweets, cache_gc, process_manager
 from lts import update_twitter_users as utu
 
 command_list = {
@@ -75,6 +75,10 @@ command_list = {
         build_command_pair('update_tweet_mentioned',
                            utu.updateTweetMentioned,
                            False),
+    'restart_zombines':
+        build_command_pair('restart_zombines',
+                           process_manager.RestartZombines,
+                           True)
     }
             
 def schedule_unique_job(date, callable_name, content_object=None, expires='7d',

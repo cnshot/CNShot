@@ -12,13 +12,14 @@ from lts.process_manager import ProcessWorker
 global logger, cfg
 
 class ScreenshotWorker(QThread):
-    def __init__(self):
+    def __init__(self, jobdone=None):
         self.task = None
         self.last_timeouted_task = None
         self.webpage = QWebPage()
         self.mutex = QMutex()
         self.processing = QWaitCondition()
         self.timer = QTimer(self.webpage)
+        self.jobdone = jobdone
         QThread.__init__(self)
     
     def postSetup(self, name):
@@ -118,6 +119,9 @@ class ScreenshotWorker(QThread):
                     self.task['html_url'+str(i)] = child_frames[i].url().toString().toUtf8()
 
             if image_save_result or html_save_result:
+                if self.jobdone:
+                    self.jobdone()
+                
                 logger.info("%s File saved: %s %s",
                             self.objectName(), self.task['filename'], 
                             self.task['html_filename'])
@@ -263,7 +267,7 @@ class ShotProcessWorker(ProcessWorker):
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
 
-        shotter = ScreenshotWorker()
+        shotter = ScreenshotWorker(jobdone=lambda: self.jobDone())
 
         shotter.start()
         shotter.postSetup(self.id)

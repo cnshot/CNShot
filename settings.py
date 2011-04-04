@@ -93,6 +93,7 @@ LTS_SCHEDULE = {
     'update_twitter_users': '6h',
     'follow_users': '1d',
     'update_tweet_mentioned': '1d',
+    'restart_zombines': '5m',
 }
 
 import os

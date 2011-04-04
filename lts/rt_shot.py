@@ -129,48 +129,6 @@ def readability_parse(task):
         logger.error("%s", traceback.format_exc())
         logger.error('-'*60)
 
-def onReceiveTask(m):
-    global stomp
-    stomp.ack(m)
-    task = pickle.loads(m.body)
-
-    if task is None:
-        logger.error("Failed to parse task")
-        return
-
-    logger.info("Got task: %s %s %s", task['url'], task['filename'], task['html_filename'])
-
-    try:
-        global mc
-        s = mc.get(task['id'])
-        mc.delete(task['id'])
-
-        if s is None:
-            # expired
-            logger.error("Failed to get status of task id: %s", task['id'])
-            return
-
-        logger.info("Got tweet: %d %s %s %s",
-                    s.id, str(s.user.screen_name),
-                    str(s.created_at), s.text.encode('utf-8'))
-
-        readability_parse(task)
-
-        # update_linkshot(task, s, image_url, thumbnail_url)
-        update_linkshot(task, s, None, None)
-
-    finally:
-        if not cfg.rt_shot.keep_file:
-            try:
-                if task.has_key('filename'):
-                    os.unlink(task['filename'])
-                if task.has_key('html_filename'):
-                    os.unlink(task['html_filename'])
-                    for i in range(task['sub_frame_count']):
-                        os.unlink(task['html_filename']+str(i))
-            except:
-                pass
-
 class RTShotWorker(ProcessWorker):
     def run(self):
         global mc
@@ -182,5 +140,49 @@ class RTShotWorker(ProcessWorker):
         stomp.subscribe(cfg.queues.shotted, ack='client')
 
         while True:
-            m = stomp.get(callback=onReceiveTask)
+            m = stomp.get(callback=lambda x:self.onReceiveTask(x))
+
+    def onReceiveTask(self, m):
+        global stomp
+        stomp.ack(m)
+        task = pickle.loads(m.body)
+    
+        if task is None:
+            logger.error("Failed to parse task")
+            return
+    
+        logger.info("Got task: %s %s %s", task['url'], task['filename'], task['html_filename'])
+    
+        try:
+            global mc
+            s = mc.get(task['id'])
+            mc.delete(task['id'])
+    
+            if s is None:
+                # expired
+                logger.error("Failed to get status of task id: %s", task['id'])
+                return
+    
+            logger.info("Got tweet: %d %s %s %s",
+                        s.id, str(s.user.screen_name),
+                        str(s.created_at), s.text.encode('utf-8'))
+    
+            readability_parse(task)
+    
+            # update_linkshot(task, s, image_url, thumbnail_url)
+            update_linkshot(task, s, None, None)
+            
+            self.jobDone()
+    
+        finally:
+            if not cfg.rt_shot.keep_file:
+                try:
+                    if task.has_key('filename'):
+                        os.unlink(task['filename'])
+                    if task.has_key('html_filename'):
+                        os.unlink(task['html_filename'])
+                        for i in range(task['sub_frame_count']):
+                            os.unlink(task['html_filename']+str(i))
+                except:
+                    pass
 

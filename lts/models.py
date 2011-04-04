@@ -1,4 +1,5 @@
-import re, random
+import re, random, psutil
+
 
 from django.db import models
 from datetime import datetime
@@ -349,4 +350,40 @@ class SizedCanvasSitePattern(models.Model):
     width = models.IntegerField(null=True)
     height = models.IntegerField(null=True)
 
+class ProcessWorker(models.Model):
+    id = models.AutoField(primary_key=True)
+    sid = models.CharField(max_length=64)
+    pid = models.IntegerField(null=True)
+    last_start = models.DateTimeField(null=False, auto_now_add=True, db_index=True)
+    last_success = models.DateTimeField(null=False, auto_now_add=True, db_index=True)
+
+    def __unicode__(self):
+        return self.sid
     
+    def running(self):
+        if self.pid is None or self.sid is None:
+            return False
+        
+        try:
+            p = psutil.Process(int(self.pid))
+        except psutil.error.NoSuchProcess:
+            return False
+        
+        if p.cmdline[0] == self.sid:
+            return True
+        return False
+    
+    def kill(self):
+        if self.pid is None or self.sid is None:
+            return
+        
+        try:
+            p = psutil.Process(int(self.pid))
+        except psutil.error.NoSuchProcess:
+            return
+        
+        if p.cmdline[0] == self.sid:
+            p.kill()
+            self.pid = None
+            self.save()
+        
