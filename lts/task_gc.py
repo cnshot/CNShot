@@ -11,6 +11,7 @@ class GCWorker(ProcessWorker):
         stomp.subscribe("/queue/cancel", ack='auto')
         while True:
             m=stomp.get()
+            self.jobDone()
 
 if __name__ == '__main__':
     stomp = stompy.simple.Client()
