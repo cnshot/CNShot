@@ -73,7 +73,7 @@ command_list = {
                            False),
     'update_tweet_mentioned':
         build_command_pair('update_tweet_mentioned',
-                           utu.updateTweetMentioned,
+                           utu.UpdateTweetMentioned,
                            False),
     'restart_zombines':
         build_command_pair('restart_zombines',
