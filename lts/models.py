@@ -369,8 +369,11 @@ class ProcessWorker(models.Model):
         except psutil.error.NoSuchProcess:
             return False
         
-        if p.cmdline[0] == self.sid:
-            return True
+        try:
+            if p.cmdline[0] == self.sid:
+                return True
+        except IndexError:
+            return False
         return False
     
     def kill(self):
@@ -382,8 +385,11 @@ class ProcessWorker(models.Model):
         except psutil.error.NoSuchProcess:
             return
         
-        if p.cmdline[0] == self.sid:
-            p.kill()
-            self.pid = None
-            self.save()
+        try:
+            if p.cmdline[0] == self.sid:
+                p.kill()
+                self.pid = None
+                self.save()
+        except IndexError:
+            return
         
