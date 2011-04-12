@@ -85,5 +85,13 @@ class Command(BaseCommand):
                 
                 self.run()                
         else:
+            logging.config.fileConfig(settings.LOGGING_CONFIG)
+            # walk around encoding issue
+            reload(sys)
+            sys.setdefaultencoding('utf-8') #@UndefinedVariable
+            
+            global logger
+            logger = logging.getLogger(__name__)
+                        
             logger.info(__name__)
             self.run()

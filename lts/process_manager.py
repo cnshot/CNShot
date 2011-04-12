@@ -5,6 +5,7 @@ Created on 2011-3-6
 '''
 
 import signal, os, setproctitle
+import thread
 from datetime import datetime, timedelta
 
 from lts.models import ProcessWorker as PWM
@@ -14,6 +15,7 @@ class ProcessManager:
         self.cfg = cfg
         self.logger = logger
         self.workers = []
+        self.signal_lock = thread.allocate_lock()
     
     def add(self, worker):
         self.workers.append(worker)
@@ -39,34 +41,39 @@ class ProcessManager:
         exit(0)
     
     def restartChildProcess(self, signum, frame):
-        self.logger.warn("Child exited ...")
+#        if(self.signal_lock.acquire()):
+#            try:
+        self.logger.warn("SIGCHLD detected ...")
 
-        for i in range(len(self.workers)):
-            if self.workers[i].pid <= 0:
-                continue
-            self.logger.warn("Testing child %d: %d", i, self.workers[i].pid)
-            
+        while True:
             done_pid = 0
-            exit_status = 0
-            
+                        
             try:
-                done_pid = 0
-                exit_status = 0
-                done_pid, exit_status = os.waitpid(self.workers[i].pid,
-                                                   os.WNOHANG)
+                self.logger.debug("Waitpid ...")
+                done_pid, exit_status = os.waitpid(0, os.WNOHANG)
             except OSError,e:
-                self.logger.warn("Failed to waitpid: %d %s",
-                            self.workers[i].pid,
-                            str(e))
-                done_pid = self.workers[i].pid
-                pass
-            
-            if done_pid > 0:
+                self.logger.warn("waitpid() failed: %s", str(e))
+                
+            if done_pid <= 0:
+                self.logger.debug("No more exited child was found.")
+                return
+        
+            exited_worker_indexs = filter(lambda i: self.workers[i].pid == done_pid,
+                                          range(len(self.workers)))
+        
+            for i in exited_worker_indexs:
                 self.logger.warn("Child %d %s exited: %d %d",
                                  i, self.workers[i].id, done_pid, exit_status)
                 new_worker = self.workers[i].clone()
+                self.logger.warn("Child %d %s cloned",
+                                 i, self.workers[i].id)
                 new_worker._run()
                 self.workers[i] = new_worker
+                self.logger.warn("Child %d %s restarted: %d",
+                                 i, self.workers[i].id, self.workers[i].pid)
+
+#            finally:
+#                self.signal_lock.release()
             
         return
             
@@ -97,10 +104,19 @@ class ProcessWorker(object):
         signal.signal(signal.SIGTERM, signal.SIG_DFL)
         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
 
+        from django.db import connection
+        connection.close()
+
         try:
-            p = PWM.objects.get(sid = self.id)
+#            p = PWM.objects.get(sid = self.id)
+#        except PWM.DoesNotExist:
+#            p = PWM(sid=self.id)
+#        except PWM.MultipleObjectsReturned:
+            PWM.objects.filter(sid = self.id).delete()
         except PWM.DoesNotExist:
-            p = PWM(sid=self.id)
+            pass
+        
+        p = PWM(sid=self.id)
             
         p.pid = os.getpid()
         p.last_start = datetime.now()
