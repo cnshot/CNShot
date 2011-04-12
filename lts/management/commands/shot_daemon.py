@@ -63,6 +63,8 @@ class Command(BaseCommand):
     
     def handle(self, *args, **options):
         self.daemon_context = None
+        global logger
+        
         if settings.SHOT_DAEMON:
             pidfile = daemon.pidlockfile.PIDLockFile(settings.SHOT_DAEMON_PIDFILE)
             self.daemon_context = daemon.DaemonContext(stdout=settings.SHOT_DAEMON_STDOUT,
@@ -80,7 +82,6 @@ class Command(BaseCommand):
                 reload(sys)
                 sys.setdefaultencoding('utf-8') #@UndefinedVariable
                 
-                global logger
                 logger = logging.getLogger(__name__)
                 
                 self.run()                
@@ -90,7 +91,6 @@ class Command(BaseCommand):
             reload(sys)
             sys.setdefaultencoding('utf-8') #@UndefinedVariable
             
-            global logger
             logger = logging.getLogger(__name__)
                         
             logger.info(__name__)
