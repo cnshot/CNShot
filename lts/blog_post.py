@@ -6,6 +6,7 @@ from optparse import OptionParser
 from datetime import datetime, timedelta
 from django.template import Context, Template
 from config import Config
+from xml.parsers.expat import ExpatError
 
 from lts.models import LinkShot, ShotBlogPost, Tweet, LinkRate
 
@@ -42,18 +43,36 @@ class WordPressPoster:
                    'mt_keywords':ls.keywords}
 
         wp_server = xmlrpclib.Server(self.cfg.blog_post.xmlrpc_url)
-        post_id = wp_server.metaWeblog.newPost(self.cfg.blog_post.blog_id,
-                                               self.cfg.blog_post.username,
-                                               self.cfg.blog_post.password,
-                                               content,
-                                               1)
-        post = wp_server.metaWeblog.getPost(post_id,
-                                            self.cfg.blog_post.username,
-                                            self.cfg.blog_post.password)
+        try:
+            post_id = wp_server.metaWeblog.newPost(self.cfg.blog_post.blog_id,
+                                                   self.cfg.blog_post.username,
+                                                   self.cfg.blog_post.password,
+                                                   content,
+                                                   1)
+            post = wp_server.metaWeblog.getPost(post_id,
+                                                self.cfg.blog_post.username,
+                                                self.cfg.blog_post.password)
+        except ExpatError:
+            self.logger.warn('Blog post failed, try to recover from recent posts ...')
+            try:
+                posts = wp_server.metaWeblog.getRecentPosts(self.cfg.blog_post.blog_id,
+                                                            self.cfg.blog_post.username,
+                                                            self.cfg.blog_post.password,
+                                                            self.cfg.blog_post.recent_posts)
+            except ExpatError:
+                self.logger.warn('Failed to get recent posts.')
+                return None
+            
+            matched_posts = filter(lambda x: x['description'] == content, posts)
+            if len(matched_posts)>0:
+                self.logger.info('Found post in recent posts')
+                post = matched_posts[0]
+            else:
+                self.logger.info("Didn't find post in recent posts")
+                return None
         
         self.logger.info("Posted: [%s]",
                          post_id)
-
         return post['link']
 
 class GoogleBuzzPoster:
@@ -140,13 +159,16 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
         poster_factory = PosterFactory(cfg, logger)
         post_url = poster_factory.getPoster().post(t, link, ls)
                 
-        # update ShotBlogPost
-        ShotBlogPost.objects.filter(link=link).delete()
-        sbp = ShotBlogPost(link=link, shot=ls, publish_time=datetime.utcnow(),
-                           url=post_url, site=cfg.blog_post.xmlrpc_url)
-        sbp.save()
-
-        return sbp
+        if post_url:
+            # update ShotBlogPost
+            ShotBlogPost.objects.filter(link=link).delete()
+            sbp = ShotBlogPost(link=link, shot=ls, publish_time=datetime.utcnow(),
+                               url=post_url, site=cfg.blog_post.xmlrpc_url)
+            sbp.save()
+    
+            return sbp
+        else:
+            return None
 
     @classmethod
     def getFirstTweet(cls, link):
