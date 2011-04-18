@@ -200,7 +200,7 @@ WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
 """
 }).filter(rating_time__gte=tt)
 
-        logger.debug("Query for links to tweet: %s", lrs.query.as_sql())
+        logger.debug("Query for links to tweet: %s", str(lrs.query))
             
         lrs = filter(lambda x: x.published==0 and x.shot>0 and x.blogpost>0, lrs)
         

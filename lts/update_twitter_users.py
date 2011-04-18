@@ -191,7 +191,7 @@ WHERE lts_twitteruserext_followed_by_account.twitteruserext_id = lts_twitteruser
               ).\
          order_by('last_update')
 
-    logger.debug("Query for users to follow: %s", ues.query.as_sql())
+    logger.debug("Query for users to follow: %s", str(ues.query))
 
     active_accounts = TwitterAccount.objects.filter(active=True)
     account_screen_names = []

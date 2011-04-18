@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+from __future__ import with_statement
+
 import sys, signal, pickle, stompy, tempfile, threading, urllib
 
 from datetime import datetime
