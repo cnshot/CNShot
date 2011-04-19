@@ -41,6 +41,11 @@ class LinkRatingThread(Thread):
                 except LinkRate.DoesNotExist:
                     lr = LinkRate(link=l)
                     logger.debug("Created LinkRate: %s", lr)
+                except LinkRate.MultipleObjectsReturned:
+                    logger.debug("Delete duplicated LinkRate: %s", lr)
+                    LinkRate.objects.filter(link=l).delete()
+                    lr = LinkRate(link=l)
+                    logger.debug("Created LinkRate: %s", lr)
 
                 if lr.rate is None or lr.rate < r:
                     lr.rate = r
@@ -155,7 +160,7 @@ class TaskProcessor:
             # enqueue for ratings
             queue.put({'linkshot':ls, 'links':links})
 
-def run(_cfg, _logger):
+def run_search(_cfg, _logger):
     global cfg, logger
     cfg = _cfg
     logger = _logger
@@ -176,100 +181,42 @@ def run(_cfg, _logger):
         workers.append(w)
 
     for i in range(cfg.link_rating.workers):
-        workers[i].join()    
-
-if __name__ == '__main__':
-    description = '''Link rating processor.'''
-    parser = OptionParser(usage="usage: %prog [options]",
-                          version="%prog 0.1, Copyright (c) 2010 Chinese Shot",
-                          description=description)
-
-#    parser.add_option("-s", "--source-queue",
-#                      dest="source_queue", default="/queue/url_processor",
-#                      type="string",
-#                      help="Source message queue path [default: %default].",
-#                      metavar="SOURCE_QUEUE")
-
-#    parser.add_option("-d", "--dest-queue", 
-#                      dest="dest_queue", default="/queue/shot_dest",
-#                      type="string",
-#                      help="Dest message queue path [default: %default].",
-#                      metavar="DEST_QUEUE")
-
-    # parser.add_option("-t", "--timeout", 
-    #                   dest="timeout", default=20, type="int",
-    #                   help="Timeout of HTTP request in second [default: %default].",
-    #                   metavar="TIMEOUT")
-
-    # parser.add_option("-n", "--workers", 
-    #                   dest="workers", default=8, type="int",
-    #                   help="Number or worker threads [default: %default].",
-    #                   metavar="WORKERS")
-
-    parser.add_option("-l", "--log-config",
-                      dest="log_config", 
-                      default="/etc/link_shot_tweet_log.conf",
-                      type="string",
-                      help="Logging config file [default: %default].",
-                      metavar="LOG_CONFIG")
-
-    # parser.add_option("-r", "--ranking-time",
-    #                   dest="ranking_time", default="7200", type="int",
-    #                   help="Time perioud of link ranking in second [default: %default].",
-    #                   metavar="RANKING_TIME")
-
-    # parser.add_option("-m", "--max-ranking-tweets",
-    #                   dest="max_ranking_tweets", default="100", type="int",
-    #                   help="Max tweet numbers to search for every link [default: %default].",
-    #                   metavar="MAX_RANKING_TWEETS")
-
-    # parser.add_option("-u", "--username", dest="username", type="string",
-    #                   default="username",
-    #                   help="Twitter username [default: %default].",
-    #                   metavar="USERNAME")
-
-    # parser.add_option("-p", "--password", dest="password", type="string",
-    #                   default="password",
-    #                   help="Twitter password [default: %default].",
-    #                   metavar="PASSWORD")
-
-    parser.add_option("-c", "--config",
-                      dest="config",
-                      default="lts.cfg",
-                      type="string",
-                      help="Config file [default %default].",
-                      metavar="CONFIG")
-
-    (options,args) = parser.parse_args()
-    if len(args) != 0:
-        parser.error("incorrect number of arguments") 
-
-#    config = ConfigParser.SafeConfigParser()
-#    config.read([options.config, os.path.expanduser('~/.lts.cfg')])
-
-    cfg=Config(file(filter(lambda x: os.path.isfile(x),
-                           [options.config,
-                            os.path.expanduser('~/.lts.cfg'),
-                            '/etc/lts.cfg'])[0]))
-    # cfg.addNamespace(options,'common')
-
-    logging.config.fileConfig(cfg.common.log_config)
-    logger = logging.getLogger("link_rating")
-                      
-    q=Queue.Queue()
-
-    # read recent tweet links from DB
-    #   filter out: a) tweeted links, b) links rated in last x mins
-    TaskProcessor.loadTasks(q)
-
-    # feed links to input queue
-    # start rating threads
-    # wait for rating threads exit
-    workers = []
-    for i in range(cfg.link_rating.workers):
-        w = LinkRatingThread(i, q)
-        w.start()
-        workers.append(w)
-
-    for i in range(cfg.link_rating.workers):
         workers[i].join()
+
+def run_count(cfg, logger):
+    now = datetime.utcnow()
+    
+    lss = LinkShot.objects.filter(shot_time__gte = now - timedelta(seconds=cfg.link_rating.ranking_time))
+    tt = now - timedelta(seconds = cfg.link_rating.ranking_time)
+    
+    for ls in lss:
+        links=ls.link.getRoot().getAliases()
+
+#        first_created_at = datetime.utcnow() 
+        for l in links:
+            ts = Tweet.objects.filter(links=l).filter(created_at__gt=tt).order_by('created_at')
+            r = ts.count()
+#            if ts[0].created_at < first_created_at:
+#                first_created_at = ts[0].created_at
+
+            try:
+                lr = LinkRate.objects.get(link=l)
+#                logger.debug("Got existing LinkRate: %s", lr)
+            except LinkRate.DoesNotExist:
+                lr = LinkRate(link=l)
+                logger.debug("Created LinkRate: %s", lr)
+            except LinkRate.MultipleObjectsReturned:
+                logger.debug("Delete duplicated LinkRate: %s", lr)
+                LinkRate.objects.filter(link=l).delete()
+                lr = LinkRate(link=l)
+                logger.debug("Created LinkRate: %s", lr)                
+
+            if lr.rate is None or lr.rate < r:
+                lr.rate = r
+                lr.rating_time = now
+
+                lr.save()
+                logger.debug("Updated LinkRate: %s [%d]", lr, r)    
+
+def run(_cfg, _logger):
+    run_count(_cfg, _logger)
