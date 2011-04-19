@@ -199,6 +199,9 @@ def run_count(cfg, logger):
 #            if ts[0].created_at < first_created_at:
 #                first_created_at = ts[0].created_at
 
+            if r == 0:
+                continue
+
             try:
                 lr = LinkRate.objects.get(link=l)
 #                logger.debug("Got existing LinkRate: %s", lr)
