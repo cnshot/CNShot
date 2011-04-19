@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import logging.config, os, time, rfc822, tweepy, Queue
+import logging.config, os, time, rfc822, tweepy, Queue, twitter_utils
 
 from threading import Thread
 from datetime import timedelta, datetime
@@ -58,23 +58,24 @@ class LinkRatingThread(Thread):
         # auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
         auth = None
 
-        api_site = TwitterApiSite.random()
-        logger.debug("Rate with API site: %s", api_site)
-
-        if api_site is not None:
-            api = tweepy.API(auth_handler=auth,
-                             host=api_site.api_host,
-                             search_host=api_site.search_host,
-                             api_root=api_site.api_root,
-                             search_root=api_site.search_root,
-                             secure=api_site.secure_api)
-        else:
-            api = tweepy.API(auth_handler=auth,
-                             host=cfg.common.api_host,
-                             search_host=cfg.common.search_host,
-                             api_root=cfg.common.api_root,
-                             search_root=cfg.common.search_root,
-                             secure=cfg.common.secure_api)
+#        api_site = TwitterApiSite.random()
+#        logger.debug("Rate with API site: %s", api_site)
+#
+#        if api_site is not None:
+#            api = tweepy.API(auth_handler=auth,
+#                             host=api_site.api_host,
+#                             search_host=api_site.search_host,
+#                             api_root=api_site.api_root,
+#                             search_root=api_site.search_root,
+#                             secure=api_site.secure_api)
+#        else:
+#            api = tweepy.API(auth_handler=auth,
+#                             host=cfg.common.api_host,
+#                             search_host=cfg.common.search_host,
+#                             api_root=cfg.common.api_root,
+#                             search_root=cfg.common.search_root,
+#                             secure=cfg.common.secure_api)
+        api = twitter_utils.createApi()
 
         try:
             # s = api.GetSearch(url, lang='', per_page=cfg.link_rating.max_ranking_tweets)
