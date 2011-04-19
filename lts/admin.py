@@ -209,6 +209,12 @@ class TwitterAccountAdmin(admin.ModelAdmin):
                     'access_key', 'access_secret',
                     'since')
     search_fields = ['name', 'screen_name']
+    actions = ['trigger']
+    
+    def trigger(self, request, queryset):
+        for account in queryset:
+            account.active = not account.active
+            account.save()
 
 admin.site.register(TwitterAccount, TwitterAccountAdmin)
 
@@ -216,6 +222,12 @@ class TwitterApiSiteAdmin(admin.ModelAdmin):
     list_display = ('id', 'active', 'secure_api', 'api_host', 'api_root',
                     'search_host', 'search_root')
     search_fields = ['api_host', 'api_root', 'search_host', 'search_root']
+    actions = ['trigger']
+    
+    def trigger(self, request, queryset):
+        for site in queryset:
+            site.active = not site.active
+            site.save()
 
 admin.site.register(TwitterApiSite, TwitterApiSiteAdmin)
                     
@@ -226,7 +238,12 @@ class TwitterApiAuthAdmin(admin.ModelAdmin):
                     'access_key', 'access_secret',
                     'last_update')
     search_fields = ['screen_name']
-
+    actions = ['trigger']
+    
+    def trigger(self, request, queryset):
+        for auth in queryset:
+            auth.active = not auth.active
+            auth.save()
 admin.site.register(TwitterApiAuth, TwitterApiAuthAdmin)
 
 class TweetFreqHashCacheAdmin(admin.ModelAdmin):
