@@ -9,7 +9,7 @@ from pyTweetPhoto import pyTweetPhoto
 from lxml import etree
 
 #os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-from lts.models import LinkShot, Tweet, LinkRate, ShotCache
+from lts.models import Tweet, LinkRate, ShotCache
 
 class ImageUploader:
     def __init__(self, uploader_list_cfg):
@@ -203,60 +203,28 @@ class ImageUploader:
 
 class ImageUpload:
     @classmethod
-    def getLinkShotRatings(cls, rank_time):
-        tt = datetime.utcnow() - timedelta(seconds = rank_time);
-        links = list(set(map(lambda x: x.link.getRoot(), LinkRate.objects.filter(rating_time__gte=tt))))
-        lss = []
-        for link in links:
-            try:
-                ls = LinkShot.objects.filter(link=link)[0]
-                if ls.url is None:
-                    lss.append(ls)
-            except IndexError:
-                continue
-        
-#        lss = filter(lambda x: x.url is None, map(lambda x: x.shot, lss))
-        sorted_lss = sorted(lss, lambda x,y: int(y.getRate()-x.getRate()))
-        logger.debug("Sorted rates: %s", str(map(lambda x: x.getRate(), sorted_lss)))    
-        return sorted_lss
-    
-    @classmethod
-    def getLinkRatings(cls, rank_time):
-        tt = datetime.utcnow() - timedelta(seconds = rank_time)
-        lrs = LinkRate.objects.extra(select={'published':"""
-SELECT COUNT(*) FROM lts_shotpublish 
-WHERE lts_shotpublish.link_id=lts_linkrate.link_id
-""",
-                                             'shot':"""
-SELECT COUNT(*) FROM lts_linkshot 
-WHERE lts_linkshot.link_id=lts_linkrate.link_id
-"""}).filter(rating_time__gte=tt)
-
-        logger.debug("Query for links to tweet: \n%s", str(lrs.query))
-            
-        lrs = filter(lambda x: x.shot>0, lrs)
-        
-        sorted_lrs = sorted(lrs, lambda x,y: y.link.getRateSum()-x.link.getRateSum())
-        return sorted_lrs
-
-    @classmethod
     def uploadImages(cls):
         register_openers()
         iu = ImageUploader(cfg.image_upload.uploaders)
 
+        def link_filter(l):
+            ls = l.getLinkShot()
+            return (ls is not None and ls.url is None)
+
         # get links; if options.tweet, tweet them
-#        lrs = cls.getLinkRatings(cfg.image_upload.rank_time)
-        lss = cls.getLinkShotRatings(cfg.image_upload.rank_time)
+        links = LinkRate.orderedLinks(datetime.utcnow() - timedelta(seconds = cfg.image_upload.rank_time),
+                                      filter_func=link_filter)
 
         uploaded = 0
-        for ls in lss:
+        for l in links:
             if uploaded >= cfg.image_upload.number:
                 break
 
             try:
-                l = ls.link.getRoot()
+#                l = ls.link.getRoot()
                 t = l.getFirstTweet()
 #                ls = LinkShot.objects.filter(link=l)[0]
+                ls = l.getLinkShot()
                 if ls.url is not None:
                     continue
 

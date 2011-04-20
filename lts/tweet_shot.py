@@ -183,50 +183,6 @@ def post_image_imjtw(image_path, s):
 
 class TweetShot:
     @classmethod
-    def getBlogRatings(cls, rank_time):
-        tt = datetime.utcnow() - timedelta(seconds = rank_time);
-        links = list(set(map(lambda x: x.link.getRoot(), LinkRate.objects.filter(rating_time__gte=tt))))
-        sbps = []
-        for link in links:
-            try:
-                sbp = ShotBlogPost.objects.filter(link=link)[0]
-                sps = ShotPublish.objects.filter(link=link)
-                if sps.count() > 0:
-                    continue
-                sbps.append(sbp)
-            except IndexError:
-                continue
-            
-        sorted_sbps = sorted(sbps, lambda x,y: int(y.getRate()-x.getRate()))
-        logger.debug("Sorted rates: %s", str(map(lambda x: x.link.getRateSum(), sorted_sbps)))    
-        return sorted_sbps
-    
-    @classmethod
-    def getLinkRatings(cls, rank_time):
-        tt = datetime.utcnow() - timedelta(seconds = rank_time);
-        lrs = LinkRate.objects.extra(select={'published':"""
-SELECT COUNT(*) FROM lts_shotpublish 
-WHERE lts_shotpublish.link_id=lts_linkrate.link_id
-""",
-                                             'shot':"""
-SELECT COUNT(*) FROM lts_linkshot 
-WHERE lts_linkshot.link_id=lts_linkrate.link_id
-  AND lts_linkshot.url IS NOT NULL
-""",
-                                             'blogpost':"""
-SELECT COUNT(*) FROM lts_shotblogpost
-WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
-"""
-}).filter(rating_time__gte=tt)
-
-        logger.debug("Query for links to tweet: %s", str(lrs.query))
-            
-        lrs = filter(lambda x: x.published==0 and x.shot>0 and x.blogpost>0, lrs)
-        
-        sorted_lrs = sorted(lrs, lambda x,y: y.link.getRateSum()-x.link.getRateSum())
-        return sorted_lrs
-
-    @classmethod
     def tweetLink(cls, link, post_image_func):
         t = cls.getFirstTweet(link)
         if t is None:
@@ -240,62 +196,14 @@ WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
             logger.warn("Failed to get shot of link: %s", link.url)
             return
 
-        # # update pending user info
-        # p=re.compile('(^|\W)@(\w+)')
-        # m=p.findall(t.text)
-        # for user in map(lambda x:x[1], m):
-        #     # check user info, and add twitter user if necessary
-        #     user_evaluating.evaluate_screen_name(user)
-
-        # try:
-        #     rt_text = u'RT @' + t.user_screenname + u': ' + t.text
-        #     cs = ShotCache.objects.get(linkshot=ls)
-        #     url, thumbnail_url = post_image_func(cs.image.path,
-        #                                         rt_text.encode('utf-8'))
-        #     if url is None:
-        #         logger.warn("Failed to post image: %s", link.url)
-        #     else:
-        #         ls.url = url
-        #         ls.thumbnail_url = thumbnail_url
-        #         ls.save()
-        # except ShotCache.DoesNotExist:
-        #     logger.warn("Failed to get shot cache of link: %s", link.url)
-
         url = shortenURL(sbp.url)
         if url is None:
             url = ls.url
 
         rt_text = unicode(url) + ' RT @' + t.user_screenname + u': ' + t.text
-
         logger.debug("Status text: %s", rt_text)
 
-        # auth = None
-        # if 'consumer_key' in cfg.common.keys() and \
-        #         'consumer_secret' in cfg.common.keys() and \
-        #         'access_key' in cfg.common.keys() and \
-        #         'access_secret' in cfg.common.keys():
-        #     auth = twitter_utils.MyOAuthHandler(cfg.common.consumer_key,
-        #                                         cfg.common.consumer_secret)
-        #     auth.set_org_url(cfg.common.api_host, cfg.common.api_root)
-        #     auth.set_access_token(cfg.common.access_key, cfg.common.access_secret)
-        # elif 'username' in cfg.common.keys() and \
-        #         'proxy_password' in cfg.common.keys():
-        #     auth = tweepy.BasicAuthHandler(cfg.common.username,
-        #                                    cfg.common.proxy_password)
-        # elif 'username' in cfg.common.keys() and \
-        #         'password' in cfg.common.keys():
-        #     auth = tweepy.BasicAuthHandler(cfg.common.username,
-        #                                    cfg.common.password)
-
-        # api = tweepy.API(auth_handler=auth,
-        #                  host=cfg.common.api_host,
-        #                  search_host=cfg.common.search_host,
-        #                  api_root=cfg.common.api_root,
-        #                  search_root=cfg.common.search_root,
-        #                  secure=cfg.common.secure_api)
-
         api = twitter_utils.createCfgApi(cfg.common)
-
         rts = api.update_status(status = rt_text[0:140],
                                 in_reply_to_status_id = t.id)
 
@@ -354,14 +262,27 @@ WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
 
         # get links; if options.tweet, tweet them
 #        lrs = cls.getLinkRatings(cfg.tweet_shot.rank_time)
-        sbps = cls.getBlogRatings(cfg.tweet_shot.rank_time)
+#        sbps = cls.getBlogRatings(cfg.tweet_shot.rank_time)
+        
+        def link_filter(link):
+            ls = link.getLinkShot()
+            if ls is None or ls.thumbnail_url is None or ls.url is None:
+                return False
+            if link.getShotBlogPost() is None:
+                return False
+            if link.getShotPublish() is not None:
+                return False
+            return True
+
+        links = LinkRate.orderedLinks(datetime.utcnow() - timedelta(seconds = cfg.image_upload.rank_time),
+                                      filter_func=link_filter)
 
         tweeted = 0
-        for sbp in sbps:
+        for l in links:
             if tweeted >= cfg.tweet_shot.number:
                 break
 
-            l = sbp.link.getRoot()
+#            l = sbp.link.getRoot()
 
             if cfg.tweet_shot.tweet:
                 logger.info("Tweet: [%d] %s", l.id, l.url)

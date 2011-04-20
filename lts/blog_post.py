@@ -114,52 +114,6 @@ class PosterFactory:
 
 class BlogPost:
     @classmethod
-    def getLinkShotRatings(cls, rank_time):
-        tt = datetime.utcnow() - timedelta(seconds = rank_time);
-        links = list(set(map(lambda x: x.link.getRoot(), LinkRate.objects.filter(rating_time__gte=tt))))
-        lss = []
-        for link in links:
-            try:
-                ls = LinkShot.objects.filter(link=link)[0]
-                if ls.thumbnail_url is None or ls.url is None:
-                    continue
-                sbps = ShotBlogPost.objects.filter(link=link)
-                if sbps.count() > 0:
-                    continue
-                lss.append(ls)
-            except IndexError:
-                continue
-            
-        sorted_lss = sorted(lss, lambda x,y: int(y.getRate()-x.getRate()))
-        logger.debug("Sorted rates: %s", str(map(lambda x: x.getRate(), sorted_lss)))    
-        return sorted_lss
-        
-    @classmethod
-    def getLinks(cls, rank_time):
-        tt = datetime.utcnow() - timedelta(seconds = rank_time);
-        lrs = LinkRate.objects.extra(select={'blog_posted':"""
-SELECT COUNT(*)
-FROM lts_shotblogpost
-WHERE lts_shotblogpost.link_id=lts_linkrate.link_id
-"""
-                                             ,
-                          'shot':"""
-SELECT COUNT(*)
-FROM lts_linkshot
-WHERE lts_linkshot.link_id=lts_linkrate.link_id
-  AND lts_linkshot.thumbnail_url IS NOT NULL
-"""
-                                             }).filter(rating_time__gte=tt)
-
-        logger.debug("Query for links to post:\n%s", str(lrs.query))
-            
-        lrs = filter(lambda x: x.blog_posted==0 and x.shot>0, lrs)
-        
-        sorted_lrs = sorted(lrs,
-                            lambda x,y: y.link.getRateSum()-x.link.getRateSum())
-        return map(lambda x: x.link.getRoot(), sorted_lrs)
-
-    @classmethod
     def postLink(cls, link):
         t = cls.getFirstTweet(link)
         if t is None:
@@ -210,13 +164,25 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
     @classmethod
     def blogPost(cls):
         # get links; if options.post, post them
-        lss = cls.getLinkShotRatings(cfg.blog_post.rank_time)
+#        lss = cls.getLinkShotRatings(cfg.blog_post.rank_time)
+        
+        def link_filter(link):
+            ls = link.getLinkShot()
+            if ls is None or ls.thumbnail_url is None or ls.url is None:
+                return False
+            if link.getShotBlogPost() is not None:
+                return False
+            return True
+
+        links = LinkRate.orderedLinks(datetime.utcnow() - timedelta(seconds = cfg.image_upload.rank_time),
+                                      filter_func=link_filter)
+        
         posted = 0
-        for ls in lss:
+        for l in links:
             if posted >= cfg.blog_post.number:
                 break
             
-            l = ls.link
+#            l = ls.link
 
             if cfg.blog_post.post:
                 logger.info("Post: [%d] %s", l.id, l.url)

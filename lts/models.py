@@ -66,6 +66,27 @@ class Link(models.Model):
         if first_tweet is None:
             raise Tweet.DoesNotExist(u"Failed to get the first tweet of link: %s" % self.url)
         return first_tweet
+    
+    def getLinkShot(self):
+        try:
+            ls = LinkShot.objects.filter(link=self)[0]
+            return ls
+        except IndexError:
+            return None
+
+    def getShotBlogPost(self):
+        try:
+            sbp = ShotBlogPost.objects.filter(link=self)[0]
+            return sbp
+        except IndexError:
+            return None
+        
+    def getShotPublish(self):
+        try:
+            sp = ShotPublish.objects.filter(link=self)[0]
+            return sp
+        except IndexError:
+            return None
 
 class Tweet(models.Model):
     id = models.CharField(primary_key=True, max_length=64)
@@ -149,6 +170,15 @@ class LinkRate(models.Model):
 
     def __unicode__(self):
         return self.link.url
+
+    @classmethod
+    def orderedLinks(cls, time_threshold, filter_func=None):
+        links = list(set(map(lambda x: x.link.getRoot(),
+                             LinkRate.objects.filter(rating_time__gte=time_threshold))))
+        if filter_func:
+            links = filter(filter_func, links)
+        sorted_links = sorted(links, lambda x,y: int(y.getRateSum() - x.getRateSum()))
+        return sorted_links
 
 class LinkRateSum(models.Model):
     link = models.ForeignKey('Link', primary_key=True)
