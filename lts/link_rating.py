@@ -36,6 +36,9 @@ class LinkRatingThread(Thread):
                 now = datetime.utcnow()
             
                 r = self.rate_link(l, now)
+                if r < 1:
+                    continue
+                
                 # update output
                 try:
                     lr = LinkRate.objects.get(link=l)
