@@ -121,7 +121,7 @@ class BlogPost:
         for link in links:
             try:
                 ls = LinkShot.objects.filter(link=link)[0]
-                if ls.url is None:
+                if ls.thumbnail_url is None or ls.url is None:
                     continue
                 sbps = ShotBlogPost.objects.filter(link=link)
                 if sbps.count() > 0:
