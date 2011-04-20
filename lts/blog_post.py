@@ -114,6 +114,27 @@ class PosterFactory:
 
 class BlogPost:
     @classmethod
+    def getLinkShotRatings(cls, rank_time):
+        tt = datetime.utcnow() - timedelta(seconds = rank_time);
+        links = list(set(map(lambda x: x.link.getRoot(), LinkRate.objects.filter(rating_time__gte=tt))))
+        lss = []
+        for link in links:
+            try:
+                ls = LinkShot.objects.filter(link=link)[0]
+                if ls.url is None:
+                    continue
+                sbps = ShotBlogPost.objects.filter(link=link)
+                if sbps.count() > 0:
+                    continue
+                lss.append(ls)
+            except IndexError:
+                continue
+            
+        sorted_lss = sorted(lss, lambda x,y: int(y.getRate()-x.getRate()))
+        logger.debug("Sorted rates: %s", str(map(lambda x: x.getRate(), sorted_lss)))    
+        return sorted_lss
+        
+    @classmethod
     def getLinks(cls, rank_time):
         tt = datetime.utcnow() - timedelta(seconds = rank_time);
         lrs = LinkRate.objects.extra(select={'blog_posted':"""
@@ -189,11 +210,13 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
     @classmethod
     def blogPost(cls):
         # get links; if options.post, post them
-        links = cls.getLinks(cfg.blog_post.rank_time)
+        lss = cls.getLinkShotRatings(cfg.blog_post.rank_time)
         posted = 0
-        for l in links:
+        for ls in lss:
             if posted >= cfg.blog_post.number:
                 break
+            
+            l = ls.link
 
             if cfg.blog_post.post:
                 logger.info("Post: [%d] %s", l.id, l.url)

@@ -36,6 +36,13 @@ class Link(models.Model):
     def getRateSum(self):
         aliases = self.getAliases()
         r = 0
+        try:
+            lr = LinkRate.objects.filter(link=self)[0]
+            if lr.alias_counted:
+                return lr.rate
+            r += lr.rate
+        except IndexError:
+            pass
         for l in aliases:
             try:
                 lr = LinkRate.objects.filter(link=l)[0]
@@ -58,7 +65,7 @@ class Link(models.Model):
                 pass
         if first_tweet is None:
             raise Tweet.DoesNotExist(u"Failed to get the first tweet of link: %s" % self.url)
-        return first_tweet        
+        return first_tweet
 
 class Tweet(models.Model):
     id = models.CharField(primary_key=True, max_length=64)
@@ -90,15 +97,7 @@ class LinkShot(models.Model):
         return self.link.url
 
     def getRate(self):
-        links = self.link.getAliases()
-        r = 0
-        for l in links:
-            try:
-                lr = LinkRate.objects.filter(link=l)[0]
-            except IndexError:
-                continue
-            r += lr.rate
-        return r
+        return self.link.getRoot().getRateSum()
 
     def thumbnailUrl(self):
         if self.thumbnail_url:
@@ -145,6 +144,7 @@ class LinkRate(models.Model):
     link = models.ForeignKey('Link', null=True)
     rate = models.IntegerField(null=True, db_index=True)
     rate.list_filter_range = [2, 5, 10]
+    alias_counted = models.BooleanField(null=False, default=False, db_index=True)
     rating_time = models.DateTimeField(null=True, db_index=True)
 
     def __unicode__(self):

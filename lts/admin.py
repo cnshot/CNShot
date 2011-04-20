@@ -72,11 +72,11 @@ class ShotCacheAdmin(admin.ModelAdmin):
 admin.site.register(ShotCache, ShotCacheAdmin)
 
 class LinkRateAdmin(admin.ModelAdmin):
-    list_display = ('id', 'link_url', 'tweet', 'rate', 'rating_time',)
+    list_display = ('id', 'link_url', 'tweet', 'rate', 'alias_counted', 'rating_time',)
 #    list_filter = ('rate', )
     search_fields = ['link__url']
     raw_id_fields = ['link']
-    list_filter = ['rate']
+    list_filter = ['rate', 'alias_counted']
 
     def link_url(self, obj):
         return ("%s" % (obj.link.url))

@@ -203,6 +203,24 @@ class ImageUploader:
 
 class ImageUpload:
     @classmethod
+    def getLinkShotRatings(cls, rank_time):
+        tt = datetime.utcnow() - timedelta(seconds = rank_time);
+        links = list(set(map(lambda x: x.link.getRoot(), LinkRate.objects.filter(rating_time__gte=tt))))
+        lss = []
+        for link in links:
+            try:
+                ls = LinkShot.objects.filter(link=link)[0]
+                if ls.url is None:
+                    lss.append(ls)
+            except IndexError:
+                continue
+        
+#        lss = filter(lambda x: x.url is None, map(lambda x: x.shot, lss))
+        sorted_lss = sorted(lss, lambda x,y: int(y.getRate()-x.getRate()))
+        logger.debug("Sorted rates: %s", str(map(lambda x: x.getRate(), sorted_lss)))    
+        return sorted_lss
+    
+    @classmethod
     def getLinkRatings(cls, rank_time):
         tt = datetime.utcnow() - timedelta(seconds = rank_time)
         lrs = LinkRate.objects.extra(select={'published':"""
@@ -227,16 +245,18 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
         iu = ImageUploader(cfg.image_upload.uploaders)
 
         # get links; if options.tweet, tweet them
-        lrs = cls.getLinkRatings(cfg.image_upload.rank_time)
+#        lrs = cls.getLinkRatings(cfg.image_upload.rank_time)
+        lss = cls.getLinkShotRatings(cfg.image_upload.rank_time)
+
         uploaded = 0
-        for lr in lrs:
+        for ls in lss:
             if uploaded >= cfg.image_upload.number:
                 break
 
             try:
-                l = lr.link.getRoot()
+                l = ls.link.getRoot()
                 t = l.getFirstTweet()
-                ls = LinkShot.objects.filter(link=l)[0]
+#                ls = LinkShot.objects.filter(link=l)[0]
                 if ls.url is not None:
                     continue
 
@@ -256,7 +276,7 @@ WHERE lts_linkshot.link_id=lts_linkrate.link_id
 
                 uploaded += 1
             except (Tweet.DoesNotExist, IndexError, ShotCache.DoesNotExist), e:
-                logger.warn("Failed to get tweet info of link: %s %s", lr.link.url, e)
+                logger.warn("Failed to get tweet info of link: %s %s", ls.link.getRoot().url, e)
 
 def run(_cfg, _logger):
     global cfg, logger

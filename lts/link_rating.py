@@ -1,16 +1,14 @@
 #!/usr/bin/python
 
-import logging.config, os, time, rfc822, tweepy, Queue, twitter_utils
+import time, rfc822, Queue, twitter_utils
 
 from threading import Thread
 from datetime import timedelta, datetime
-from optparse import OptionParser
 from urllib2 import HTTPError
-from config import Config
 from tweepy.error import TweepError
 from httplib import IncompleteRead
 
-from lts.models import Tweet, LinkShot, LinkRate, ShotPublish, TwitterApiSite
+from lts.models import Tweet, LinkShot, LinkRate, ShotPublish
 
 global logger, cfg
 
@@ -55,6 +53,7 @@ class LinkRatingThread(Thread):
                 if lr.rate is None or lr.rate < r:
                     lr.rate = r
                     lr.rating_time = now
+                    lr.alias_counted = True
 
                     lr.save()
                     logger.debug("Updated LinkRate: %s [%d]", lr, r)
@@ -66,7 +65,7 @@ class LinkRatingThread(Thread):
         #                   password=cfg.common.password)
         # api = twitter.Api()
         # auth = tweepy.BasicAuthHandler(cfg.common.username, cfg.common.password)
-        auth = None
+#        auth = None
 
 #        api_site = TwitterApiSite.random()
 #        logger.debug("Rate with API site: %s", api_site)
@@ -145,8 +144,9 @@ class TaskProcessor:
             # get existing rate
 #            lrs = LinkRate.objects.filter(link = ls.link)
 
+            # twitter searches links and recorgnizable shorten url now, so search root only
             # get link and link alias
-            links=ls.link.getRoot().getAliases()
+            links=[ls.link.getRoot()]
 
             # get tweets related to the links
             latest_tweet_time = datetime.fromtimestamp(0)

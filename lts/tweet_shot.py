@@ -183,6 +183,25 @@ def post_image_imjtw(image_path, s):
 
 class TweetShot:
     @classmethod
+    def getBlogRatings(cls, rank_time):
+        tt = datetime.utcnow() - timedelta(seconds = rank_time);
+        links = list(set(map(lambda x: x.link.getRoot(), LinkRate.objects.filter(rating_time__gte=tt))))
+        sbps = []
+        for link in links:
+            try:
+                sbp = ShotBlogPost.objects.filter(link=link)[0]
+                sps = ShotPublish.objects.filter(link=link)
+                if sps.count() > 0:
+                    continue
+                sbps.append(sbp)
+            except IndexError:
+                continue
+            
+        sorted_sbps = sorted(sbps, lambda x,y: int(y.getRate()-x.getRate()))
+        logger.debug("Sorted rates: %s", str(map(lambda x: x.link.getRateSum(), sorted_sbps)))    
+        return sorted_sbps
+    
+    @classmethod
     def getLinkRatings(cls, rank_time):
         tt = datetime.utcnow() - timedelta(seconds = rank_time);
         lrs = LinkRate.objects.extra(select={'published':"""
@@ -334,13 +353,15 @@ WHERE lts_shotblogpost.link_id = lts_linkrate.link_id
             f = post_image_twitpic
 
         # get links; if options.tweet, tweet them
-        lrs = cls.getLinkRatings(cfg.tweet_shot.rank_time)
+#        lrs = cls.getLinkRatings(cfg.tweet_shot.rank_time)
+        sbps = cls.getBlogRatings(cfg.tweet_shot.rank_time)
+
         tweeted = 0
-        for lr in lrs:
+        for sbp in sbps:
             if tweeted >= cfg.tweet_shot.number:
                 break
 
-            l = lr.link.getRoot()
+            l = sbp.link.getRoot()
 
             if cfg.tweet_shot.tweet:
                 logger.info("Tweet: [%d] %s", l.id, l.url)
