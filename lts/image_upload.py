@@ -106,6 +106,10 @@ class ImageUploader:
                 return None, None
 
             thumbnail_url = response.read()
+            
+            p = re.compile('www\.mobypicture\.com/images/user', re.VERBOSE)
+            thumbnail_url = p.sub(r'a2.img.mobypicture.com', thumbnail_url)
+            image_url = thumbnail_url.replace('_small', '_full')
 
             logger.debug("Moby posted: %s %s", image_path, s)
         except:
