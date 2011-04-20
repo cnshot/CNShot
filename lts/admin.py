@@ -1,3 +1,5 @@
+import rangevaluesfilterspec
+
 from django.contrib import admin
 
 # Site patterns
@@ -74,6 +76,7 @@ class LinkRateAdmin(admin.ModelAdmin):
 #    list_filter = ('rate', )
     search_fields = ['link__url']
     raw_id_fields = ['link']
+    list_filter = ['rate']
 
     def link_url(self, obj):
         return ("%s" % (obj.link.url))

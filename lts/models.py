@@ -144,6 +144,7 @@ class LinkRate(models.Model):
     id = models.AutoField(primary_key=True)
     link = models.ForeignKey('Link', null=True)
     rate = models.IntegerField(null=True, db_index=True)
+    rate.list_filter_range = [2, 5, 10]
     rating_time = models.DateTimeField(null=True, db_index=True)
 
     def __unicode__(self):
