@@ -94,7 +94,7 @@ class LinkShot(models.Model):
         r = 0
         for l in links:
             try:
-                lr = LinkRate.filter(link=l)[0]
+                lr = LinkRate.objects.filter(link=l)[0]
             except IndexError:
                 continue
             r += lr.rate

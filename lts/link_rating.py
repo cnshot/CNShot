@@ -12,6 +12,8 @@ from httplib import IncompleteRead
 
 from lts.models import Tweet, LinkShot, LinkRate, ShotPublish, TwitterApiSite
 
+global logger, cfg
+
 class LinkRatingThread(Thread):
     def __init__(self, id, input_queue):
         Thread.__init__(self)
@@ -123,11 +125,14 @@ class LinkRatingThread(Thread):
         
 class TaskProcessor:
     @classmethod
-    def loadTasks(cls, queue):
+    def loadTasks(cls, queue, rate_threshold=0):
         # get links shotted in last 2 hours
         lss = LinkShot.objects.filter(shot_time__gte=datetime.utcnow()-timedelta(seconds=cfg.link_rating.ranking_time))
 
         for ls in lss:
+            if ls.getRate()<rate_threshold:
+                continue
+            
             # if it's published, not more rate
             published = ShotPublish.objects.filter(link = ls.link)
             if len(published) > 0:
@@ -221,5 +226,30 @@ def run_count(cfg, logger):
                 lr.save()
                 logger.debug("Updated LinkRate: %s [%d]", lr, r)    
 
-def run(_cfg, _logger):
+def run_mixed(_cfg, _logger):
     run_count(_cfg, _logger)
+    
+    global cfg, logger
+    cfg = _cfg
+    logger = _logger
+
+    q=Queue.Queue()
+
+    # read recent tweet links from DB
+    #   filter out: a) tweeted links, b) links rated in last x mins
+    TaskProcessor.loadTasks(q, rate_threshold = cfg.link_rating.rate_threshold)
+
+    # feed links to input queue
+    # start rating threads
+    # wait for rating threads exit
+    workers = []
+    for i in range(cfg.link_rating.workers):
+        w = LinkRatingThread(i, q)
+        w.start()
+        workers.append(w)
+
+    for i in range(cfg.link_rating.workers):
+        workers[i].join()
+        
+def run(_cfg, _logger):
+    run_mixed(_cfg, _logger)
