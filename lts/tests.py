@@ -2,7 +2,7 @@
 '''
 Created on 2011-3-13
 
-@author: yale
+@author: cnshot
 '''
 
 import unittest

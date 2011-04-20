@@ -106,7 +106,10 @@ class Command(LabelCommand):
         if command == 'schedule':
             for k in command_list.keys():
                 job_str = "%s.%s" % (__name__,k)
-                schedule_unique_job(settings.LTS_SCHEDULE[k], job_str)
+                try:
+                    schedule_unique_job(settings.LTS_SCHEDULE[k], job_str)
+                except KeyError:
+                    pass
         elif command in command_list.keys():
             cfg = Config(file(settings.LTS_CONFIG))
             command_list[command]['command'].run(cfg, logger)

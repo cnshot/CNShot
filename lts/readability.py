@@ -441,8 +441,10 @@ if __name__ == '__main__':
                             os.path.expanduser('~/.readability.cfg'),
                             '/etc/readability.cfg'])[0]))
 
-    logging.config.fileConfig(cfg.common.log_config)
-    logger = logging.getLogger("readability")
+#    logging.config.fileConfig(cfg.common.log_config)
+#    logger = logging.getLogger("readability")
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging
 
     src_file = sys.stdin
     if(options.file):

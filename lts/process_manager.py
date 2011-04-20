@@ -1,7 +1,7 @@
 '''
 Created on 2011-3-6
 
-@author: yale
+@author: cnshot
 '''
 
 import signal, os, setproctitle
