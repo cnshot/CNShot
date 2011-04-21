@@ -27,6 +27,7 @@ class ImageUploader:
             elif c == 'imj.tw':
                 f = self.post_image_imjtw
             if f is not None:
+                logger.debug("Enabling uploader: %s", c)
                 self.uploaders.append(f)
 
     def upload(self, image_path, s):
@@ -39,6 +40,7 @@ class ImageUploader:
     def post_image_twitpic(self, image_path, s):
         twitpic_url = None
         thumbnail_url = None
+        image_url = None
 
         try:
             logger.debug("Post image to twitpic: %s %s", image_path, s)
@@ -58,6 +60,9 @@ class ImageUploader:
                 thumbnail_url = re.sub(r'^http://twitpic.com/(.+)$',
                                        r'http://twitpic.com/show/thumb/\1',
                                        twitpic_url)
+                image_url = re.sub(r'^http://twitpic.com/(.+)$',
+                                   r'http://twitpic.com/show/large/\1',
+                                   twitpic_url)
 
             logger.debug("Twitpic posted: %s %s", image_path, s)
         except:
@@ -66,7 +71,7 @@ class ImageUploader:
             logger.error("%s", traceback.format_exc())
             logger.error('-'*60)
         finally:
-            return twitpic_url, thumbnail_url
+            return image_url, thumbnail_url
 
     def post_image_moby(self, image_path, s):
         image_url = None
@@ -94,6 +99,8 @@ class ImageUploader:
             if not m:
                 logger.error("Failed to upload image: %d %s",
                              response.code, image_url)
+                image_url = None
+                thumbnail_url = None
                 return None, None
 
             datagen, headers = multipart_encode({'t':m.group(1),
