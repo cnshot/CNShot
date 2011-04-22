@@ -389,6 +389,9 @@ class ReadabilityProcessor:
                 if not a in self.permited_attributes:
                     d.attrib.pop(a)
 
+        for tag in top_div.xpath(self.cfg.readability.final_empty_tags):
+            tag.drop_tag()
+
         return {'title': title,
                 'body': top_div,
                 'text': etree.tostring(top_div, encoding='utf-8')}
