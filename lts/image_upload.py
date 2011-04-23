@@ -224,7 +224,7 @@ class ImageUploader:
             b = StringIO.StringIO()
             c = pycurl.Curl()
             values = [("key", cfg.common.imgur_api_key),
-                      ("image", (c.FORM_FILE, image_path))]
+                      ("image", (c.FORM_FILE, str(image_path)))]
             c.setopt(c.URL, "http://api.imgur.com/2/upload.json")
             c.setopt(c.HTTPPOST, values)
             c.setopt(pycurl.WRITEFUNCTION, b.write)
