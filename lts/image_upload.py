@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, traceback, twitpic, urllib2, re
+import sys, traceback, twitpic, urllib2, re, pycurl, simplejson, StringIO
 
 from datetime import datetime, timedelta
 from poster.encode import multipart_encode
@@ -26,6 +26,8 @@ class ImageUploader:
                 f = self.post_image_twitgoo
             elif c == 'imj.tw':
                 f = self.post_image_imjtw
+            elif c == 'imgur':
+                f = self.post_image_imgur
             if f is not None:
                 logger.debug("Enabling uploader: %s", c)
                 self.uploaders.append(f)
@@ -204,6 +206,39 @@ class ImageUploader:
             thumbnail_url = root.xpath('/res/thumbnail_url')[0].text
 
             logger.debug("imj.tw posted: %s %s", image_path, s)
+        except:
+            logger.error("Failed to tweet image: %s", sys.exc_info()[0])
+            logger.error('-'*60)
+            logger.error("%s", traceback.format_exc())
+            logger.error('-'*60)
+        finally:
+            return image_url, thumbnail_url
+
+    def post_image_imgur(self, image_path, s):
+        image_url = None
+        thumbnail_url = None
+
+        try:
+            logger.debug("Post image to imgur: %s %s", image_path, s)
+
+            b = StringIO.StringIO()
+            c = pycurl.Curl()
+            values = [("key", cfg.common.imgur_api_key),
+                      ("image", (c.FORM_FILE, image_path))]
+            c.setopt(c.URL, "http://api.imgur.com/2/upload.json")
+            c.setopt(c.HTTPPOST, values)
+            c.setopt(pycurl.WRITEFUNCTION, b.write)
+            c.perform()
+
+            r = c.getinfo(pycurl.HTTP_CODE)
+            if r < 200 or r >= 300:
+                return None, None
+            
+            j = simplejson.loads(b.getvalue())
+            thumbnail_url = j['upload']['links']['small_square']
+            image_url = j['upload']['links']['original']
+
+            logger.debug("imgur posted: %s %s", image_path, s)
         except:
             logger.error("Failed to tweet image: %s", sys.exc_info()[0])
             logger.error('-'*60)
